@@ -1,0 +1,189 @@
+/* App chrome: navbar dropdowns (legacy navbar.css + dropdown.css effective values, inv-01 §1.4/1.5) */
+.navbar-tech-theme {
+  background: radial-gradient(circle at 20% 20%, rgba(45, 152, 255, 0.35), transparent 60%),
+    linear-gradient(135deg, rgba(11, 14, 40, 0.95), rgba(18, 26, 54, 0.98));
+}
+
+.navbar-brand-custom {
+  color: #e4e7eb;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+.navbar-brand-custom svg { color: #66fcf1; filter: drop-shadow(0 0 5px rgba(102, 252, 241, 0.6)); }
+.navbar-brand-custom:hover {
+  background: rgba(102, 252, 241, 0.15);
+  border-color: rgba(102, 252, 241, 0.4);
+  box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
+}
+
+.rounded-dropdown {
+  border-radius: 18px;
+  padding: 0 8px;
+  margin-right: 3px;
+  font-size: 0.875rem;
+  min-width: 80px;
+  max-width: 150px;
+  height: 29px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e4e7eb;
+  transition: all 150ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 1;
+}
+.rounded-dropdown .dd-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.rounded-dropdown .dd-caret {
+  flex-shrink: 0; width: 0; height: 0;
+  border-top: 0.3em solid; border-right: 0.3em solid transparent; border-left: 0.3em solid transparent;
+}
+.rounded-dropdown:hover { background: rgba(0, 255, 255, 0.1); border-color: rgba(0, 255, 255, 0.3); color: #fff; }
+.rounded-dropdown[data-state='open'], .rounded-dropdown:focus-visible {
+  background: rgba(102, 252, 241, 0.2);
+  border-color: rgba(102, 252, 241, 0.5);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(102, 252, 241, 0.3);
+  outline: none;
+}
+
+/* Menu panel */
+.nav-dd-menu {
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 200px;
+  background: linear-gradient(135deg, rgba(18, 26, 54, 0.98), rgba(11, 14, 40, 0.99));
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px);
+  padding: 6px;
+  z-index: 10000;
+  scrollbar-width: thin;
+  scrollbar-color: #0096c7 transparent;
+  outline: none;
+}
+.nav-dd-menu::-webkit-scrollbar { width: 4px; }
+.nav-dd-menu::-webkit-scrollbar-track { background: rgba(37, 43, 59, 0.5); border-radius: 2px; }
+.nav-dd-menu::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #00ffff 0%, #8a2be2 100%); border-radius: 2px; }
+
+.nav-dd-menu .dropdown-sticky-search {
+  position: sticky; top: -6px; z-index: 110;
+  margin: -6px -6px 4px; padding: 6px 8px;
+  border-radius: 12px 12px 0 0;
+  background: #0b0e28;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+}
+.nav-dd-menu .dd-search {
+  position: relative; width: 100%; height: 34px;
+  background: #0b0e28; color: #fff; caret-color: #fff;
+  border: 1px solid rgba(0, 255, 255, 0.4); border-radius: 6px;
+  padding: 6px 10px; font-size: 0.875rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.nav-dd-menu .dd-search::placeholder { color: rgba(255, 255, 255, 0.4); }
+.nav-dd-menu .dd-search:focus { background: #1a1f3d; border-color: #00ffff; box-shadow: 0 0 10px rgba(0, 255, 255, 0.4); outline: none; }
+
+.nav-dd-menu .dropdown-item {
+  display: flex; align-items: center; width: 100%; text-align: left;
+  color: #e4e7eb; font-size: 0.75rem; padding: 7px 12px; border-radius: 6px; margin-bottom: 2px;
+  background: transparent; border: none; transition: all 150ms ease;
+}
+.nav-dd-menu .dropdown-item:hover:not(:disabled), .nav-dd-menu .dropdown-item:focus-visible {
+  background: rgba(0, 150, 199, 0.12); color: #00ffff; box-shadow: inset 0 0 8px rgba(0, 255, 255, 0.05); outline: none;
+}
+.nav-dd-menu .dropdown-item:disabled { color: #6c757d; cursor: default; }
+.nav-dd-menu .dropdown-item.shifted { background: #d1e7dd; color: #0f5132; font-weight: 600; }
+.nav-dd-menu .dropdown-item.shifted:hover { color: #0f5132; filter: brightness(0.96); }
+
+/* Navbar mobile sizing (inv-01 §2 Mobile) */
+@media (max-width: 768px) {
+  .navbar-tech-theme { padding: 2px 6px !important; }
+  .rounded-dropdown { height: 26px; font-size: 0.75rem; padding: 0 6px; min-width: 75px; max-width: 100px; margin-right: 2px; }
+  .nav-dd-menu { min-width: 150px; padding: 2px; }
+}
+@media (max-width: 400px) {
+  .rounded-dropdown { min-width: 56px; max-width: 84px; padding: 0 5px; }
+}
+
+/* Phones: full-width sheet-like dropdown directly under the 42px bar */
+@media (max-width: 639px) {
+  [data-radix-popper-content-wrapper]:has(> .nav-dd-menu) {
+    position: fixed !important;
+    transform: none !important;
+    top: 46px !important;
+    left: 8px !important;
+    right: 8px !important;
+    min-width: 0 !important;
+  }
+  .nav-dd-menu {
+    width: auto !important; min-width: 0 !important; max-width: none !important;
+    max-height: min(60dvh, 420px) !important;
+    padding: 6px;
+  }
+  .nav-dd-menu .dropdown-item { padding: 9px 12px; font-size: 0.82rem; }
+}
+
+/* Sidebar (NavigationMenu.css) */
+.nav-link-clean {
+  display: block; width: 100%; text-align: left;
+  padding: 4px 10px; margin-bottom: 1px; border-radius: 6px;
+  color: #374151; font-size: 0.82rem; font-weight: 500; background: transparent;
+  transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nav-link-clean:hover:not(.disabled) { background: #f3f4f6; color: #111827; transform: translateX(3px); }
+.nav-link-clean.disabled { opacity: 0.4; cursor: not-allowed; }
+.nav-link-clean.logout { background: rgba(220, 38, 38, 0.05); color: #dc2626; margin-top: 4px; }
+.nav-link-clean.logout:hover { background: rgba(220, 38, 38, 0.1); color: #b91c1c; }
+@media (max-width: 639px) { .nav-link-clean { padding: 8px 10px; } }
+.submenu-accordion {
+  background: #f8fafc; border-left: 2px solid #3b82f6; border-radius: 0 6px 6px 0;
+  margin: 3px 0 4px 12px; padding: 4px 2px; display: flex; flex-direction: column; gap: 1px;
+  animation: submenuFadeIn 0.2s ease;
+}
+@keyframes submenuFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.submenu-accordion .submenu-item { font-size: 0.78rem; padding: 4px 8px; color: #4b5563; border-radius: 4px; }
+.submenu-accordion .submenu-item:hover:not(.disabled) { background: #e2e8f0; color: #0f172a; transform: translateX(2px); }
+@media (max-width: 639px) { .submenu-accordion .submenu-item { padding: 7px 8px; } }
+.nav-divider { height: 1px; background: #e5e7eb; margin: 3px 0; }
+.nav-user-info {
+  padding: 8px 12px; margin-bottom: 6px; border-radius: 6px;
+  background: linear-gradient(135deg, rgba(45, 152, 255, 0.1) 0%, rgba(11, 14, 40, 0.08) 100%);
+  border: 1px solid rgba(45, 152, 255, 0.2);
+}
+.nav-user-info .user-greeting { font-size: 0.82rem; font-weight: 600; color: #1f2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-user-info .user-role { font-size: 0.72rem; color: #6b7280; font-weight: 500; text-transform: uppercase; }
+
+/* Subscription warning banner (warning-banner.css) */
+.subscription-warning-banner {
+  position: fixed; top: 65px; left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: 90%; z-index: 2000;
+  background: #ffc107; color: #212529; padding: 5px 12px; font-weight: 600; font-size: 0.84rem;
+  border-radius: 36px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid rgba(0, 0, 0, 0.05);
+}
+.subscription-warning-banner-icon {
+  background: #fff; width: 19px; height: 19px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: #dc3545;
+}
+.subscription-warning-banner-container { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; justify-content: center; }
+.subscription-warning-banner-text { font-size: 0.92rem; }
+.subscription-warning-banner-btn-whatsapp {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.78rem; padding: 2.5px 10px; border-radius: 18px; font-weight: 700;
+  background: #1b9d4e; border: 1px solid #1b9d4e; color: #fff; box-shadow: 0 2px 5px rgba(27, 157, 78, 0.3);
+}
+.subscription-warning-banner-btn-whatsapp:hover { filter: brightness(1.08); }
+@media (max-width: 400px) {
+  .subscription-warning-banner { max-width: calc(100vw - 16px); font-size: 0.78rem; }
+  .subscription-warning-banner-text { font-size: 0.82rem; }
+}

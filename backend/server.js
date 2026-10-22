@@ -290,6 +290,16 @@ if (require('fs').existsSync(BUILD_ROOT)) {
   }));
 }
 
+// SPA pages whose path collides with a legacy API route (the admin stats API is GET /stats,
+// and the Insights page is also /stats). A browser navigation asks for HTML; the app's own
+// fetches ask for JSON. Serve the SPA for the former so a refresh or link opens the page.
+const SPA_PAGE_PATHS = new Set(['/stats']);
+app.get([...SPA_PAGE_PATHS], (req, res, next) => {
+  const wantsHtml = req.accepts(['json', 'html']) === 'html';
+  if (!wantsHtml || !require('fs').existsSync(BUILD_ROOT)) return next();
+  return res.sendFile(path.join(BUILD_ROOT, 'index.html'));
+});
+
 // Mount Application API & Auth Routes immediately
 app.use(authRoutes);
 // Before userRoutes: its catch-all /api/users/:userId(*) would swallow /api/users/me/*

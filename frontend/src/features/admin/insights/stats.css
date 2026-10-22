@@ -1,0 +1,33 @@
+/* Stats / sub-admin dashboards: scoped bits of legacy statistics.css that are easier as CSS. */
+.stats-page .table tbody td { color: #2c5364; }
+/* Row tone via CSS vars (sub-admin list: --row-bg / --row-solid / --row-border) */
+tr.tone-row > td { background: var(--row-bg); }
+tr.tone-row > td:first-child { background: var(--row-solid); border-left: 4px solid var(--row-border); }
+@media (max-width: 768px) {
+  .stats-page .table thead th { padding: 0.34rem 0.425rem; font-size: 0.75rem; }
+  .stats-page .table tbody td { padding: 0.298rem 0.425rem; font-size: 0.78rem; }
+}
+/* sticky first column + dark sticky header for plain tables (legacy .sticky-list) */
+.sticky-list thead th:first-child { left: 0; z-index: 5; background: #1b333c; }
+.sticky-list tbody td:first-child { position: sticky; left: 0; z-index: 2; background: #fff; box-shadow: 2px 0 4px rgba(0, 0, 0, 0.06); }
+.renewal-view-buttons .btn { white-space: nowrap; }
+@media (max-width: 576px) {
+  .renewal-view-buttons { display: flex; width: 100%; }
+  .renewal-view-buttons .btn { flex: 1 1 0; padding: 0.2rem 0.3rem; font-size: 0.75rem; }
+}
+/* sa-page-tabs (inv-03 §2.2) */
+.sa-page-tabs > .tab { flex: 1 1 0; min-height: 44px; white-space: normal; text-align: center; }
+@media (max-width: 768px) {
+  .sa-page-tabs > .tab { flex: 1 1 33.333%; min-height: 52px; font-size: 0.74rem; padding: 0.35rem 0.3rem; flex-direction: column; gap: 2px; }
+}
+/* sa-detail-tabs (§14.1) */
+.sa-detail-tabs > .tab { flex: 1 1 0; white-space: nowrap; margin-bottom: 0; }
+@media (max-width: 768px) {
+  .sa-detail-tabs > .tab { flex: 1 1 33.333%; padding: 0.4rem 0.3rem; font-size: 0.78rem; }
+}
+/* button group (react-bootstrap ButtonGroup look) */
+.btn-group { display: inline-flex; max-width: 100%; }
+.btn-group > .btn { border-radius: 0; }
+.btn-group > .btn + .btn { margin-left: -1px; }
+.btn-group > .btn:first-child { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+.btn-group > .btn:last-child { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }

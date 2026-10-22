@@ -1,0 +1,33 @@
+/* Feature CSS for the users screens (keyframes + Leaflet bits that are easier as CSS). */
+.user-list-loading-bar {
+  background: linear-gradient(90deg, #00d4ff 0%, #090979 50%, #00d4ff 100%);
+  background-size: 200% 100%;
+  animation: user-list-loading-bar 1.5s infinite linear;
+}
+@keyframes user-list-loading-bar {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.user-list-table thead th { font-size: 0.85rem; z-index: 103; }
+.user-list-table thead th.freeze { z-index: 105; }
+.user-list-table tbody td { font-size: 0.88rem; border-right: 0.5px solid rgba(0, 150, 180, 0.25); white-space: nowrap; }
+.user-list-table tbody td.freeze { z-index: 101; box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2); }
+.user-list-table thead tr { position: relative; }
+@media (max-width: 768px) {
+  .user-list-table thead th { padding: 0.34rem 0.425rem; font-size: 0.75rem; font-weight: 700; }
+  .user-list-table tbody td { padding: 0.298rem 0.425rem; font-size: 0.78rem; }
+}
+
+/* User detail tabs: slide-in panel */
+.tab-content-panel { animation: user-tab-slide-in 0.3s ease-out; }
+@keyframes user-tab-slide-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Numbered teardrop markers (LocationMapTab) */
+.ud-login-marker { background: transparent; border: none; }
+.ud-login-marker .pin {
+  width: 28px; height: 28px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  background: linear-gradient(135deg, #667eea, #764ba2); border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); display: flex; align-items: center; justify-content: center;
+}
+.ud-login-marker.selected .pin { width: 32px; height: 32px; background: linear-gradient(135deg, #764ba2, #f093fb); }
+.ud-login-marker .pin span { transform: rotate(45deg); color: #fff; font-weight: 700; font-size: 11px; }

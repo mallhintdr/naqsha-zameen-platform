@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useMap } from 'react-leaflet';
+import { useMap } from './mapContext';
 import L from 'leaflet';
 import './css/SearchControl.css';
 

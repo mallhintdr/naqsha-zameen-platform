@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import L from 'leaflet';
 import { VectorTile } from '@mapbox/vector-tile';
-import Pbf from 'pbf';
+import { PbfReader as Pbf } from 'pbf';
 import { showKaramSegmentLengths, clearActiveKillaSelection } from '../measurementUtils';
 
 import * as turf from '@turf/turf';

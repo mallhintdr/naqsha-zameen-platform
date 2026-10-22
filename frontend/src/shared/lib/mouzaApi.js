@@ -183,31 +183,9 @@ async function fetchTehsilsFromMetadataHost() {
  * Scans by checking which tehsil folders exist (tries common tehsils or uses directory listing)
  */
 async function fetchTehsilsFromMetadataFolder() {
-  try {
-    // Strategy: Try to fetch directory listing endpoint if available
-    // Most web servers don't allow directory listing for security,
-    // so we'll infer from successful Mouza-Index.json fetches
-
-    // If PHP script exists that can list directories
-    try {
-      const base = apiBase();
-      const res = await fetch(`${base}/list-metadata-folders.php`, { cache: 'no-store', credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          console.log(`[Metadata Scan] ✓ Found ${data.length} tehsils from directory listing`);
-          return data;
-        }
-      }
-    } catch { }
-
-    // Probing 159 folders over HTTP is removed to prevent massive 401/403 console spam.
-    // The backend /api/tehsil-list route already scans the filesystem directly.
-    return [];
-  } catch (e) {
-    console.log('[Metadata Scan] Could not scan folder structure:', e.message);
-    return null;
-  }
+  // Legacy probed list-metadata-folders.php, which never existed on the API host (dead, see inv-06 §6).
+  // The backend /api/tehsil-list route already scans the filesystem directly.
+  return [];
 }
 
 // Old helper functions removed - replaced by unified fetchFromLocal() and fetchFromMetadataHost()

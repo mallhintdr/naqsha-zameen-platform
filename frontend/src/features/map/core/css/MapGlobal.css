@@ -1,0 +1,80 @@
+/* Map-page globals carried over from legacy index.css / global.css (inv-04 §1.6)
+   plus rebuild mobile additions (safe areas, >= 36px touch targets). */
+
+.map-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* legacy index.css: darker text in Leaflet popups/tooltips (overridden by murabba/killa classes) */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-content,
+.leaflet-popup-content *,
+.leaflet-tooltip-content,
+.leaflet-tooltip {
+  color: #111827 !important;
+}
+
+/* legacy global.css: hide vector layers during programmatic moves */
+.map-animating .leaflet-geoJsonMouzaPane-pane,
+.map-animating .leaflet-murabbaPane-pane,
+.map-animating .leaflet-fallbackGeoJsonPane-pane,
+.map-animating .leaflet-murabbaTooltipPane-pane,
+.map-animating .leaflet-killaTooltipPane-pane {
+  visibility: hidden !important;
+}
+
+/* ── Rebuild: safe areas (inv-04 gotcha 20) ── */
+.map-container .leaflet-bottom.leaflet-left {
+  bottom: env(safe-area-inset-bottom, 0px);
+  left: env(safe-area-inset-left, 0px);
+}
+.map-container .leaflet-top.leaflet-left {
+  left: env(safe-area-inset-left, 0px);
+}
+.map-container .leaflet-top.leaflet-right {
+  right: env(safe-area-inset-right, 0px);
+}
+.map-container .dropdown-container {
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  right: calc(10px + env(safe-area-inset-right, 0px));
+}
+.map-container .killa-area-info-box,
+.map-container .drawn-area-info-box {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── Rebuild: touch targets >= 36px on phones ── */
+@media (max-width: 768px) {
+  .map-container .dropdown-container {
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    right: calc(8px + env(safe-area-inset-right, 0px));
+  }
+  .map-container .leaflet-touch .leaflet-bar a,
+  .map-container .leaflet-bar a {
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+  }
+  .map-container .leaflet-location-icon,
+  .map-container .search-btn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .map-container .leaflet-pm-toolbar .leaflet-buttons-control-button {
+    width: 36px;
+    height: 36px;
+  }
+  .map-container .leaflet-pm-toolbar .leaflet-pm-icon-marker,
+  .map-container .leaflet-pm-toolbar .control-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .map-container .admin-toolbar-btn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .map-container .dropdown-select {
+    min-height: 36px;
+  }
+}

@@ -86,7 +86,7 @@ export default function App() {
     <div
       className={
         isMap
-          ? 'fixed inset-0 flex w-full flex-col overflow-hidden pb-[env(safe-area-inset-bottom)]'
+          ? 'fixed inset-0 flex w-full flex-col overflow-hidden'
           : 'flex min-h-dvh flex-col'
       }
     >

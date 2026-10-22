@@ -1,10 +1,11 @@
 // src/Map Component/VectorTileLoader.js
 import { useEffect, useRef, useCallback } from 'react';
-import { useMap } from 'react-leaflet';
+import { apiBase as getApiBase } from '@/shared/api/base';
+import { useMap } from './mapContext';
 import L from 'leaflet';
 import { PMTiles } from 'pmtiles';
 import { VectorTile } from '@mapbox/vector-tile';
-import Pbf from 'pbf';
+import { PbfReader as Pbf } from 'pbf';
 import { MAP_STYLES } from './tileStyles';
 import { bindMurabbaTooltip, bindKillaTooltip, clearRegisteredTooltips } from './Map/bindTooltips';
 import { loadMurabbaPMTiles, prefetchMurabbaGeoJson } from './loadMurabbaPMTiles';
@@ -79,6 +80,7 @@ const VectorTileLoader = ({
 }) => {
   const map = useMap();
   const vectorLayerRef = useRef(null);
+  const mouzaClickHandlerRef = useRef(null);
   const murabbaLayerRef = useRef(null);
   const completePMTilesLayerRef = useRef(null); // Track complete PMTiles layer
   const pmtilesBoundsRef = useRef(null);
@@ -231,7 +233,7 @@ const VectorTileLoader = ({
     if (!tehsil || !mouza || !map) return;
 
     try {
-      const apiBase = process.env.REACT_APP_API_URL || '';
+      const apiBase = getApiBase();
       const geoJsonUrl = `${apiBase}/JSON Murabba/${encodeURIComponent(tehsil)}/${encodeURIComponent(mouza)}.geojson?t=${Date.now()}`;
 
       const response = await fetch(geoJsonUrl, {
@@ -705,7 +707,9 @@ const VectorTileLoader = ({
         vectorLayerRef.current = vectorTileLayer;
 
         // Add click handler to zoom to murabba (removed hover tooltip - using permanent tooltips instead)
-        map.on('click', async (e) => {
+        // Gotcha 7 fix: keep a reference so cleanup removes ONLY this handler.
+        if (mouzaClickHandlerRef.current) map.off('click', mouzaClickHandlerRef.current);
+        const onMouzaClick = async (e) => {
           console.log('🖱️ Map clicked at:', e.latlng);
           if (map._isDrawing) return; // Skip during draw/edit mode
           if (!vectorLayerRef.current || !pmtilesRef.current || !headerRef.current) return;
@@ -832,7 +836,9 @@ const VectorTileLoader = ({
           } catch (err) {
             console.warn('Click handler error:', err);
           }
-        });
+        };
+        mouzaClickHandlerRef.current = onMouzaClick;
+        map.on('click', onMouzaClick);
 
         // Auto-fit map to PMTiles mouza bounds — BUT only if the user isn't already zoomed
         // in to this mouza. Skipping prevents the jarring zoom-out-then-zoom-in behaviour.
@@ -938,7 +944,7 @@ const VectorTileLoader = ({
         return; // Success - don't fall back to GeoJSON
 
       } catch (headerError) {
-        throw new Error('Failed to load PMTiles header: ' + headerError.message);
+        throw new Error('Failed to load PMTiles header: ' + headerError.message, { cause: headerError });
       }
 
     } catch (error) {
@@ -1001,8 +1007,11 @@ const VectorTileLoader = ({
     // NOTE: Do NOT call map.off('zoomend') or map.off('moveend') without a specific handler —
     // that nukes ALL listeners on those events, breaking Leaflet rendering and bindTooltips.
     try {
-      map.off('mousemove');
-      map.off('click');
+      // Gotcha 7 fix: remove only our own handler instead of wiping every listener.
+      if (mouzaClickHandlerRef.current) {
+        map.off('click', mouzaClickHandlerRef.current);
+        mouzaClickHandlerRef.current = null;
+      }
       console.log('✓ Map mousemove/click event listeners removed');
     } catch (err) {
       console.warn('Error removing map event listeners:', err);

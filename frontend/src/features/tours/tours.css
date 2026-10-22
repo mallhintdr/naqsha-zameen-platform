@@ -1,0 +1,39 @@
+@keyframes pulse-red-glow-alt {
+  0% { box-shadow: 0 0 8px rgba(255, 0, 0, 0.4); }
+  100% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
+}
+.tour-highlight {
+  position: fixed;
+  border: 3px solid #ff0000;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 10600;
+  animation: pulse-red-glow-alt 1.5s infinite alternate;
+  transition: top 0.15s ease, left 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+.tour-tooltip {
+  position: fixed;
+  width: min(290px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: 45vh;
+  overflow-y: auto;
+  background: linear-gradient(135deg, rgba(11, 14, 40, 0.95) 0%, rgba(20, 30, 65, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 255, 255, 0.6);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 12px 32px rgba(0, 212, 255, 0.25), 0 6px 20px rgba(0, 0, 0, 0.6);
+  color: #f8fafc;
+  z-index: 10601;
+  box-sizing: border-box;
+}
+.tour-tooltip h6 { color: #00ffff; font-weight: 700; font-size: 0.9rem; margin: 0 0 6px; }
+.tour-tooltip p { font-size: 0.78rem; line-height: 1.4; margin: 0 0 12px; color: #d1d5db; }
+.tour-tooltip .tour-btn { font-size: 0.78rem; font-weight: 600; padding: 6px 10px; min-height: 32px; border-radius: 4px; }
+.tour-tooltip .tour-stop { background: transparent; border: none; color: #9ca3af; }
+.tour-tooltip .tour-back { background: transparent; border: 1px solid rgba(255, 255, 255, 0.2); color: #e5e7eb; }
+.tour-tooltip .tour-next { background: #00d4ff; color: #0b0e28; border: none; font-weight: 700; padding: 6px 12px; box-shadow: 0 2px 6px rgba(0, 212, 255, 0.3); }
+.tour-tooltip .tour-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+.tour-tooltip .tour-next:disabled { background: #4b5563; color: #d1d5db; box-shadow: none; opacity: 0.75; }

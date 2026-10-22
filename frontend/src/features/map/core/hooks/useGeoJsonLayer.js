@@ -1,10 +1,11 @@
 import { useCallback } from 'react';
+import { apiBase as getApiBase } from '@/shared/api/base';
 import L from 'leaflet';
 import { bindMurabbaTooltip, bindKillaTooltip } from '../Map/bindTooltips';
 import { showKaramSegmentLengths, clearActiveKillaSelection } from '../measurementUtils';
 import { normalizeKillaBandi, byPlotNumber } from '@/shared/lib/killaBandi';
 import { focusPoint, focusBounds, afterMove } from '../utils/murabbaCamera';
-import { prefetchMurabbaGeoJson } from '../loadMurabbaPMTiles';
+import { prefetchMurabbaGeoJson, loadMurabbaPMTiles } from '../loadMurabbaPMTiles';
 
 // Killa-bandi plot (killa used as murabba): highlight it with its karam lengths and
 // zoom to it. There are no murabba sub-divisions to load for these mouzas.
@@ -25,7 +26,6 @@ const selectKillaBandiPlot = (layer, map, zoom = true) => {
 
 // Helper function to load individual murabba PMTiles
 const loadMurabbaGeoJSON = async (murabbaNo, tehsil, mouza, map, mustateelLayers, preferGeoJson, skipZoom = false) => {
-  const { loadMurabbaPMTiles } = require('../loadMurabbaPMTiles');
   return loadMurabbaPMTiles(murabbaNo, tehsil, mouza, map, mustateelLayers, preferGeoJson, false, skipZoom);
 };
 
@@ -65,10 +65,7 @@ export function useGeoJsonLayer({
       // On localhost the CRA dev-server proxies relative paths to localhost:5000 where the
       // auth cookie is valid. Using REACT_APP_API_URL (production API) from localhost sends
       // a cross-origin request and the httpOnly cookie is blocked by the browser — causing 401.
-      const isLocalDev =
-        typeof window !== 'undefined' &&
-        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-      const apiBase = isLocalDev ? '' : (process.env.REACT_APP_API_URL || '');
+      const apiBase = getApiBase();
       let geoJsonData = null;
 
       // 1. Try static JSON Murabba file first

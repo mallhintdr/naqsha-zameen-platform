@@ -38,7 +38,17 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      ...Object.fromEntries(PROXIED.map((p) => [p, { target: BACKEND, changeOrigin: true }])),
+      ...Object.fromEntries(
+        PROXIED.map((p) => [
+          p,
+          {
+            target: BACKEND,
+            changeOrigin: true,
+            // Browser navigations to SPA pages that share a prefix with an API route (/stats) get index.html
+            bypass: (req: any) => (req.headers.accept?.includes('text/html') ? '/index.html' : undefined),
+          },
+        ]),
+      ),
       '/socket.io': { target: BACKEND, ws: true, changeOrigin: true },
     },
   },

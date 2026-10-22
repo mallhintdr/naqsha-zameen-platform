@@ -1,6 +1,29 @@
-// src/components/AksShajra/exportUtils.js
-import jsPDF from 'jspdf';
+// Ported from legacy src/components/AksShajra/exportUtils.js
+import { jsPDF } from 'jspdf';
 import { PAPER_SIZES } from './shajraConstants';
+
+/**
+ * D7 fix: capture the stage at its natural (zoom 1) size so export resolution is
+ * independent of on-screen zoom. Temporarily resets the stage scale/size while
+ * calling toDataURL, then restores it.
+ */
+export const captureStage = (stage: any, pixelRatio: number) => {
+  const sx = stage.scaleX() || 1;
+  const sy = stage.scaleY() || 1;
+  const w = stage.width();
+  const h = stage.height();
+  const baseW = Math.round(w / sx);
+  const baseH = Math.round(h / sy);
+  stage.scale({ x: 1, y: 1 });
+  stage.size({ width: baseW, height: baseH });
+  try {
+    return { url: stage.toDataURL({ pixelRatio }) as string, width: baseW, height: baseH };
+  } finally {
+    stage.scale({ x: sx, y: sy });
+    stage.size({ width: w, height: h });
+    stage.batchDraw();
+  }
+};
 
 /**
  * Export Konva Stage to PNG.
@@ -8,13 +31,15 @@ import { PAPER_SIZES } from './shajraConstants';
  * We additionally stamp a thin metadata header over the exported image so it
  * survives even if the on-canvas title is small.
  */
-export const exportStageToPNG = (stageRef, metadata = {}, fileName = 'aks-shajra-map.png', pixelRatio = 3) => {
-  if (!stageRef || !stageRef.current) return;
+export const exportStageToPNG = (stageRef: any, metadata: any = {}, fileName = 'aks-shajra-map.png', pixelRatio = 3): Promise<void> => new Promise((resolve, reject) => {
+  if (!stageRef || !stageRef.current) { resolve(); return; }
 
-  const stageDataUrl = stageRef.current.toDataURL({ pixelRatio });
+  const stageDataUrl = captureStage(stageRef.current, pixelRatio).url;
 
   const img = new window.Image();
+  img.onerror = () => reject(new Error('Failed to load stage image'));
   img.onload = () => {
+   try {
     const W = img.width;
     const H = img.height;
 
@@ -58,9 +83,11 @@ export const exportStageToPNG = (stageRef, metadata = {}, fileName = 'aks-shajra
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    resolve();
+   } catch (err) { reject(err); }
   };
   img.src = stageDataUrl;
-};
+});
 
 /**
  * Export complete layout (Title block, Map, Legend, North Arrow, Scale Bar) to PDF
@@ -68,12 +95,10 @@ export const exportStageToPNG = (stageRef, metadata = {}, fileName = 'aks-shajra
 export const exportToPDF = ({
   stageRef,
   metadata = {},
-  legend = [],
   paperSize = 'A3',
   orientation = 'portrait',
   scale = '1:1000',
-  northArrowSvg = null,
-}) => {
+}: { stageRef: any; metadata?: any; legend?: any[]; paperSize?: string; orientation?: string; scale?: string }) => {
   if (!stageRef || !stageRef.current) return;
 
   const isPortrait = orientation === 'portrait';
@@ -155,9 +180,7 @@ export const exportToPDF = ({
   const mapAvailableWidth  = contentWidth  - 6;
 
   // Capture canvas data (the stage already contains the on-canvas title block)
-  const mapDataUrl  = stageRef.current.toDataURL({ pixelRatio: 2.5 });
-  const stageWidth  = stageRef.current.width();
-  const stageHeight = stageRef.current.height();
+  const { url: mapDataUrl, width: stageWidth, height: stageHeight } = captureStage(stageRef.current, 2.5);
 
   // Aspect ratio fit
   const imgRatio = stageWidth / stageHeight;
@@ -243,7 +266,7 @@ export const exportToPDF = ({
 /**
  * Export project state as JSON file
  */
-export const exportProjectJSON = (projectData, fileName = 'aks-shajra-project.json') => {
+export const exportProjectJSON = (projectData: any, fileName = 'aks-shajra-project.json') => {
   const jsonStr = JSON.stringify(projectData, null, 2);
   const blob    = new Blob([jsonStr], { type: 'application/json' });
   const url     = URL.createObjectURL(blob);

@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react';
 import L from 'leaflet';
 import { PMTiles } from 'pmtiles';
 import { VectorTile } from '@mapbox/vector-tile';
-import Pbf from 'pbf';
+import { PbfReader as Pbf } from 'pbf';
 import { getSignedPMTilesUrl } from '@/features/map/config/pmtiles';
 import { fetchKillaJson, fetchMurabbaJson } from '@/shared/lib/mouzaApi';
 import { loadMurabbaPMTiles } from '../loadMurabbaPMTiles';

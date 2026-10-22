@@ -1,10 +1,10 @@
 import L from 'leaflet';
+import { loadMurabbaPMTiles } from '../loadMurabbaPMTiles';
 import { fetchMurabbaJson } from '@/shared/lib/mouzaApi';
 import { focusPoint, focusBounds, afterMove, wasClickSelection } from './murabbaCamera';
 
 // Helper function to load individual murabba PMTiles
 const loadMurabbaGeoJSON = async (murabbaNo, tehsil, mouza, map, mustateelLayers, preferGeoJson, skipZoom = false) => {
-  const { loadMurabbaPMTiles } = require('../loadMurabbaPMTiles');
   return loadMurabbaPMTiles(murabbaNo, tehsil, mouza, map, mustateelLayers, preferGeoJson, false, skipZoom);
 };
 
@@ -430,7 +430,7 @@ export async function applyMurabbaSelection(
   }
 
   const murabbaCentroidsMap = new Map();
-  let metadataJson = null;
+  let metadataJson;
   try {
     metadataJson = await fetchMurabbaJson(tehsil, mouza);
     if (metadataJson && metadataJson.murabba_centroids) {
