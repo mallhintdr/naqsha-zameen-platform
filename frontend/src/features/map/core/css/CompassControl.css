@@ -1,0 +1,267 @@
+.compass-control-wrapper {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  margin-right: 12px;
+  margin-top: 12px;
+  box-sizing: border-box;
+}
+
+.leaflet-compass-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  width: 36px;
+  height: 36px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.75); /* Frosted glass base */
+  backdrop-filter: blur(10px); /* Glassmorphism blur */
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.6); /* Crisp inner edge */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+  z-index: 2;
+
+  /* Performance optimizations */
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0; /* Removed padding */
+}
+
+
+/* SVG icon styling */
+.compass-svg {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); /* Add subtle shadow to SVG for visibility on map */
+}
+
+/* Dynamic color states for SVG elements */
+.compass-bg-circle {
+  stroke: #d1d5db;
+  transition: stroke 0.3s ease;
+}
+
+.compass-marker-text {
+  fill: #1f2937;
+  transition: fill 0.3s ease;
+}
+
+/* Active state colors */
+.compass-active .compass-bg-circle {
+  stroke: #3b82f6;
+}
+
+.compass-active .compass-marker-text {
+  fill: #3b82f6;
+}
+
+.compass-needle {
+  /* Fast but smooth transition for sensor updates */
+  transition: none;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* subtle glow hint for iOS permission */
+.leaflet-compass-icon.compass-hint {
+  animation: compassGlow 1.5s ease-out 3;
+}
+
+.map-rotated {
+  border-color: #eab308; /* Bright yellow */
+  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
+}
+
+/* Rotate Ring Styles - 30% Slimmer with Outer White Ring */
+.compass-rotate-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.68) 0%, rgba(30, 41, 59, 0.78) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 
+    0 0 0 1px #ffffff,
+    0 0 8px rgba(0, 0, 0, 0.3), 
+    inset 0 1.5px 3px rgba(255, 255, 255, 0.15),
+    inset 0 0 0 0.8px rgba(56, 189, 248, 0.25); /* Elegant soft cyan ambient edge */
+  box-sizing: border-box;
+  cursor: grab;
+  z-index: 1;
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+  will-change: transform;
+  transform-origin: center center;
+}
+
+.compass-rotate-ring:hover {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(30, 41, 59, 0.9) 100%);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 
+    0 0 0 1.5px #ffffff,
+    0 5px 14px rgba(0, 0, 0, 0.4), 
+    inset 0 1.5px 3px rgba(255, 255, 255, 0.2),
+    inset 0 0 0 1px rgba(56, 189, 248, 0.5);
+}
+
+.compass-rotate-ring:active,
+.compass-rotate-ring.is-dragging {
+  cursor: grabbing;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%);
+  box-shadow: 
+    0 0 0 1.5px #ffffff,
+    0 3px 12px rgba(0, 0, 0, 0.45), 
+    inset 0 1.5px 3px rgba(255, 255, 255, 0.15),
+    inset 0 0 0 1px rgba(255, 42, 75, 0.75);
+}
+
+/* Handle/Notch - Neon Crimson Triangle */
+.compass-rotate-ring::after {
+  content: '';
+  position: absolute;
+  top: -8.5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 12'%3E%3Cpolygon points='7,0 0,12 14,12' fill='%23ff2a4b' /%3E%3Cpolygon points='7,3 2.5,10 11.5,10' fill='none' stroke='white' stroke-width='1' stroke-linejoin='round' /%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 5px rgba(255, 42, 75, 0.5)) drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.2s;
+}
+
+.compass-rotate-ring:hover::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 12'%3E%3Cpolygon points='7,0 0,12 14,12' fill='%23ff4d69' /%3E%3Cpolygon points='7,3 2.5,10 11.5,10' fill='none' stroke='white' stroke-width='1' stroke-linejoin='round' /%3E%3C/svg%3E");
+  transform: translateX(-50%) scale(1.15);
+  filter: drop-shadow(0 0 8px rgba(255, 42, 75, 0.7)) drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+}
+
+.compass-rotate-ring:active::after,
+.compass-rotate-ring.is-dragging::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 12'%3E%3Cpolygon points='7,0 0,12 14,12' fill='%23e61c3c' /%3E%3Cpolygon points='7,3 2.5,10 11.5,10' fill='none' stroke='white' stroke-width='1' stroke-linejoin='round' /%3E%3C/svg%3E");
+  transform: translateX(-50%) scale(1.25);
+  filter: drop-shadow(0 0 10px rgba(255, 42, 75, 0.8));
+}
+
+@keyframes compassGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.6);
+  }
+
+  70% {
+    box-shadow: 0 0 0 15px rgba(102, 126, 234, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+  }
+}
+
+/* Loading state */
+.leaflet-compass-icon.compass-loading {
+  opacity: 0.6;
+  pointer-events: none;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* Active state indicator */
+.leaflet-compass-icon.compass-active {
+  /* Removed background/border logic for active state to keep it clean */
+  filter: drop-shadow(0 0 4px rgba(102, 126, 234, 0.8));
+}
+
+/* Low accuracy/calibration needed warning */
+.leaflet-compass-icon.compass-calibrating {
+  opacity: 0.7;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+}
+
+/* Accuracy Badge below compass */
+.locate-accuracy-badge {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: 6px;
+  padding: 2px 6px;
+  min-width: 46px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  font-family: 'Inter', Arial, sans-serif;
+  cursor: default;
+  pointer-events: none;
+  animation: lacFadeIn 0.25s ease-out forwards;
+  transition: background 0.4s ease;
+  z-index: 1001;
+}
+
+@keyframes lacFadeIn {
+  from { opacity: 0; transform: translate(-50%, -4px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.lac-val {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.lac-lbl {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Responsive design for smaller screens - preserve 36px concentric alignment */
+@media (max-width: 768px) {
+  .compass-control-wrapper {
+    margin-right: 10px;
+    margin-top: 10px;
+  }
+}

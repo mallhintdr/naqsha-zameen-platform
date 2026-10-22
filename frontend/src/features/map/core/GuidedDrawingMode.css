@@ -1,0 +1,436 @@
+.guided-drawing-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 15000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Guide lines through the crosshair: dashed, solid near the centre and fading out
+   towards the edges. */
+.guided-ruler-h,
+.guided-ruler-v {
+  position: absolute;
+  pointer-events: none;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.95));
+}
+.guided-ruler-h {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1.2px;
+  transform: translateY(-50%);
+  background: repeating-linear-gradient(90deg, #fff 0 4px, transparent 4px 8px);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 calc(50% - 11px), transparent calc(50% - 11px), transparent calc(50% + 11px), #000 calc(50% + 11px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 calc(50% - 11px), transparent calc(50% - 11px), transparent calc(50% + 11px), #000 calc(50% + 11px), transparent 100%);
+}
+.guided-ruler-v {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1.2px;
+  transform: translateX(-50%);
+  background: repeating-linear-gradient(180deg, #fff 0 4px, transparent 4px 8px);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 calc(50% - 11px), transparent calc(50% - 11px), transparent calc(50% + 11px), #000 calc(50% + 11px), transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 calc(50% - 11px), transparent calc(50% - 11px), transparent calc(50% + 11px), #000 calc(50% + 11px), transparent 100%);
+}
+
+.guided-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  filter: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.guided-controls-container {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  pointer-events: none;
+  width: auto;
+  max-width: 90%;
+  z-index: 15001;
+}
+
+/* Real-time HUD Measurement Badge */
+.guided-metrics-badge {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.95));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  padding: 7px 18px;
+  color: #f8fafc;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  pointer-events: auto;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metric-label {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-area {
+  color: #fbbf24;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+}
+
+.metric-guide {
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+/* Glassmorphic Modern Toolbar */
+.guided-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.85); /* Deep slate */
+  padding: 6px 14px;
+  border-radius: 50px;
+  box-shadow: 
+    0 12px 36px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  pointer-events: auto;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.guided-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 0; /* no browser default padding, so the icon's 75% is of the full button */
+}
+
+/* Icons are always 75% of their button, centred, on every screen size and in
+   every state (the button itself may scale on hover/press; the icon scales with it). */
+.guided-btn svg {
+  width: 75%;
+  height: 75%;
+  flex: 0 0 75%;
+  display: block;
+  margin: auto;
+  stroke-width: 2.2px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+/* Subtle inner highlight for buttons */
+.guided-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1.5px 3px rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+.guided-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none !important; /* greyed out, but same size as the others */
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.guided-btn:not(:disabled):hover {
+  transform: scale(1.1);
+}
+
+.guided-btn:not(:disabled):active {
+  transform: scale(0.95);
+  transition: all 0.1s;
+}
+
+/* Modern Stylistic Buttons */
+.btn-undo {
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  color: #fbbf24;
+}
+.btn-undo:not(:disabled):hover {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  border-color: rgba(251, 191, 36, 0.8);
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35);
+  color: #fde047;
+}
+
+.btn-add {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.6);
+  color: #ffffff;
+  animation: pulseGlow 2.5s infinite;
+}
+.btn-add svg {
+  stroke-width: 2.6px;
+}
+.btn-add:not(:disabled):hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.8);
+  transform: scale(1.12);
+}
+.btn-add:not(:disabled):active {
+  transform: scale(0.94);
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5), 0 0 0 0 rgba(59, 130, 246, 0.45); }
+  70% { box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5), 0 0 0 14px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5), 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+.btn-finish {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+  color: #ecfdf5;
+}
+.btn-finish:not(:disabled):hover {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: rgba(52, 211, 153, 0.8);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+  color: #ffffff;
+}
+
+.btn-cancel {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+  color: #fef2f2;
+}
+.btn-cancel:not(:disabled):hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-color: rgba(248, 113, 113, 0.8);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+  color: #ffffff;
+}
+
+/* Unit Toggle Button inside Guided Toolbar */
+.btn-unit-toggle {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.4);
+  color: #ccfbf1;
+  font-weight: 700;
+}
+.btn-unit-toggle.metric-active {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45);
+  color: #e0f2fe;
+}
+.btn-unit-toggle.meters-active {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border-color: rgba(167, 139, 250, 0.6);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.45);
+  color: #f5f3ff;
+}
+.btn-unit-toggle:not(:disabled):hover {
+  filter: brightness(1.15);
+  transform: scale(1.08);
+}
+.unit-btn-text {
+  font-size: 12.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  user-select: none;
+  line-height: 1;
+}
+
+/* Circular Unit Toggle Container - Positioned directly above Geoman Toolbar */
+.circular-unit-toggle-container {
+  position: absolute;
+  bottom: 350px; /* Directly above 9-button Geoman Toolbar (bottom-left) */
+  left: 12px;
+  z-index: 1000;
+  pointer-events: auto;
+  user-select: none;
+  animation: fadeIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.circular-unit-toggle-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.88); /* Sleek slate glassmorphism */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(0, 212, 255, 0.4);
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-sizing: border-box;
+}
+
+.circular-unit-toggle-btn.imperial-active {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  border-color: rgba(45, 212, 191, 0.5);
+  box-shadow: 0 4px 16px rgba(15, 118, 110, 0.45);
+}
+
+.circular-unit-toggle-btn.metric-active {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45);
+}
+
+.circular-unit-toggle-btn.meters-active {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border-color: rgba(167, 139, 250, 0.6);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.45);
+}
+
+.circular-unit-toggle-btn:hover {
+  transform: scale(1.1);
+  filter: brightness(1.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.circular-unit-toggle-btn:active {
+  transform: scale(0.94);
+}
+
+.circular-unit-label {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  user-select: none;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .circular-unit-toggle-container {
+    bottom: 340px; /* Directly above mobile Geoman Toolbar */
+    left: 10px;
+  }
+  
+  .circular-unit-toggle-btn {
+    width: 34px;
+    height: 34px;
+  }
+  
+  .circular-unit-label {
+    font-size: 12px;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Mobile / Small Screen Responsive Layout ──────────────────
+   Elevates guided toolbar strictly ABOVE bottom-right Layer Control
+   to guarantee ZERO overlap on mobile and tablet screens.         */
+@media (max-width: 768px) {
+  .guided-controls-container {
+    bottom: 56px; /* Cleanly clears Layer Control (bottom: 8px, height: ~32px) */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 56px);
+    gap: 12px;
+    max-width: 96%;
+  }
+
+  .guided-metrics-badge {
+    padding: 6px 14px;
+    font-size: 0.76rem;
+    gap: 8px;
+  }
+
+  .guided-toolbar {
+    padding: 5px 12px;
+    gap: 9px;
+  }
+
+  .guided-btn {
+    width: 35px;
+    height: 35px;
+  }
+
+  .btn-add {
+    width: 40px;
+    height: 40px;
+  }
+  /* Icons follow the base rule: 75% of whichever button size applies. */
+}
+
+@media (max-width: 480px) {
+  .guided-controls-container {
+    bottom: 60px; /* Ample clearance on compact smartphones */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
+    gap: 10px;
+  }
+
+  .guided-metrics-badge {
+    padding: 5px 12px;
+    font-size: 0.72rem;
+  }
+}
+
+
+
+/* During guided drawing the crosshair's centre dot is the anchor: hide Geoman's
+   own cursor marker, which otherwise lingers where the draw button was tapped. */
+.guided-drawing-active .marker-icon.cursor-marker,
+.guided-drawing-active .geoman-draw-cursor .marker-icon {
+  display: none !important;
+}

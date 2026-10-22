@@ -1,0 +1,308 @@
+/* Active button styling for the Geoman draw toolbar */
+.leaflet-pm-toolbar .leaflet-buttons-control-button.active,
+.leaflet-pm-toolbar .leaflet-buttons-control-button.action-active {
+  background-color: rgba(220, 220, 220, 0.9) !important;
+  color: #333 !important;
+}
+
+/* Hover state for the Geoman draw toolbar buttons */
+.leaflet-pm-toolbar .leaflet-buttons-control-button:hover {
+  background-color: rgba(100, 223, 247, 0.9) !important;
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Container ensuring tooltip centers precisely at the latlng */
+.area-label-container,
+.distance-label-container,
+.circle-label-container,
+.marker-label-container {
+  overflow: visible !important;
+}
+
+/* Label styling for measurements - Clean, modern, highly readable */
+.labelstyle,
+.distance-label,
+.area-label,
+.circle-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-weight: 600;
+  white-space: nowrap;
+  background-color: rgba(15, 23, 42, 0.85); /* Slate 900 */
+  backdrop-filter: blur(4px);
+  padding: 1px 3px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  pointer-events: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: 0px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+  line-height: 1.1;
+}
+
+/* Minimal Box & 20% Smaller Font for Karam Side Measurement Labels */
+.distance-label.karam-distance-label {
+  padding: 0px 2px !important;
+  border-radius: 2px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  font-size: 8px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-zoom="14"] .karam-distance-label,
+[data-zoom="15"] .karam-distance-label {
+  font-size: 8px !important;
+}
+
+[data-zoom="16"] .karam-distance-label,
+[data-zoom="17"] .karam-distance-label {
+  font-size: 9px !important;
+}
+
+[data-zoom="18"] .karam-distance-label,
+[data-zoom="19"] .karam-distance-label,
+[data-zoom="20"] .karam-distance-label,
+[data-zoom="21"] .karam-distance-label,
+[data-zoom="22"] .karam-distance-label {
+  font-size: 10px !important;
+}
+
+/* Specific styling for drop pin marker label (center-bottom, clickable) */
+.marker-label {
+  position: absolute;
+  /* Center horizontally, push down vertically by 25px to be below the pin */
+  transform: translate(-50%, 25px);
+  color: #ffffff;
+  font-weight: 600;
+  white-space: nowrap;
+  background-color: rgba(15, 23, 42, 0.85); /* Slate 900 */
+  backdrop-filter: blur(4px);
+  padding: 2px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  /* Re-enable pointer events and add cursor so it can be clicked to copy */
+  pointer-events: auto !important;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: 0px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+  line-height: 1.1;
+  transition: transform 0.1s, background-color 0.1s;
+}
+
+.marker-label:hover {
+  background-color: rgba(30, 41, 59, 0.95);
+  transform: translate(-50%, 25px) scale(1.05);
+}
+
+/* Adjust tooltip visibility and size dynamically based on map zoom */
+.labelstyle, .distance-label, .area-label, .circle-label, .marker-label {
+  display: block !important; 
+  font-size: 9px;
+}
+
+/* Zoom 14-15 (small font) */
+[data-zoom="14"] .labelstyle, [data-zoom="14"] .distance-label, [data-zoom="14"] .area-label, [data-zoom="14"] .circle-label, [data-zoom="14"] .marker-label,
+[data-zoom="15"] .labelstyle, [data-zoom="15"] .distance-label, [data-zoom="15"] .area-label, [data-zoom="15"] .circle-label, [data-zoom="15"] .marker-label {
+  display: block !important;
+  font-size: 10px;
+}
+
+/* Zoom 16-17 (medium font) */
+[data-zoom="16"] .labelstyle, [data-zoom="16"] .distance-label, [data-zoom="16"] .area-label, [data-zoom="16"] .circle-label, [data-zoom="16"] .marker-label,
+[data-zoom="17"] .labelstyle, [data-zoom="17"] .distance-label, [data-zoom="17"] .area-label, [data-zoom="17"] .circle-label, [data-zoom="17"] .marker-label {
+  display: block !important;
+  font-size: 11px;
+}
+
+/* Zoom 18+ (large font) */
+[data-zoom="18"] .labelstyle, [data-zoom="18"] .distance-label, [data-zoom="18"] .area-label, [data-zoom="18"] .circle-label, [data-zoom="18"] .marker-label,
+[data-zoom="19"] .labelstyle, [data-zoom="19"] .distance-label, [data-zoom="19"] .area-label, [data-zoom="19"] .circle-label, [data-zoom="19"] .marker-label,
+[data-zoom="20"] .labelstyle, [data-zoom="20"] .distance-label, [data-zoom="20"] .area-label, [data-zoom="20"] .circle-label, [data-zoom="20"] .marker-label,
+[data-zoom="21"] .labelstyle, [data-zoom="21"] .distance-label, [data-zoom="21"] .area-label, [data-zoom="21"] .circle-label, [data-zoom="21"] .marker-label,
+[data-zoom="22"] .labelstyle, [data-zoom="22"] .distance-label, [data-zoom="22"] .area-label, [data-zoom="22"] .circle-label, [data-zoom="22"] .marker-label {
+  display: block !important;
+  font-size: 13px;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+  /* Bump font sizes on mobile for better touch screen readability */
+  [data-zoom="14"] .labelstyle, [data-zoom="14"] .distance-label, [data-zoom="14"] .area-label, [data-zoom="14"] .circle-label, [data-zoom="14"] .marker-label,
+  [data-zoom="15"] .labelstyle, [data-zoom="15"] .distance-label, [data-zoom="15"] .area-label, [data-zoom="15"] .circle-label, [data-zoom="15"] .marker-label {
+    font-size: 11px;
+    padding: 1px 4px;
+  }
+  
+  [data-zoom="16"] .labelstyle, [data-zoom="16"] .distance-label, [data-zoom="16"] .area-label, [data-zoom="16"] .circle-label, [data-zoom="16"] .marker-label,
+  [data-zoom="17"] .labelstyle, [data-zoom="17"] .distance-label, [data-zoom="17"] .area-label, [data-zoom="17"] .circle-label, [data-zoom="17"] .marker-label {
+    font-size: 12px;
+    padding: 2px 5px;
+  }
+  
+  [data-zoom="18"] .labelstyle, [data-zoom="18"] .distance-label, [data-zoom="18"] .area-label, [data-zoom="18"] .circle-label, [data-zoom="18"] .marker-label,
+  [data-zoom="19"] .labelstyle, [data-zoom="19"] .distance-label, [data-zoom="19"] .area-label, [data-zoom="19"] .circle-label, [data-zoom="19"] .marker-label,
+  [data-zoom="20"] .labelstyle, [data-zoom="20"] .distance-label, [data-zoom="20"] .area-label, [data-zoom="20"] .circle-label, [data-zoom="20"] .marker-label,
+  [data-zoom="21"] .labelstyle, [data-zoom="21"] .distance-label, [data-zoom="21"] .area-label, [data-zoom="21"] .circle-label, [data-zoom="21"] .marker-label,
+  [data-zoom="22"] .labelstyle, [data-zoom="22"] .distance-label, [data-zoom="22"] .area-label, [data-zoom="22"] .circle-label, [data-zoom="22"] .marker-label {
+    font-size: 14px;
+    padding: 2px 6px;
+  }
+}
+
+/* Custom styling for drawing anchor points (handles) and pointer circle in Geoman (increased by 50% from 10.5px to 15.75px) */
+.marker-icon,
+.marker-icon.cursor-marker,
+.geoman-draw-cursor .marker-icon {
+  width: 15.75px !important;
+  height: 15.75px !important;
+  margin-left: -7.875px !important;
+  margin-top: -7.875px !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.marker-icon-middle {
+  width: 7.5px !important;
+  height: 7.5px !important;
+  margin-left: -3.75px !important;
+  margin-top: -3.75px !important;
+}
+
+.marker-icon.leaflet-pm-draggable {
+  border-radius: 50% !important;
+  width: 9px !important;
+  height: 9px !important;
+  margin-left: -4.5px !important;
+  margin-top: -4.5px !important;
+  background-color: #ffffff !important;
+  border: 2px solid #00d4ff !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.marker-icon.leaflet-pm-draggable:hover {
+  transform: scale(1.2);
+  background-color: #00d4ff !important;
+  border-color: #ffffff !important;
+}
+
+/* Touch-friendly handles and pointer circle */
+.leaflet-touch .marker-icon.cursor-marker,
+.leaflet-touch .geoman-draw-cursor .marker-icon {
+  width: 15.75px !important;
+  height: 15.75px !important;
+  margin-left: -7.875px !important;
+  margin-top: -7.875px !important;
+}
+
+.leaflet-touch .marker-icon.leaflet-pm-draggable {
+  width: 10.5px !important;
+  height: 10.5px !important;
+  margin-left: -5.25px !important;
+  margin-top: -5.25px !important;
+}
+
+/* Ensure actions toolbar matches premium styling */
+.leaflet-pm-actions {
+  background: rgba(15, 32, 39, 0.9) !important;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+  border-radius: 4px;
+}
+
+.leaflet-pm-actions .leaflet-pm-action {
+  color: #fff !important;
+  background-color: transparent !important;
+}
+
+.leaflet-pm-actions .leaflet-pm-action:hover {
+  background-color: rgba(100, 223, 247, 0.3) !important;
+}
+
+/* Match icon colors to the drawing shape colors via SVG filters */
+/* Polyline -> Red (#FF0000) */
+.leaflet-pm-icon-polyline {
+  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(6011%) hue-rotate(358deg) brightness(105%) contrast(115%) !important;
+}
+
+/* Polygon -> Darker Yellow (#DAA520 Goldenrod) */
+.leaflet-pm-icon-polygon {
+  filter: brightness(0) saturate(100%) invert(69%) sepia(76%) saturate(417%) hue-rotate(7deg) brightness(94%) contrast(92%) !important;
+}
+
+/* Rectangle -> LimeGreen (#32CD32) */
+.leaflet-pm-icon-rectangle {
+  filter: brightness(0) saturate(100%) invert(67%) sepia(82%) saturate(350%) hue-rotate(72deg) brightness(87%) contrast(93%) !important;
+}
+
+/* Circle -> Darker Blue (#1E90FF DodgerBlue) */
+.leaflet-pm-icon-circle {
+  filter: brightness(0) saturate(100%) invert(38%) sepia(88%) saturate(2978%) hue-rotate(205deg) brightness(101%) contrast(104%) !important;
+}
+
+/* Marker -> Blue (Default but enhanced) */
+.leaflet-pm-icon-marker {
+  filter: brightness(0) saturate(100%) invert(46%) sepia(86%) saturate(2331%) hue-rotate(193deg) brightness(105%) contrast(101%) !important;
+}
+
+/* Delete -> Red (#FF0000) */
+.leaflet-pm-icon-delete {
+  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(6011%) hue-rotate(358deg) brightness(105%) contrast(115%) !important;
+}
+
+/* Separate the Draw tools from the Edit/Delete tools (since they are now in oneBlock) */
+.leaflet-pm-toolbar .button-container:has(.leaflet-pm-icon-edit) {
+  margin-top: 12px !important;
+  border-top: 1px solid rgba(0, 255, 255, 0.3) !important;
+}
+
+/* Red X Cursor SVG when Delete / Removal Mode is Active */
+.leaflet-container.pm-removal-active,
+.leaflet-container.pm-removal-active .leaflet-interactive,
+.leaflet-container.pm-removal-active path.leaflet-interactive,
+.leaflet-container.pm-removal-active .leaflet-marker-icon,
+.leaflet-container.pm-removal-active .marker-icon,
+.leaflet-container.pm-removal-active .leaflet-pm-draggable,
+.leaflet-container.pm-removal-active .leaflet-overlay-pane svg path {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Ccircle cx='14' cy='14' r='11.5' fill='rgba(15,23,42,0.85)' stroke='%23ff2222' stroke-width='2'/%3E%3Cline x1='9' y1='9' x2='19' y2='19' stroke='%23ff2222' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='19' y1='9' x2='9' y2='19' stroke='%23ff2222' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") 14 14, crosshair, pointer !important;
+}
+
+/* Red Delete Burst Feedback Indicator */
+.pm-delete-burst-container {
+  overflow: visible !important;
+  pointer-events: none !important;
+}
+
+.pm-delete-burst-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: deleteBurstAnim 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes deleteBurstAnim {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  35% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}

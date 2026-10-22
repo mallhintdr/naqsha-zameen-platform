@@ -1,0 +1,31 @@
+/* Fraction tooltip - smaller font size */
+.killa-tooltip-fraction {
+  font-size: 85% !important; /* Reduce size relative to current zoom class */
+}
+
+/* ── Remove grey grid lines on satellite imagery ───────────────────────────
+   Leaflet GridLayer tiles render a grey background when tiles are missing
+   or still loading. These rules make empty/failed tiles fully transparent
+   so no grid artefacts are visible on satellite basemaps.                  */
+
+/* Hide the tile's native 1px border subpixel gap */
+.leaflet-tile {
+  outline: none !important;
+  border: none !important;
+}
+
+/* Tile container: never show a background so missing tiles are transparent */
+.leaflet-tile-container img {
+  background: transparent !important;
+}
+
+/* When a tile fails to load (broken-image state), hide it completely */
+.leaflet-tile-loaded {
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Remove grey artefacts on the pane itself */
+.leaflet-tile-pane {
+  background: transparent !important;
+}
+

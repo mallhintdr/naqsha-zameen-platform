@@ -1,0 +1,24 @@
+/* MapComponent styles */
+.map-container {
+    height: 100%;
+    width: 100%;
+}
+
+/* Static Highlight for Selected Tooltip */
+.tooltip-selected {
+    transform-origin: center center !important;
+    z-index: 5000 !important;
+    /* Maximum visibility */
+    border: 2px solid #FFD700 !important;
+    /* Thick Gold border */
+    background-color: rgba(0, 0, 0, 0.9) !important;
+    /* Dark opaque background */
+    color: #fff !important;
+    border-radius: 4px;
+    box-shadow: 0 0 7px rgba(255, 215, 0, 0.5) !important; /* glow halved */
+    /* Steady glow */
+    font-weight: bold !important;
+    padding: 1px 4px !important;
+    /* Compact padding */
+    min-width: auto !important;
+}

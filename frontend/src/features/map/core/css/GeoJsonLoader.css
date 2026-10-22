@@ -1,0 +1,131 @@
+/* Murabba Tooltip Styling */
+.murabba-tooltip {
+  pointer-events: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #97e702 !important;
+  /* Green color */
+  font-size: 16px !important;
+  /* Larger size for better readability */
+  font-weight: bold;
+  text-shadow: 1px 1px 2px #000000,
+    /* Horizontal shadow, Vertical shadow, Blur, and Color */
+    -1px -1px 2px #0b0b0b,
+    1px -1px 2px #050505,
+    -1px 1px 2px #070707;
+  /* Shadow for readability */
+}
+
+.murabba-tooltip--dense {
+  font-size: 14px !important;
+}
+
+.murabba-tooltip--selected-displaced {
+  font-size: 16px !important;
+  color: #a3ff00 !important;
+  text-shadow: 0 0 4px #000, 1px 1px 2px #000, -1px -1px 2px #000 !important;
+  z-index: 700 !important;
+  transition: transform 0.15s ease-out;
+}
+
+/* (Animation styles removed; using static labels) */
+
+/* Killa Tooltip Styling */
+.killa-tooltip,
+.killa-label {
+  pointer-events: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #FFD700 !important;
+  /* Yellow color */
+  font-size: 11px !important;
+  /* Standard killa size smaller than murabba */
+  font-weight: bold;
+  text-shadow: 1px 1px 2px #000000,
+    /* Horizontal shadow, Vertical shadow, Blur, and Color */
+    -1px -1px 2px #0b0b0b,
+    1px -1px 2px #050505,
+    -1px 1px 2px #070707;
+  /* Shadow for readability */
+}
+
+/* Killa compact size for 220x220 / 220x198 and high-density clusters */
+.killa-tooltip--compact {
+  font-size: 10px !important;
+}
+
+.killa-tooltip--very-compact {
+  font-size: 8.5px !important;
+  letter-spacing: -0.5px;
+}
+
+.killa-tooltip--extremely-dense {
+  font-size: 7.5px !important;
+  letter-spacing: -0.5px;
+  text-shadow: 1px 1px 1px #000 !important;
+}
+
+.killa-tooltip--very-dense {
+  font-size: 8.5px !important;
+  text-shadow: 1px 1px 1px #000 !important;
+}
+
+.killa-tooltip--medium-dense {
+  font-size: 9.5px !important;
+}
+
+.killa-tooltip--zoom-low {
+  font-size: 9px !important;
+}
+
+.killa-tooltip--zoom-medium {
+  font-size: 11px !important;
+}
+
+.killa-tooltip--zoom-high {
+  font-size: 13px !important;
+}
+
+/* Remove the default pointer from Leaflet tooltips */
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  border: none !important;
+  /* This removes the triangle (pointer) under the tooltip */
+}
+
+/* Tooltip font size classes */
+.label-small {
+  font-size: 10px !important;
+}
+
+.label-medium {
+  font-size: 12px !important;
+}
+
+.label-large {
+  font-size: 16px !important;
+}
+
+/* Dynamic size classes to prevent overcrowding */
+.murabba-tooltip--zoom-low {
+  font-size: 9px !important;
+}
+.murabba-tooltip--zoom-medium {
+  font-size: 11px !important;
+}
+.murabba-tooltip--zoom-high {
+  font-size: 15px !important;
+}
+.murabba-tooltip--very-dense {
+  font-size: 10px !important;
+}
+.murabba-tooltip--medium-dense {
+  font-size: 12px !important;
+}
+.murabba-tooltip--compact {
+  font-size: 11px !important;
+}

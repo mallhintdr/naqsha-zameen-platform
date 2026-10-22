@@ -1,0 +1,1079 @@
+/* src/components/AksShajra/AksShajra.css */
+
+.aks-shajra-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: #0f172a;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  user-select: none;
+}
+
+/* ── Top Toolbar ────────────────────────────────────────────────────────── */
+.shajra-toolbar {
+  height: 48px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.98));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  z-index: 100;
+  color: #e2e8f0;
+  /* Allow horizontal scroll on small viewports */
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+
+.shajra-toolbar::-webkit-scrollbar {
+  height: 4px;
+}
+.shajra-toolbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.shajra-toolbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;   /* never collapse – toolbar scrolls instead */
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+.toolbar-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.toolbar-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
+}
+
+.toolbar-btn.active-accent {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: #10b981;
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* .btn-label: hide text to save toolbar space; buttons rely on title tooltips */
+.btn-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  display: none;   /* hide labels – icons + tooltips are sufficient */
+}
+
+/* Keep labels on designated action buttons */
+.metadata-btn .btn-label,
+.export-btn .btn-label,
+.toolbar-btn--labeled .btn-label {
+  display: inline;
+}
+
+.color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.color-picker-wrapper input[type="color"] {
+  border: none;
+  background: none;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.mini-pill-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 0.72rem;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mini-pill-btn.active {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: #ef4444;
+}
+
+.toolbar-select {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  padding: 0 6px;
+  cursor: pointer;
+}
+
+.zoom-indicator {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #38bdf8;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.metadata-btn {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+.metadata-btn:hover {
+  background: rgba(168, 85, 247, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.export-btn {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border-color: #38bdf8;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
+.export-btn:hover {
+  background: linear-gradient(135deg, #0369a1, #075985) !important;
+}
+
+/* ── Work Area Layout ───────────────────────────────────────────────────── */
+.shajra-workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Main Canvas Container ──────────────────────────────────────────────── */
+/* Takes remaining width after the left panel; scrollable when zoomed in.   */
+.shajra-canvas-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: #0f172a;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 16px;
+  min-width: 0;   /* allow flex shrinking */
+}
+
+/* Stage wrapper: no CSS transform – scaling is done by Konva's scaleX/Y.   */
+/* display:inline-block keeps the wrapper tight around the canvas DOM node.  */
+.shajra-stage-wrapper {
+  display: inline-block;
+  line-height: 0;   /* no ghost gap below canvas */
+  border-radius: 4px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+/* ── Left Collapsible Panel ─────────────────────────────────────────────── */
+.shajra-left-panel {
+  width: 320px;
+  background: #1e293b;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, margin-left 0.25s ease;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+.shajra-left-panel.closed {
+  margin-left: -320px;
+}
+
+.panel-header {
+  height: 48px;
+  background: #0f172a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.panel-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.panel-close-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+}
+
+.panel-close-btn:hover {
+  color: #f87171;
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  color: #e2e8f0;
+}
+
+.section-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #38bdf8;
+  margin-bottom: 12px;
+}
+
+.section-subtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.form-row-2 {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.form-group {
+  flex: 1;
+  margin-bottom: 10px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+}
+
+.field-hint {
+  font-size: 0.7rem;
+  color: #64748b;
+  display: block;
+  margin-top: 2px;
+}
+
+.range-with-val {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.range-with-val input[type="range"] {
+  flex: 1;
+}
+
+.range-with-val span {
+  font-size: 0.75rem;
+  color: #38bdf8;
+  font-weight: 600;
+  width: 38px;
+}
+
+.apply-btn {
+  width: 100%;
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s ease;
+}
+
+.apply-btn:hover {
+  background: #0369a1;
+}
+
+.divider-hr {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 16px 0;
+}
+
+.orientation-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.toggle-pill {
+  flex: 1;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.toggle-pill.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+
+/* Layer Items */
+.cell-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cell-layer-item {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cell-layer-item:hover {
+  border-color: #38bdf8;
+}
+
+.cell-layer-item.active {
+  border-color: #38bdf8;
+  background: rgba(2, 132, 199, 0.15);
+}
+
+.cell-item-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cell-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #334155;
+  color: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.cell-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.cell-badge {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.empty-hint {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.4;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+/* Symbols Grid */
+.symbols-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.symbol-card {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.symbol-card:hover {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  transform: translateY(-1px);
+}
+
+.symbol-icon {
+  font-size: 1.4rem;
+}
+
+.symbol-name {
+  font-size: 0.72rem;
+  text-align: center;
+  color: #cbd5e1;
+}
+
+/* Legend items */
+.btn-link-add {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-color-input {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.legend-text-input {
+  flex: 1;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+}
+
+.legend-del-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.legend-del-btn:hover {
+  color: #ef4444;
+}
+
+/* ── Main Canvas Area ───────────────────────────────────────────────────── */
+.shajra-canvas-container {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #334155;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 0);
+  background-size: 20px 20px;
+  position: relative;
+  padding: 40px;
+}
+
+.shajra-stage-wrapper {
+  background-color: #ffffff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  transition: transform 0.1s ease-out;
+}
+
+/* ── Cell Editor Overlay Modal ──────────────────────────────────────────── */
+.cell-editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.cell-editor-container {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow: hidden;
+}
+
+.cell-editor-header {
+  height: 52px;
+  background: #0f172a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.cell-badge-large {
+  background: #0284c7;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.cell-header-title {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.cell-editor-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cell-tool-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.cell-tool-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  color: #38bdf8;
+}
+
+.cell-tool-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+
+.cell-tool-btn.active-accent {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: #10b981;
+}
+
+.finish-poly-btn {
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cell-color-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.cell-color-btn input[type="color"] {
+  border: none;
+  background: none;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.vert-sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 4px;
+}
+
+.cell-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-cancel {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #94a3b8;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-apply-save {
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-apply-save:hover {
+  background: #059669;
+}
+
+.btn-clear-cell {
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s ease;
+}
+
+.btn-clear-cell:hover {
+  background: #b91c1c;
+}
+
+.cell-canvas-wrapper {
+  overflow: hidden;   /* Stage always fits via auto-fit fitScale */
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #090d16;
+}
+
+.cell-stage {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  line-height: 0;   /* prevent phantom pixel gap below canvas */
+}
+
+/* Text Input Prompt inside Cell Editor */
+.text-prompt-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #1e293b;
+  border: 1px solid #38bdf8;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+  min-width: 320px;
+}
+
+.text-prompt-modal h6 {
+  color: #f8fafc;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.text-prompt-modal input {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+}
+
+.text-prompt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.text-prompt-actions button {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #94a3b8;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.text-prompt-actions .confirm-btn {
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+}
+
+/* Modals */
+.shajra-modal .modal-content {
+  background: #1e293b;
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+}
+
+.modal-header-custom {
+  background: #0f172a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #38bdf8;
+}
+
+.modal-body-custom {
+  padding: 20px;
+}
+
+.modal-footer-custom {
+  background: #0f172a;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.field-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.format-card {
+  flex: 1;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.format-card:hover {
+  border-color: #38bdf8;
+}
+
+.format-card.active {
+  border-color: #0284c7;
+  background: rgba(2, 132, 199, 0.15);
+}
+
+.format-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.format-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #f8fafc;
+}
+
+.format-desc {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RESPONSIVE: Mobile / Touch / Small-screen support
+   The tool remains desktop-first (precision drawing needs a large canvas),
+   but the chrome around it — toolbar, side panel, cell editor — now adapts
+   so it's usable on a tablet or phone instead of clipping/overflowing.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Backdrop shown behind the left panel only when it overlays the canvas (mobile) */
+.shajra-panel-backdrop {
+  display: none;
+}
+
+.shajra-exit-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #38bdf8;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+/* Larger, touch-friendly tap targets on any touch/coarse-pointer device,
+   regardless of screen width (e.g. a touchscreen laptop). */
+@media (pointer: coarse) {
+  .toolbar-btn,
+  .cell-tool-btn,
+  .tab-btn,
+  .panel-close-btn,
+  .legend-del-btn {
+    min-height: 40px;
+    min-width: 40px;
+  }
+  .toolbar-select,
+  .form-group input,
+  .form-group select {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Left panel becomes an overlay drawer instead of squeezing the canvas */
+  .shajra-left-panel {
+    position: fixed;
+    top: 48px;
+    bottom: 0;
+    left: 0;
+    width: min(320px, 84vw);
+    margin-left: 0 !important;
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+  }
+  .shajra-left-panel.closed {
+    transform: translateX(-100%);
+  }
+  .shajra-panel-backdrop {
+    display: block;
+    position: fixed;
+    top: 48px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 49; /* just below the panel (z-index 50) */
+  }
+
+  .shajra-canvas-container {
+    padding: 8px;
+  }
+
+  /* Cell Editor: stack header rows instead of clipping content */
+  .cell-editor-overlay {
+    padding: 0;
+  }
+  .cell-editor-container {
+    max-width: 100vw;
+    max-height: 100vh;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+  .cell-editor-header {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    gap: 8px;
+    row-gap: 8px;
+  }
+  .cell-header-left {
+    order: 1;
+    flex: 1 1 100%;
+  }
+  .cell-editor-tools {
+    order: 3;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .cell-header-actions {
+    order: 2;
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+  .cell-canvas-wrapper {
+    padding: 8px;
+  }
+}
+
+@media (max-width: 520px) {
+  .shajra-toolbar {
+    height: 44px;
+  }
+  .toolbar-btn {
+    padding: 0 6px;
+    font-size: 0.76rem;
+  }
+  .cell-header-title {
+    font-size: 0.72rem;
+  }
+  .cell-badge-large {
+    font-size: 0.75rem;
+  }
+  .cell-tool-btn span,
+  .cell-tool-btn {
+    font-size: 0.72rem;
+    padding: 6px 7px;
+  }
+  .btn-cancel,
+  .btn-apply-save,
+  .btn-clear-cell {
+    padding: 6px 9px;
+    font-size: 0.76rem;
+  }
+  .symbols-grid {
+    grid-template-columns: 1fr;
+  }
+  /* Text prompt must never exceed the viewport on narrow phones */
+  .text-prompt-modal {
+    min-width: 0;
+    width: calc(100vw - 32px);
+  }
+  .shajra-exit-btn {
+    top: 8px;
+    left: 8px;
+    padding: 5px 9px;
+    font-size: 0.72rem;
+  }
+}

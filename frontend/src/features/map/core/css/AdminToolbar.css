@@ -1,0 +1,162 @@
+/* Admin Toolbar - Unified with Leaflet Draw Theme (Circular) */
+
+.admin-toolbar-container {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 25px;
+  padding: 6px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+.admin-toolbar-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  background-color: #ffffff;
+  color: #464646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  font-size: 18px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+
+.admin-toolbar-btn:hover {
+  background-color: #f4f4f4;
+  color: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.admin-toolbar-btn:active {
+  transform: translateY(0);
+}
+
+.admin-toolbar-icon {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  font-size: 18px;
+}
+
+/* Premium Tooltip styling */
+.admin-toolbar-tooltip {
+  visibility: hidden;
+  position: absolute;
+  right: 50px;
+  top: 50%;
+  transform: translateY(-50%) translateX(10px);
+  background: rgba(15, 32, 39, 0.95);
+  backdrop-filter: blur(5px);
+  color: #00ffff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+  pointer-events: none;
+}
+
+.admin-toolbar-btn:hover .admin-toolbar-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Individual Button Colors */
+.admin-toolbar-btn.btn-register {
+  color: #2ecc71; /* Green */
+  border-color: rgba(46, 204, 113, 0.4);
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.1) 0%, rgba(138, 43, 226, 0.1) 100%);
+}
+.admin-toolbar-btn.btn-register:hover {
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.3) 0%, rgba(138, 43, 226, 0.3) 100%);
+  border-color: #2ecc71;
+  box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+}
+
+.admin-toolbar-btn.btn-manage {
+  color: #fd7e14; /* Orange */
+  border-color: rgba(253, 126, 20, 0.4);
+  background: linear-gradient(135deg, rgba(253, 126, 20, 0.1) 0%, rgba(138, 43, 226, 0.1) 100%);
+}
+.admin-toolbar-btn.btn-manage:hover {
+  background: linear-gradient(135deg, rgba(253, 126, 20, 0.3) 0%, rgba(138, 43, 226, 0.3) 100%);
+  border-color: #fd7e14;
+  box-shadow: 0 4px 10px rgba(253, 126, 20, 0.3);
+}
+
+.admin-toolbar-btn.btn-public-users {
+  color: #9b59b6; /* Purple / Violet */
+  border-color: rgba(155, 89, 182, 0.4);
+  background: linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(52, 152, 219, 0.1) 100%);
+}
+.admin-toolbar-btn.btn-public-users:hover {
+  background: linear-gradient(135deg, rgba(155, 89, 182, 0.3) 0%, rgba(52, 152, 219, 0.3) 100%);
+  border-color: #9b59b6;
+  box-shadow: 0 4px 10px rgba(155, 89, 182, 0.3);
+}
+
+.admin-toolbar-btn.btn-insights {
+  color: #e84393; /* Pink/Magenta */
+  border-color: rgba(232, 67, 147, 0.4);
+  background: linear-gradient(135deg, rgba(232, 67, 147, 0.1) 0%, rgba(138, 43, 226, 0.1) 100%);
+}
+.admin-toolbar-btn.btn-insights:hover {
+  background: linear-gradient(135deg, rgba(232, 67, 147, 0.3) 0%, rgba(138, 43, 226, 0.3) 100%);
+  border-color: #e84393;
+  box-shadow: 0 4px 10px rgba(232, 67, 147, 0.3);
+}
+
+.admin-toolbar-btn.btn-subadmins {
+  color: #e67e22; /* Amber / Orange */
+  border-color: rgba(230, 126, 34, 0.4);
+  background: linear-gradient(135deg, rgba(230, 126, 34, 0.1) 0%, rgba(241, 196, 15, 0.1) 100%);
+}
+.admin-toolbar-btn.btn-subadmins:hover {
+  background: linear-gradient(135deg, rgba(230, 126, 34, 0.3) 0%, rgba(241, 196, 15, 0.3) 100%);
+  border-color: #e67e22;
+  box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .admin-toolbar-container {
+    top: 50%;
+    transform: translateY(-50%);
+    right: 10px;
+    gap: 6px;
+    padding: 4px;
+  }
+
+  .admin-toolbar-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .admin-toolbar-icon {
+    width: 15px;
+    height: 15px;
+    min-width: 15px;
+    min-height: 15px;
+    font-size: 15px;
+  }
+}
