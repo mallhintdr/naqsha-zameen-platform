@@ -1,0 +1,16 @@
+# Environment files — catch-all covers dotted AND malformed space-named
+# variants (e.g. ".env  local", ".env production") so secrets never get committed.
+.env
+.env.*
+.env*
+!.env.example
+
+node_modules
+dist
+
+# Logs (backend/logs/*.log etc.)
+*.log
+logs/
+
+# Editor/backup files
+*.bak

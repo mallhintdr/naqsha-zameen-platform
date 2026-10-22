@@ -1,0 +1,16 @@
+{
+  "name": "naqsha-zameen",
+  "private": true,
+  "version": "5.0.0",
+  "workspaces": ["frontend", "backend"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "npm run dev -w frontend",
+    "dev:backend": "npm run dev -w backend",
+    "build": "npm run build -w frontend",
+    "start": "npm start -w backend",
+    "lint": "npm run lint -w frontend",
+    "test": "npm test -w frontend",
+    "typecheck": "npm run typecheck -w frontend"
+  }
+}

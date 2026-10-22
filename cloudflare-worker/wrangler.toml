@@ -1,0 +1,24 @@
+# Cloudflare Worker Configuration for PMTiles Serving (Simplified - No Auth)
+# 
+# IMPORTANT: Before deploying, you must:
+# 1. Run: wrangler login
+# 2. Get your account ID: wrangler whoami
+# 3. Replace YOUR_ACCOUNT_ID below with your actual account ID
+# 4. Deploy: wrangler deploy
+
+name = "pmtiles-worker"
+main = "pmtiles-worker-simple.js"
+compatibility_date = "2024-11-03"
+
+# Cloudflare Account ID
+account_id = "22d46ada0d50df7bc038985cdcb55de2"
+
+# R2 Bucket Binding
+[[r2_buckets]]
+binding = "PMTILES_BUCKET"
+bucket_name = "geo-dashboard-pmtiles"
+
+# Environment Variables (non-secret)
+# Secrets (like PMTILES_SIGNING_KEY) must be set via: wrangler secret put PMTILES_SIGNING_KEY
+[vars]
+# Add any non-secret environment variables here if needed

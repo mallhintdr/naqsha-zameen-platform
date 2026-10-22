@@ -1,0 +1,14 @@
+{
+  "name": "Naqsha Zameen",
+  "short_name": "Naqsha Zameen",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0b0e28",
+  "background_color": "#ffffff",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/logo192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/logo512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
+  ]
+}

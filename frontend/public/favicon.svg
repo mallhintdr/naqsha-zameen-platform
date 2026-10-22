@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Transparent background by default -->
+  
+  <!-- Main Squircle (Rounded Rectangle) -->
+  <rect x="32" y="32" width="448" height="448" rx="128" fill="#0A0F1A" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
+  
+  <!-- Subtle Gradient Glow inside -->
+  <rect x="32" y="32" width="448" height="448" rx="128" fill="url(#bg-gradient)" opacity="0.4"/>
+  
+  <!-- Neon Cyan Map Pin -->
+  <path d="M256 120C194.1 120 144 170.1 144 232C144 316 256 424 256 424C256 424 368 316 368 232C368 170.1 317.9 120 256 120Z" 
+        fill="none" stroke="#00D4FF" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+        
+  <!-- Center Dot -->
+  <circle cx="256" cy="232" r="48" fill="#00D4FF"/>
+  
+  <!-- Minimal Grid Lines (Abstract) -->
+  <path d="M128 232H384 M256 104V360" stroke="rgba(0, 212, 255, 0.2)" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Definitions -->
+  <defs>
+    <radialGradient id="bg-gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(224)">
+      <stop stop-color="#00D4FF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#00D4FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>
