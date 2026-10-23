@@ -22,17 +22,8 @@ const _IS_PROD = process.env.NODE_ENV === 'production' ||
     process.platform === 'linux' ||
     (process.env.CORS_ORIGIN || '').startsWith('https://');
 const COOKIE_SECURE = _IS_PROD || COOKIE_SAMESITE === 'none';
-// Auto-derive cookie domain from CORS_ORIGIN when COOKIE_DOMAIN env var is not explicitly set.
-// e.g. CORS_ORIGIN=https://dashboard.naqsha-zameen.pk  →  COOKIE_DOMAIN=.naqsha-zameen.pk
-const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || (() => {
-    if (!_IS_PROD) return undefined;
-    try {
-        const origin = process.env.CORS_ORIGIN || 'https://dashboard.naqsha-zameen.pk';
-        const hostname = new URL(origin).hostname;
-        const parts = hostname.split('.');
-        return parts.length >= 2 ? '.' + parts.slice(-2).join('.') : undefined;
-    } catch (_) { return undefined; }
-})();
+// Cookie domain comes from COOKIE_DOMAIN, else APP_URL (utils/siteConfig.js).
+const { COOKIE_DOMAIN, APP_URL } = require('../utils/siteConfig');
 const axios = require('axios');
 const geoip = require('geoip-lite');
 
@@ -276,7 +267,7 @@ exports.logout = async (req, res) => {
                 .clearCookie('x-csrf-token', { httpOnly: true, path: '/', secure: COOKIE_SECURE, sameSite: COOKIE_SAMESITE });
 
             if (req.method === 'GET') {
-                const redirectUrl = process.env.FRONTEND_URL || 'https://dashboard.naqsha-zameen.pk/login';
+                const redirectUrl = `${APP_URL}/login`;
                 return res.redirect(redirectUrl);
             }
             return res.json({ message: isClearAll ? 'Cache and sessions cleared successfully' : 'Logout successful' });
@@ -852,9 +843,7 @@ exports.demoAccess = async (req, res) => {
         // server this used to redirect to "/" on the API host, which answered
         // "Route not found". Fall back to the dashboard like server.js does, and
         // take the first entry when CORS_ORIGIN is a comma-separated list.
-        const configured = String(process.env.FRONTEND_URL || process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()).find(s => /^https?:\/\//.test(s));
-        const fallback = (process.env.NODE_ENV === 'production' || process.platform === 'linux') ?'https://dashboard.naqsha-zameen.pk' : 'http://localhost:3000';
-        const redirectTarget = `${(configured || fallback).replace(/\/$/, '')}/`;
+        const redirectTarget = `${APP_URL}/`;
 
         res
             .cookie('authToken', authToken, {

@@ -72,7 +72,7 @@ function CreateCustomerModal({ show, onHide, me, onCreated }: { show: boolean; o
       if (!isTrial) body.customerFee = Number(f.customerFee);
       const r = await api.post('/api/subadmin/users', body);
       // WhatsApp message for the customer — byte-identical to legacy.
-      const origin = window.location.origin || 'https://dashboard.naqsha-zameen.pk';
+      const origin = window.location.origin;
       const lines = [
         `Dear *${body.userName}*,`, '',
         'Your Naqsha Zameen account has been created.',

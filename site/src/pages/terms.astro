@@ -1,0 +1,62 @@
+---
+import Legal from '../layouts/Legal.astro';
+import { SITE } from '../site';
+---
+<Legal title="Terms of Use" updated="22 October 2026" description={`Terms for using ${SITE.url}, the Naqsha Zameen dashboard and ${SITE.company} survey services.`}>
+  <p>By using {SITE.url}, the Naqsha Zameen dashboard or our survey services, you agree to these terms.</p>
+
+  <h2>Our Services</h2>
+  <p>
+    {SITE.company} provides digital land maps through the Naqsha Zameen dashboard, RTK land measurement, printed survey
+    maps and drone imagery services in {SITE.region}.
+  </p>
+
+  <h2>Maps Are for Reference</h2>
+  <p>
+    Mouza, murabba and killa boundaries in the dashboard are digitised for reference and planning. They are not an
+    official revenue record and do not replace demarcation by the revenue department. Satellite imagery may be out of
+    date or slightly offset. Do not rely on the dashboard alone for legal or financial decisions.
+  </p>
+
+  <h2>Survey Services</h2>
+  <p>
+    Scope, price and delivery for RTK and drone surveys are agreed before each job. Survey accuracy depends on site and
+    satellite conditions. Results describe the ground at the time of survey.
+  </p>
+
+  <h2>Accounts and Subscriptions</h2>
+  <ul>
+    <li>Accounts are personal. Sharing logins or exceeding device limits may lead to suspension.</li>
+    <li>Subscriptions give access to the areas you selected for the period you paid for.</li>
+    <li>Fees are shown before payment and are generally non-refundable once access is activated.</li>
+  </ul>
+
+  <h2>Acceptable Use</h2>
+  <p>
+    Do not copy, resell, scrape or redistribute map data, attempt to break security, or use our services unlawfully.
+  </p>
+
+  <h2>Intellectual Property</h2>
+  <p>
+    The website, dashboard software, map layers and our survey outputs are owned by {SITE.company} or its licensors.
+    Printed maps and reports you purchase may be used for your own purposes.
+  </p>
+
+  <h2>Advertising and Third-Party Links</h2>
+  <p>
+    The Website may display third-party advertisements and links. We are not responsible for the content or practices of
+    third-party sites or advertisers.
+  </p>
+
+  <h2>Limitation of Liability</h2>
+  <p>
+    To the extent permitted by law, {SITE.company} is not liable for indirect or consequential losses arising from use of
+    our maps or services. Our total liability for any service is limited to the amount you paid for it.
+  </p>
+
+  <h2>Changes and Contact</h2>
+  <p>
+    We may update these terms; the date above shows the latest version. Questions:
+    <a href={`tel:${SITE.phoneTel}`}>{SITE.phoneDisplay}</a> or <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+  </p>
+</Legal>

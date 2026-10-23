@@ -18,9 +18,8 @@ function visitorId(req, res) {
     if (/^[a-f0-9]{32}$/.test(fromCookie)) return fromCookie;
     const id = crypto.randomBytes(16).toString('hex');
     try {
-        // Shared by every *.naqsha-zameen.pk site, so the home page and the dashboard agree.
-        const host = String(req.hostname || '');
-        const domain = host.endsWith('naqsha-zameen.pk') ? '.naqsha-zameen.pk' : undefined;
+        // Shared by the website and the dashboard of the same domain, so they agree.
+        const domain = require('../utils/siteConfig').cookieDomainForHost(req.hostname);
         res.cookie(COOKIE, id, { maxAge: 2 * 365 * 86400e3, httpOnly: true, sameSite: 'lax', secure: req.secure, domain });
     } catch (e) { /* ignore */ }
     // First visit: until the cookie comes back, the same IP + browser on the same day is one visitor.

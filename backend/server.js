@@ -48,11 +48,12 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 const _IS_PROD_SERVER = process.env.NODE_ENV === 'production' || process.platform === 'linux';
-const CORS_ORIGIN = process.env.CORS_ORIGIN || (_IS_PROD_SERVER ? 'https://dashboard.naqsha-zameen.pk' : 'http://localhost:3000');
+const { APP_URL, COOKIE_DOMAIN: _SITE_COOKIE_DOMAIN, JOBS_ENABLED } = require('./utils/siteConfig');
+const CORS_ORIGIN = APP_URL; // the app's own origin (CSP connect-src, socket default)
 
 // ─── 1. Core Security & CORS (Must be first) ──────────────────────────────────────
 const corsOptions = {
-  // www / apex / dashboard / api and any https subdomain of naqsha-zameen.pk, localhost, CORS_ORIGIN list.
+  // Any https subdomain of the ALLOWED_DOMAINS (see utils/siteConfig.js), localhost, CORS_ORIGIN list.
   // Unknown origins get no CORS headers (browser blocks) instead of a 500 error.
   origin: function (origin, callback) {
     callback(null, isAllowedOrigin(origin));
@@ -173,18 +174,9 @@ app.use(cookieParser());
 // Validated purely from the x-csrf-token header — no cross-domain cookie dependency.
 // This removes all csrf-csrf library API version issues.
 //
-// Cookie domain: auto-derived from CORS_ORIGIN so no .env change needed on VPS.
-// e.g. CORS_ORIGIN=https://dashboard.naqsha-zameen.pk  →  .naqsha-zameen.pk
+// Cookie domain: COOKIE_DOMAIN, else derived from APP_URL (utils/siteConfig.js).
 const crypto = require('crypto');
-const _DERIVED_COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || (() => {
-    if (!_IS_PROD_SERVER) return undefined;
-    try {
-        const origin = CORS_ORIGIN || 'https://dashboard.naqsha-zameen.pk';
-        const hostname = new URL(origin).hostname;
-        const parts = hostname.split('.');
-        return parts.length >= 2 ? '.' + parts.slice(-2).join('.') : undefined;
-    } catch (_) { return undefined; }
-})();
+const _DERIVED_COOKIE_DOMAIN = _SITE_COOKIE_DOMAIN;
 const _CSRF_SAMESITE = (process.env.COOKIE_SAMESITE || (_IS_PROD_SERVER ? 'none' : 'lax')).toLowerCase();
 // Chrome 80+: SameSite=None cookies MUST have Secure=true or they are silently discarded
 const _CSRF_SECURE   = _IS_PROD_SERVER || _CSRF_SAMESITE === 'none';
@@ -564,29 +556,34 @@ const startServer = async () => {
       const queueService = require('./services/queueService');
       const queues = queueService.getQueues();
 
-      // Run initial DB hygiene
-      const { runCleanupTasks } = require('./utils/dbHygiene');
-      runCleanupTasks();
+      // Scheduled tasks. JOBS_ENABLED=false (parallel test copy sharing the production
+      // database) runs none of them, so nothing is purged, billed or emailed twice.
+      logger.info(`Background jobs: ${JOBS_ENABLED ? 'ON' : 'OFF'} (pid ${process.pid}, pm2 instance ${process.env.NODE_APP_INSTANCE ?? '-'})`);
+      if (JOBS_ENABLED) {
+        // Run initial DB hygiene
+        const { runCleanupTasks } = require('./utils/dbHygiene');
+        runCleanupTasks();
 
-      // Public sign-ups not verified within 24 hours are deleted (record, email,
-      // device). Checked at start-up and every hour; safe to run on every instance.
-      const { purgeUnverifiedPublicUsers } = require('./services/unverifiedPurge');
-      const purge = () => purgeUnverifiedPublicUsers().catch(err => logger.error('Unverified sign-up purge failed', { error: err.message }));
-      purge();
-      setInterval(purge, 60 * 60 * 1000);
+        // Public sign-ups not verified within 24 hours are deleted (record, email,
+        // device). Checked at start-up and every hour; safe to run on every instance.
+        const { purgeUnverifiedPublicUsers } = require('./services/unverifiedPurge');
+        const purge = () => purgeUnverifiedPublicUsers().catch(err => logger.error('Unverified sign-up purge failed', { error: err.message }));
+        purge();
+        setInterval(purge, 60 * 60 * 1000);
 
-      // Sub-admins are notified when one of their customers' subscriptions expires.
-      require('./services/subAdminExpiryNotice').startSubAdminExpiryNotices();
+        // Sub-admins are notified when one of their customers' subscriptions expires.
+        require('./services/subAdminExpiryNotice').startSubAdminExpiryNotices();
 
-      // Customers using more than one device in 30 days get a daily sharing warning.
-      require('./services/multiUseWarning').startDailyWarning();
+        // Customers using more than one device in 30 days get a daily sharing warning.
+        require('./services/multiUseWarning').startDailyWarning();
 
-      // If BullMQ is not active (e.g. REDIS_ENABLED=false), run daily hygiene via in-memory timer fallback
-      if (!queues) {
-        setInterval(() => {
-          runCleanupTasks().catch(err => logger.error('Scheduled DB hygiene error:', err));
-        }, 24 * 60 * 60 * 1000);
-        require('./services/subAdminJobs').startFallbackScheduler();
+        // If BullMQ is not active (e.g. REDIS_ENABLED=false), run daily hygiene via in-memory timer fallback
+        if (!queues) {
+          setInterval(() => {
+            runCleanupTasks().catch(err => logger.error('Scheduled DB hygiene error:', err));
+          }, 24 * 60 * 60 * 1000);
+          require('./services/subAdminJobs').startFallbackScheduler();
+        }
       }
       // NOTE: the admin operations report is no longer auto-scheduled — it's
       // generated on demand from Admin > Operations Report (a date-range

@@ -270,7 +270,7 @@ export default function AdminRegistrationPage() {
         activeTehsil: isAdmin ? '' : finalActiveTehsil,
       });
       const token = btoa(JSON.stringify({ u: formData.userId, p: formData.password }));
-      const origin = window.location.origin || 'https://dashboard.naqsha-zameen.pk';
+      const origin = window.location.origin;
       const link = `${origin}/login?t=${token}`;
       try {
         await copyText(`User ID: ${formData.userId}\nPassword: ${formData.password}\n\nQuick Login Link:\n${link}`);

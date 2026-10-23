@@ -27,7 +27,7 @@ async function loadKeys() {
         pub = doc?.value?.publicKey || fresh.publicKey;
         priv = doc?.value?.privateKey || fresh.privateKey;
     }
-    webpush.setVapidDetails('mailto:admin@naqsha-zameen.pk', pub, priv);
+    webpush.setVapidDetails(process.env.VAPID_CONTACT || 'mailto:admin@naqsha-zameen.pk', pub, priv);
     publicKey = pub;
     logger.info('Web Push ready');
     return pub;

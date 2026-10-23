@@ -422,7 +422,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const host = window.location.hostname;
       const hp = host.split('.');
-      const domains = ['', host, '.' + host, hp.length >= 2 ? '.' + hp.slice(-2).join('.') : '', '.naqsha-zameen.pk', 'dashboard.naqsha-zameen.pk'].filter(Boolean);
+      const domains = ['', host, '.' + host, hp.length >= 2 ? '.' + hp.slice(-2).join('.') : '', '.naqsha-zameen.com', '.naqsha-zameen.pk'].filter(Boolean);
       for (const c of document.cookie.split(';')) {
         const name = c.split('=')[0].trim();
         if (!name) continue;

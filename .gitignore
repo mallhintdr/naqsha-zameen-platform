@@ -19,3 +19,9 @@ frontend/test-results/
 frontend/playwright-report/
 .DS_Store
 .claude/
+
+# website build output and local files
+site/node_modules/
+site/dist/
+site/.astro/
+site/*.log

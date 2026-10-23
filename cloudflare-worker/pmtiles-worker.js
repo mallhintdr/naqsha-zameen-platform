@@ -12,6 +12,7 @@
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
   'https://dashboard.naqsha-zameen.pk',
+  'https://dashboard.naqsha-zameen.com',
   'http://localhost:3000'
 ];
 
@@ -294,6 +295,8 @@ function getCORSHeaders(request) {
   const headers = {
     'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Range, Authorization',
+    // The PMTiles reader needs these on cross-origin range responses
+    'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, ETag, Last-Modified',
     'Access-Control-Max-Age': '86400'
   };
 

@@ -1,0 +1,28 @@
+---
+import Icon from './Icon.astro';
+interface Props {
+  items: { q: string; a: string }[];
+  title?: string;
+}
+const { items, title = 'Frequently Asked Questions' } = Astro.props;
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })),
+};
+---
+<section class="mx-auto mt-24 max-w-3xl px-4 sm:px-6">
+  <h2 class="reveal font-display text-center text-3xl font-extrabold text-white sm:text-4xl">{title}</h2>
+  <div class="mt-10 space-y-3">
+    {items.map((i) => (
+      <details class="reveal group rounded-2xl border border-white/10 bg-white/[0.04] p-5 open:border-cyan-300/30 open:bg-white/[0.07]">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-white">
+          {i.q}
+          <Icon name="chevron" class="size-5 shrink-0 text-cyan-300 transition group-open:rotate-180" />
+        </summary>
+        <p class="mt-3 text-slate-300">{i.a}</p>
+      </details>
+    ))}
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(ld)} />
+</section>

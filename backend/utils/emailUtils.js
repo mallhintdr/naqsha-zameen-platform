@@ -30,11 +30,7 @@ const getTransporter = () => {
     return transporter;
 };
 
-const getFrontendUrl = () => {
-    if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, '');
-    const isProd = process.env.NODE_ENV === 'production' || process.platform === 'linux';
-    return isProd ? 'https://dashboard.naqsha-zameen.pk' : 'http://localhost:3000';
-};
+const getFrontendUrl = () => require('./siteConfig').APP_URL;
 
 const _sendResetEmail = async (toEmail, userId, token, temporaryPassword = null) => {
     let subject, html;

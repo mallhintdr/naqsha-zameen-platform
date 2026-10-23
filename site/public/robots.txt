@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://naqsha-zameen.pk/sitemap-index.xml

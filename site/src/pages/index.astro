@@ -1,0 +1,175 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import IconBox from '../components/IconBox.astro';
+import MapMock from '../components/MapMock.astro';
+import CTA from '../components/CTA.astro';
+import FAQ from '../components/FAQ.astro';
+import AdSlot from '../components/AdSlot.astro';
+import { SERVICES, SITE, waLink } from '../site';
+
+const features = [
+  { icon: 'search', title: 'Find Any Chak in Seconds', text: 'Pick tehsil, chak and murabba — the map flies straight to it.' },
+  { icon: 'pin', title: '“Which Killa Am I In?”', text: 'Live GPS shows your position on the killa grid while you walk the field.' },
+  { icon: 'ruler', title: 'Measure in Kanal & Marla', text: 'Draw any shape and get area in acres, kanal and marla instantly.' },
+  { icon: 'layers', title: 'Satellite + Shajra Overlay', text: 'Switch base maps and overlay the shajra on current imagery.' },
+  { icon: 'download', title: 'Save & Export', text: 'Save your drawings, share locations and export maps for records.' },
+  { icon: 'phoneApp', title: 'Built for the Field', text: 'Works on any phone browser — no app install, no heavy downloads.' },
+];
+
+const steps = [
+  { n: '01', title: 'Tell Us Your Area', text: 'Share your tehsil and chak on WhatsApp or register online.' },
+  { n: '02', title: 'Get Dashboard Access', text: 'Your mouzas are activated — start with a free 24-hour trial.' },
+  { n: '03', title: 'Survey When You Need It', text: 'Book an RTK or drone team for on-ground demarcation and imagery.' },
+];
+
+const faqs = [
+  { q: 'What is Naqsha Zameen?', a: 'An online dashboard that shows mouza, murabba and killa boundaries on satellite imagery, with GPS location, area measurement and drawing tools — plus on-ground RTK and drone survey services by GeoMatrix Technologies.' },
+  { q: 'Which areas do you cover?', a: 'We cover tehsils across Punjab and keep adding more. Message us your tehsil and chak on WhatsApp and we will confirm availability right away.' },
+  { q: 'Do I need to install an app?', a: `No. The dashboard runs in any modern phone or computer browser. Just log in at ${SITE.dashboardHost}.` },
+  { q: 'How accurate is the RTK measurement?', a: 'Our GNSS RTK equipment measures with centimetre-level accuracy under good conditions, suitable for demarcation, boundary disputes and plot layout.' },
+  { q: 'Can I try before paying?', a: 'Yes. Register online for a free 24-hour trial, then choose a monthly or yearly plan.' },
+];
+---
+<Base>
+  <!-- HERO -->
+  <section class="relative isolate overflow-hidden pt-28 sm:pt-36">
+    <div class="grid-bg absolute inset-0 -z-10"></div>
+    <div class="absolute left-1/2 top-0 -z-10 h-[600px] w-[1000px] -translate-x-1/2 rounded-full bg-gradient-to-b from-indigo-600/30 via-cyan-500/10 to-transparent blur-3xl"></div>
+    <div class="mx-auto grid max-w-7xl items-center gap-16 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+      <div>
+        <span class="eyebrow"><span class="size-1.5 animate-pulse rounded-full bg-emerald-400"></span> Mapping · RTK · Drone</span>
+        <h1 class="font-display mt-6 text-4xl font-extrabold text-white sm:text-6xl">
+          Your Land, <span class="text-gradient">Mapped to the Killa.</span>
+        </h1>
+        <p class="urdu mt-4 text-2xl text-cyan-100/90" dir="rtl" lang="ur">ہر مربع، ہر کلہ — آپ کے موبائل پر</p>
+        <p class="mt-5 max-w-xl text-lg text-slate-300">
+          Digital mouza maps, centimetre-accurate RTK measurement and high-resolution drone imagery — everything you need to
+          know, prove and plan your land in Punjab.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={SITE.registerUrl} class="btn-primary">Start free trial <Icon name="arrow" class="size-4" /></a>
+          <a href={waLink('Assalam-o-Alaikum, I want to book a survey.')} target="_blank" rel="noopener" class="btn-ghost"><Icon name="whatsapp" class="size-5 text-emerald-300" /> Book a survey</a>
+        </div>
+        <ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400">
+          <li class="flex items-center gap-1.5"><Icon name="check" class="size-4 text-emerald-400" /> No app install</li>
+          <li class="flex items-center gap-1.5"><Icon name="check" class="size-4 text-emerald-400" /> 24-hour free trial</li>
+          <li class="flex items-center gap-1.5"><Icon name="check" class="size-4 text-emerald-400" /> Urdu & English support</li>
+        </ul>
+      </div>
+      <div class="pb-12 lg:pb-0"><MapMock /></div>
+    </div>
+  </section>
+
+  <!-- TRUST STRIP -->
+  <section class="mx-auto mt-24 max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="reveal grid grid-cols-2 gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center sm:grid-cols-4">
+      {[
+        ['cm-level', 'RTK accuracy'],
+        ['25', 'Killas per murabba, numbered'],
+        ['24/7', 'Online map access'],
+        ['3-in-1', 'Maps · Survey · Drone'],
+      ].map(([v, l]) => (
+        <div>
+          <div class="font-display text-3xl font-extrabold text-gradient sm:text-4xl">{v}</div>
+          <div class="mt-1 text-xs font-medium uppercase tracking-wider text-slate-400">{l}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="services" class="mx-auto mt-28 max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="reveal mx-auto max-w-2xl text-center">
+      <span class="eyebrow">What we do</span>
+      <h2 class="font-display mt-4 text-3xl font-extrabold text-white sm:text-5xl">Three Services. One Clear Picture of Your Land.</h2>
+    </div>
+    <div class="mt-14 grid gap-6 md:grid-cols-3">
+      {SERVICES.map((s) => (
+        <a href={`/services/${s.slug}/`} class="card reveal group relative overflow-hidden">
+          <div class={`absolute -right-16 -top-16 size-48 rounded-full bg-gradient-to-br ${s.accent} opacity-20 blur-2xl transition group-hover:opacity-40`}></div>
+          <div class="flex items-center gap-4">
+            <IconBox name={s.icon} size="lg" />
+            <div class="min-w-0">
+              <h3 class="font-display text-2xl font-bold leading-tight text-white">{s.title}</h3>
+              <p class="urdu text-left text-base text-cyan-200/80" dir="rtl" lang="ur">{s.urdu}</p>
+            </div>
+          </div>
+          <p class="mt-4 text-slate-300">{s.short}</p>
+          <span class="mt-6 inline-flex items-center gap-1.5 font-semibold text-cyan-300 transition group-hover:gap-3">Learn more <Icon name="arrow" class="size-4" /></span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <AdSlot position="inContent" />
+
+  <!-- DASHBOARD FEATURES -->
+  <section class="relative mt-28 overflow-hidden py-24">
+    <div class="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-indigo-950/60 to-transparent"></div>
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="reveal flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+        <div class="max-w-2xl">
+          <span class="eyebrow">The dashboard</span>
+          <h2 class="font-display mt-4 text-3xl font-extrabold text-white sm:text-5xl">Patwari-Level Detail, <span class="text-gradient">in Your Pocket.</span></h2>
+        </div>
+        <a href="/dashboard/" class="btn-ghost self-start lg:self-auto">Explore the dashboard <Icon name="arrow" class="size-4" /></a>
+      </div>
+      <div class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {features.map((f) => (
+          <div class="card reveal">
+            <div class="flex items-center gap-3.5">
+              <IconBox name={f.icon} />
+              <h3 class="text-lg font-semibold leading-snug text-white">{f.title}</h3>
+            </div>
+            <p class="mt-3 text-slate-400">{f.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="mx-auto mt-16 max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="reveal mx-auto max-w-2xl text-center">
+      <span class="eyebrow">How it works</span>
+      <h2 class="font-display mt-4 text-3xl font-extrabold text-white sm:text-5xl">From Question to Answer in a Day.</h2>
+    </div>
+    <ol class="mt-14 grid gap-6 md:grid-cols-3">
+      {steps.map((s) => (
+        <li class="card reveal relative">
+          <span class="font-display text-6xl font-extrabold text-white/10">{s.n}</span>
+          <h3 class="-mt-4 text-xl font-semibold text-white">{s.title}</h3>
+          <p class="mt-2 text-slate-400">{s.text}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <!-- WHO IT'S FOR -->
+  <section class="mx-auto mt-28 max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="grid gap-6 lg:grid-cols-4">
+      <div class="reveal lg:col-span-1">
+        <span class="eyebrow">Who it's for</span>
+        <h2 class="font-display mt-4 text-3xl font-extrabold text-white">Made for People Who Work the Land.</h2>
+      </div>
+      {[
+        ['users', 'Landowners & Farmers', 'Know your exact killas and settle boundary questions with proof.'],
+        ['shield', 'Lawyers & Property Dealers', 'Verify plots before deals and back cases with accurate maps.'],
+        ['compass', 'Developers & Planners', 'Lay out housing schemes and roads on surveyed ground truth.'],
+      ].map(([i, t, d]) => (
+        <div class="card reveal">
+          <div class="flex items-center gap-3.5">
+            <IconBox name={i} />
+            <h3 class="text-lg font-semibold leading-snug text-white">{t}</h3>
+          </div>
+          <p class="mt-3 text-slate-400">{d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <AdSlot position="beforeFooter" />
+  <FAQ items={faqs} />
+  <CTA />
+</Base>

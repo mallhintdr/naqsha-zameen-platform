@@ -63,7 +63,7 @@ Announce it a day before, for example on WhatsApp: "From [date] the dashboard is
 
 ## Domain step 1. Make the domain a setting (Code)
 
-Before anything changes on the server, the code must stop assuming `.pk`. Claude Code will:
+Before anything changes on the server, the code must stop assuming `.pk`. Claude Code will (**done** on 2026-10-23, see the commit "domain is a setting"):
 
 1. **Backend: one setting for addresses.** New env values `APP_URL=https://dashboard.naqsha-zameen.com` and `SITE_URL=https://naqsha-zameen.com`. These replace every hard-coded `dashboard.naqsha-zameen.pk`: email links, the logout and demo-link redirects, the cookie domain and the CORS default.
    Files: `utils/emailUtils.js`, `utils/frontendOrigin.js`, `controllers/authController.js`, `middleware/authMiddleware.js`, `server.js`, `services/visitorCounter.js`.
@@ -142,6 +142,7 @@ Connect: hPanel → VPS → Browser terminal, or `ssh root@<VPS IP>`.
    ```
    Keep `MONGO_URI`, `SECRET_KEY`, `PMTILES_SIGNING_KEY`, `SMTP_*`, `VAPID_*` exactly as they were. `VAPID` keys must not change, or existing push subscriptions stop working.
    Keep the old checkout and its `.env` untouched: production keeps running from there.
+   Set `PORT` and `JOBS_ENABLED` **in this `.env` file**, not on the command line: `server.js` loads `.env` with override, so values typed before `pm2 start` are ignored.
 4. **Install and build** (the app and the website):
    ```bash
    PUPPETEER_SKIP_DOWNLOAD= npm ci

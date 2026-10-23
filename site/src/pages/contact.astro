@@ -1,0 +1,84 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import IconBox from '../components/IconBox.astro';
+import { SERVICES, SITE, waLink } from '../site';
+---
+<Base title="Contact" seoTitle="Contact Naqsha Zameen – WhatsApp, Phone & Email | Land Maps, RTK & Drone Survey Punjab" description="Contact Naqsha Zameen for dashboard access, RTK land measurement or drone surveys. WhatsApp, phone or email.">
+  <section class="relative isolate overflow-hidden pt-32 sm:pt-40">
+    <div class="grid-bg absolute inset-0 -z-10"></div>
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="mx-auto max-w-2xl text-center">
+        <span class="eyebrow">Contact</span>
+        <h1 class="font-display mt-6 text-4xl font-extrabold text-white sm:text-6xl">Let's Talk About <span class="text-gradient">Your Land.</span></h1>
+        <p class="mt-5 text-lg text-slate-300">WhatsApp is the fastest way to reach us — usually a reply within minutes during working hours.</p>
+      </div>
+
+      <div class="mt-16 grid gap-8 lg:grid-cols-5">
+        <div class="space-y-4 lg:col-span-2">
+          <a href={waLink()} target="_blank" rel="noopener" class="card flex items-center gap-4 !border-emerald-400/30">
+            <IconBox name="whatsapp" />
+            <span><span class="block font-semibold text-white">WhatsApp</span><span class="text-slate-400">{SITE.phoneDisplay}</span></span>
+          </a>
+          <a href={`tel:${SITE.phoneTel}`} class="card flex items-center gap-4">
+            <IconBox name="phone" />
+            <span><span class="block font-semibold text-white">Call Us</span><span class="text-slate-400">{SITE.phoneDisplay}</span></span>
+          </a>
+          <a href={`mailto:${SITE.email}`} class="card flex items-center gap-4">
+            <IconBox name="mail" />
+            <span><span class="block font-semibold text-white">Email</span><span class="text-slate-400 break-all">{SITE.email}</span></span>
+          </a>
+        </div>
+
+        <!-- Enquiry form: composes a WhatsApp message (no server needed). -->
+        <form id="enquiry" class="card space-y-4 lg:col-span-3" novalidate>
+          <h2 class="font-display text-2xl font-bold text-white">Send an Enquiry</h2>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block"><span class="text-sm font-medium text-slate-300">Your name</span>
+              <input name="name" required class="mt-1.5 h-12 w-full rounded-xl border border-white/15 bg-white/5 px-4 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/15" placeholder="Muhammad Ali" />
+            </label>
+            <label class="block"><span class="text-sm font-medium text-slate-300">Service</span>
+              <select name="service" class="mt-1.5 h-12 w-full rounded-xl border border-white/15 bg-ink px-4 text-white outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/15">
+                {SERVICES.map((s) => <option>{s.title}</option>)}
+                <option>Dashboard access</option>
+                <option>Partnership</option>
+              </select>
+            </label>
+            <label class="block"><span class="text-sm font-medium text-slate-300">Tehsil</span>
+              <input name="tehsil" class="mt-1.5 h-12 w-full rounded-xl border border-white/15 bg-white/5 px-4 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/15" placeholder="e.g. Jaranwala" />
+            </label>
+            <label class="block"><span class="text-sm font-medium text-slate-300">Chak / Mouza</span>
+              <input name="chak" class="mt-1.5 h-12 w-full rounded-xl border border-white/15 bg-white/5 px-4 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/15" placeholder="e.g. 47/GB" />
+            </label>
+          </div>
+          <label class="block"><span class="text-sm font-medium text-slate-300">Message</span>
+            <textarea name="message" rows="4" class="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/15" placeholder="Tell us what you need…"></textarea>
+          </label>
+          <p id="form-error" class="hidden text-sm text-rose-300">Please enter your name.</p>
+          <button type="submit" class="btn-primary w-full sm:w-auto"><Icon name="whatsapp" class="size-5" /> Send on WhatsApp</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <script define:vars={{ wa: SITE.whatsapp }}>
+    const form = document.getElementById('enquiry');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const d = new FormData(form);
+      const name = String(d.get('name') || '').trim();
+      const err = document.getElementById('form-error');
+      if (!name) { err.classList.remove('hidden'); form.name.focus(); return; }
+      err.classList.add('hidden');
+      const lines = [
+        'Assalam-o-Alaikum,',
+        `Name: ${name}`,
+        `Service: ${d.get('service')}`,
+        d.get('tehsil') && `Tehsil: ${d.get('tehsil')}`,
+        d.get('chak') && `Chak/Mouza: ${d.get('chak')}`,
+        d.get('message') && `\n${d.get('message')}`,
+      ].filter(Boolean).join('\n');
+      window.open(`https://wa.me/${wa}?text=${encodeURIComponent(lines)}`, '_blank', 'noopener');
+    });
+  </script>
+</Base>

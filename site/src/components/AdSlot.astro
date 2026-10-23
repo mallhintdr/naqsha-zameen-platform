@@ -1,0 +1,29 @@
+---
+// Ad placement. Renders nothing until ads are enabled in src/site.ts (ADS).
+// Clearly labelled and visually separated from content, as ad policies require.
+import { ADS, adsEnabled } from '../site';
+
+interface Props {
+  position: keyof typeof ADS.slots;
+  class?: string;
+}
+const { position, class: cls = '' } = Astro.props;
+const slotId = ADS.slots[position];
+const show = adsEnabled() && !!slotId;
+---
+{show && (
+  <aside class={`mx-auto my-16 max-w-5xl px-4 sm:px-6 ${cls}`} aria-label="Advertisement">
+    <p class="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">Advertisement</p>
+    <div class="min-h-[120px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+      <ins
+        class="adsbygoogle"
+        style="display:block"
+        data-ad-client={ADS.adsenseClient}
+        data-ad-slot={slotId}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      ></ins>
+    </div>
+    <script is:inline>(window.adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </aside>
+)}

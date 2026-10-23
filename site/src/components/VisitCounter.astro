@@ -1,0 +1,16 @@
+---
+// Anonymous page-view counter: loads a 1x1 image from the dashboard API
+// (GET /api/visit.gif?p=<page>), which works from any domain without CORS.
+// The backend counts unique visitors with its own cookie; no personal data is sent.
+// Page key: "home" for /, otherwise the path joined with "-" (e.g. services-rtk-survey).
+import { SITE } from '../site';
+---
+<script is:inline define:vars={{ endpoint: SITE.visitsEndpoint }}>
+  (function () {
+    if (!endpoint || navigator.webdriver) return;
+    var page = location.pathname.replace(/^\/+|\/+$/g, '').replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40) || 'home';
+    var img = new Image(1, 1);
+    img.referrerPolicy = 'no-referrer-when-downgrade';
+    img.src = endpoint + '?p=' + encodeURIComponent(page) + '&t=' + Date.now();
+  })();
+</script>

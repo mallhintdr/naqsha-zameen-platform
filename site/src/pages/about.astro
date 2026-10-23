@@ -1,0 +1,45 @@
+---
+import Base from '../layouts/Base.astro';
+import IconBox from '../components/IconBox.astro';
+import CTA from '../components/CTA.astro';
+import { SITE } from '../site';
+
+const values = [
+  ['target', 'Accuracy First', 'Survey-grade equipment and careful processing — because a boundary is only useful if it is right.'],
+  ['users', 'Built for Local People', 'Urdu and English, local land units, and a dashboard that works on any phone.'],
+  ['shield', 'Trust & Privacy', 'Your land data stays private to your account.'],
+  ['bolt', 'Always Improving', 'New tehsils, tools and imagery are added continuously.'],
+];
+---
+<Base title="About" seoTitle="About GeoMatrix Technologies – Makers of Naqsha Zameen | Land Mapping & Survey, Punjab" description={`${SITE.company} builds Naqsha Zameen — digital land maps, RTK surveys and drone imagery for Punjab.`}>
+  <section class="relative isolate overflow-hidden pt-32 sm:pt-40">
+    <div class="grid-bg absolute inset-0 -z-10"></div>
+    <div class="mx-auto max-w-4xl px-4 text-center sm:px-6">
+      <span class="eyebrow">About us</span>
+      <h1 class="font-display mt-6 text-4xl font-extrabold text-white sm:text-6xl">We Make Land <span class="text-gradient">Easy to Understand.</span></h1>
+      <p class="mx-auto mt-6 max-w-2xl text-lg text-slate-300">
+        {SITE.company} combines geospatial technology with field surveying. Our Naqsha Zameen platform puts mouza, murabba
+        and killa maps on everyone's phone, and our RTK and drone teams bring the same precision to the ground.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto mt-24 grid max-w-7xl gap-6 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
+    {values.map(([i, t, d]) => (
+      <div class="card reveal">
+        <div class="flex items-center gap-3.5">
+          <IconBox name={i} />
+          <h2 class="text-lg font-semibold leading-snug text-white">{t}</h2>
+        </div>
+        <p class="mt-3 text-slate-400">{d}</p>
+      </div>
+    ))}
+  </section>
+
+  <section class="mx-auto mt-24 max-w-3xl px-4 text-center sm:px-6">
+    <p class="urdu reveal text-3xl text-cyan-100" dir="rtl" lang="ur">زمین کی معلومات — آسان، درست اور ہر ایک کی پہنچ میں</p>
+    <p class="reveal mt-4 text-slate-400">Land information — simple, accurate and within everyone's reach.</p>
+  </section>
+
+  <CTA />
+</Base>

@@ -31,7 +31,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 export function passwordMessage({ userId, userName, password, signOff, quickLink }: { userId: string; userName?: string; password: string; signOff?: string; quickLink?: string }) {
-  const origin = window.location.origin || 'https://dashboard.naqsha-zameen.pk';
+  const origin = window.location.origin;
   return [
     `Dear *${userName || userId}*,`, '',
     'Your Naqsha Zameen password has been reset.',
@@ -64,7 +64,7 @@ export async function resetPasswordAndCopy(
   let quickLink: string | undefined;
   if (withQuickLink) {
     const token = btoa(JSON.stringify({ u: userId, p: password }));
-    quickLink = `${window.location.origin || 'https://dashboard.naqsha-zameen.pk'}/login?t=${token}`;
+    quickLink = `${window.location.origin}/login?t=${token}`;
   }
   const message = passwordMessage({ userId, userName: name, password, signOff, quickLink });
   const copied = await copyToClipboard(message);

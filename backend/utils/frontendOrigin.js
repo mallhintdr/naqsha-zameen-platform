@@ -1,15 +1,18 @@
-// The dashboard address a link should point to: the site the request came from
-// (http://localhost:3000 in development, the live dashboard in production), so
-// links work in both. Only trusted origins are used; anything else falls back to
-// FRONTEND_URL / CORS_ORIGIN, then the production dashboard.
-const PROD = 'https://dashboard.naqsha-zameen.pk';
+// The dashboard address a link should point to: the app the request came from
+// (http://localhost:3000 in development, dashboard.naqsha-zameen.com or the .pk
+// dashboard while both run in parallel), so links in emails open the same app
+// the user was using. Only app hosts are trusted: the marketing website (bare
+// domain / www) is never used as a link target. Otherwise falls back to APP_URL.
+const { APP_URL } = require('./siteConfig');
+const { isOwnHost } = require('./allowedOrigins');
 
 const trusted = (origin) => {
     if (!/^https?:\/\/[^/]+$/i.test(origin)) return false;
     const host = origin.replace(/^https?:\/\//i, '').split(':')[0].toLowerCase();
     if (['localhost', '127.0.0.1'].includes(host) || /^192\.168\.\d+\.\d+$/.test(host) || /^10\.\d+\.\d+\.\d+$/.test(host)) return true;
-    if (host === 'naqsha-zameen.pk' || host.endsWith('.naqsha-zameen.pk')) return true;
-    const configured = String(process.env.FRONTEND_URL || process.env.CORS_ORIGIN || '').split(',').map(s => s.trim().replace(/\/$/, '').toLowerCase());
+    const isWebsite = host.split('.').length <= 2 || host.startsWith('www.');
+    if (origin.toLowerCase().startsWith('https://') && isOwnHost(host) && !isWebsite) return true;
+    const configured = String(process.env.FRONTEND_URL || process.env.CORS_ORIGIN || '').split(',').map((s) => s.trim().replace(/\/$/, '').toLowerCase());
     return configured.includes(origin.toLowerCase());
 };
 
@@ -20,8 +23,7 @@ function frontendOrigin(req) {
     }
     origin = origin.replace(/\/$/, '');
     if (origin && trusted(origin)) return origin;
-    const configured = String(process.env.FRONTEND_URL || process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()).find(s => /^https?:\/\//.test(s));
-    return (configured || PROD).replace(/\/$/, '');
+    return APP_URL;
 }
 
 module.exports = { frontendOrigin };

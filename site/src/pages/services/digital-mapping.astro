@@ -1,0 +1,46 @@
+---
+import Service from '../../layouts/Service.astro';
+import { SITE } from '../../site';
+---
+<Service
+  title="Digital Land Maps"
+  seoTitle="Digital Land Maps of Punjab – Mouza, Murabba & Killa Maps Online | Naqsha Zameen"
+  slug="digital-mapping"
+  urdu="موضع، مربع اور کلہ — سیٹلائٹ نقشے پر"
+  description="Digital mouza, murabba and killa maps on satellite imagery. Find any chak, see which killa you're standing in, and measure area in kanal and marla."
+  icon="map"
+  accent="from-indigo-500 to-cyan-400"
+  lead="Mouza, murabba and killa boundaries laid over satellite imagery in the Naqsha Zameen dashboard — searchable, measurable and with you in the field on any phone."
+  waText="Assalam-o-Alaikum, I want digital map access for my chak."
+  benefits={[
+    { icon: 'search', title: 'Tehsil → Chak → Murabba', text: 'Three taps take you from the whole tehsil to a single murabba with all 25 killas numbered.' },
+    { icon: 'pin', title: 'Live GPS on the Grid', text: 'Walk your field and see exactly which killa you are standing in, with accuracy shown.' },
+    { icon: 'ruler', title: 'Area in Local Units', text: 'Draw shapes and lines; get area and length in acres, kanal, marla and karam.' },
+    { icon: 'layers', title: 'Multiple Base Maps', text: 'Switch between satellite, hybrid and street maps, and overlay the shajra where available.' },
+    { icon: 'download', title: 'Save Your Work', text: 'Save drawn layers to your account and reopen them on any device.' },
+    { icon: 'shield', title: 'Private & Secure', text: 'Access is limited to your activated mouzas, protected by secure login.' },
+  ]}
+  deliverables={[
+    'Dashboard login for your selected tehsil and mouzas',
+    'Murabba and killa boundary layers on satellite imagery',
+    'GPS location, go-to-coordinates and search tools',
+    'Drawing, measurement and saved layers',
+    'WhatsApp support in Urdu and English',
+  ]}
+  useCases={['Locating ancestral land', 'Pre-purchase checks', 'Boundary disputes', 'Crop & irrigation planning', 'Court evidence prep', 'Plot layout']}
+  process={[
+    { title: 'Register', text: 'Sign up online or send your tehsil and chak on WhatsApp.' },
+    { title: 'Free Trial', text: 'Explore the dashboard free for 24 hours.' },
+    { title: 'Choose a Plan', text: 'Monthly or yearly access — renew any time.' },
+    { title: 'Use Anywhere', text: `Open ${SITE.dashboardHost} on phone or computer.` },
+  ]}
+  faqs={[
+    { q: 'Is my chak available?', a: `You can see the list of available mouzas / chaks on the registration page: ${SITE.dashboardHost}/register.` },
+    { q: 'Can I use it offline?', a: 'The dashboard needs an internet connection; it is optimised to load quickly even on mobile data.' },
+    { q: 'How do I pay?', a: 'Plans are paid by mobile wallet or bank transfer. Payment details appear in your dashboard after registration.' },
+  ]}
+>
+  <section class="mx-auto mt-16 max-w-3xl px-4 text-center">
+    <a href={SITE.registerUrl} class="btn-primary">Start your free 24-hour trial</a>
+  </section>
+</Service>

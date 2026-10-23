@@ -1,0 +1,45 @@
+---
+// Colored rounded box with a large white icon. The color follows the icon's meaning.
+import Icon from './Icon.astro';
+
+interface Props {
+  name: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  class?: string;
+}
+const { name, size = 'md', class: cls = '' } = Astro.props;
+
+// Gradient per icon: blue = maps/navigation, green = accuracy/safety/WhatsApp,
+// amber = drone/measuring/time, red = location/mail, violet = layers/data.
+const ICON_COLORS: Record<string, string> = {
+  map: 'from-blue-500 to-indigo-600 shadow-blue-500/40',
+  target: 'from-emerald-400 to-green-600 shadow-emerald-500/40',
+  drone: 'from-amber-400 to-orange-600 shadow-orange-500/40',
+  search: 'from-sky-400 to-blue-600 shadow-sky-500/40',
+  pin: 'from-rose-500 to-red-600 shadow-rose-500/40',
+  ruler: 'from-yellow-400 to-amber-600 shadow-amber-500/40',
+  layers: 'from-violet-500 to-purple-700 shadow-violet-500/40',
+  download: 'from-teal-400 to-cyan-600 shadow-teal-500/40',
+  phoneApp: 'from-cyan-400 to-sky-600 shadow-cyan-500/40',
+  shield: 'from-emerald-500 to-teal-700 shadow-emerald-500/40',
+  users: 'from-orange-400 to-rose-500 shadow-orange-500/40',
+  compass: 'from-sky-500 to-indigo-600 shadow-sky-500/40',
+  bolt: 'from-yellow-300 to-orange-500 shadow-yellow-500/40',
+  satellite: 'from-indigo-500 to-violet-700 shadow-indigo-500/40',
+  camera: 'from-pink-500 to-fuchsia-600 shadow-pink-500/40',
+  clock: 'from-amber-400 to-orange-500 shadow-amber-500/40',
+  file: 'from-slate-400 to-blue-700 shadow-blue-500/40',
+  star: 'from-yellow-300 to-amber-500 shadow-yellow-500/40',
+  whatsapp: 'from-green-400 to-emerald-600 shadow-green-500/40',
+  phone: 'from-blue-500 to-cyan-500 shadow-blue-500/40',
+  mail: 'from-red-500 to-orange-500 shadow-red-500/40',
+  facebook: 'from-[#1877F2] to-[#0b5fcc] shadow-blue-600/40',
+};
+
+const box = { sm: 'size-10 rounded-lg', md: 'size-14 rounded-2xl', lg: 'size-16 rounded-2xl', xl: 'size-20 rounded-3xl' }[size];
+const icon = { sm: 'size-6', md: 'size-9', lg: 'size-10', xl: 'size-12' }[size];
+const color = ICON_COLORS[name] ?? 'from-indigo-500 to-cyan-500 shadow-indigo-500/40';
+---
+<span class={`inline-flex shrink-0 items-center justify-center bg-gradient-to-br text-white shadow-lg ring-1 ring-white/20 ${box} ${color} ${cls}`}>
+  <Icon name={name} class={`${icon} drop-shadow-sm`} />
+</span>

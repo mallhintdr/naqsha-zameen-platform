@@ -53,7 +53,7 @@ export default function VisitorsTab() {
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h5 className="m-0 text-lg font-bold text-teal-ink">Website visitors</h5>
-          <div className="text-sm text-ink-2">www.naqsha-zameen.pk home page · unique visitors (page views) · avg {n(avg30)} visitors/day over 30 days</div>
+          <div className="text-sm text-ink-2">Website home page · unique visitors (page views) · avg {n(avg30)} visitors/day over 30 days</div>
         </div>
         <button className="btn btn-sm btn-outline-primary" onClick={load} disabled={loading}>
           {loading ? <Spinner size="sm" /> : <><RefreshCw size={13} />Refresh</>}

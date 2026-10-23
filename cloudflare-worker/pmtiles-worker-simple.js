@@ -11,6 +11,7 @@
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
   'https://dashboard.naqsha-zameen.pk',
+  'https://dashboard.naqsha-zameen.com',
   'http://localhost:3000',
   'http://localhost:5000'
 ];

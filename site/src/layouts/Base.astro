@@ -1,0 +1,247 @@
+---
+import '../styles/global.css';
+import { Image } from 'astro:assets';
+import logo from '../assets/logo-icon.png';
+import Icon from '../components/Icon.astro';
+import Consent from '../components/Consent.astro';
+import VisitCounter from '../components/VisitCounter.astro';
+import { ADS, NAV, SERVICES, SITE, adsEnabled, waLink } from '../site';
+
+interface Props {
+  title?: string;
+  /** Full <title> override for search results (defaults to "title | brand"). */
+  seoTitle?: string;
+  description?: string;
+  noindex?: boolean;
+  /** Extra JSON-LD objects for this page (Service, BreadcrumbList, ...). */
+  schema?: Record<string, unknown>[];
+}
+const { title, seoTitle, description = SITE.description, noindex = false, schema = [] } = Astro.props;
+const fullTitle = seoTitle ?? (title ? `${title} | ${SITE.brand}` : SITE.seoTitle);
+const canonical = new URL(Astro.url.pathname, SITE.url).href;
+const path = Astro.url.pathname;
+const year = new Date().getFullYear();
+const ogImage = new URL('/og.png', SITE.url).href;
+
+// Breadcrumbs from the URL: Home › Services › Page.
+const crumbs = path
+  .split('/')
+  .filter(Boolean)
+  .map((seg, i, arr) => ({ name: seg.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), url: `${SITE.url}/${arr.slice(0, i + 1).join('/')}/` }));
+const breadcrumbLd =
+  crumbs.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [{ name: 'Home', url: `${SITE.url}/` }, ...crumbs].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.url })),
+      }
+    : null;
+
+const orgLd = {
+  '@context': 'https://schema.org',
+  '@type': ['Organization', 'ProfessionalService'],
+  '@id': `${SITE.url}/#organization`,
+  name: SITE.company,
+  alternateName: SITE.brand,
+  url: SITE.url,
+  logo: new URL('/logo.png', SITE.url).href,
+  image: ogImage,
+  telephone: SITE.phoneTel,
+  email: SITE.email,
+  areaServed: { '@type': 'AdministrativeArea', name: 'Punjab', containedInPlace: { '@type': 'Country', name: 'Pakistan' } },
+  address: { '@type': 'PostalAddress', addressRegion: 'Punjab', addressCountry: 'PK' },
+  description: SITE.description,
+  sameAs: [SITE.facebook],
+  contactPoint: [{ '@type': 'ContactPoint', telephone: SITE.phoneTel, contactType: 'customer service', availableLanguage: ['en', 'ur'] }],
+  knowsLanguage: ['en', 'ur'],
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: 'Survey & mapping services',
+    itemListElement: SERVICES.map((s) => ({ '@type': 'Offer', itemOffered: { '@type': 'Service', name: s.title, url: `${SITE.url}/services/${s.slug}/` } })),
+  },
+};
+const siteLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${SITE.url}/#website`,
+  url: SITE.url,
+  name: SITE.brand,
+  inLanguage: ['en', 'ur'],
+  publisher: { '@id': `${SITE.url}/#organization` },
+};
+const jsonLd = [orgLd, siteLd, breadcrumbLd, ...schema].filter(Boolean);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1'} />
+    {SITE.googleSiteVerification && <meta name="google-site-verification" content={SITE.googleSiteVerification} />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#070b24" />
+    <meta name="author" content={SITE.company} />
+    <meta name="geo.region" content="PK-PB" />
+    <meta name="geo.placename" content="Punjab, Pakistan" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_PK" />
+    <meta property="og:locale:alternate" content="ur_PK" />
+    <meta property="og:site_name" content={SITE.brand} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${SITE.brand} — ${SITE.tagline}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Noto+Nastaliq+Urdu:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    {jsonLd.map((ld) => <script type="application/ld+json" set:html={JSON.stringify(ld)} />)}
+    {adsEnabled() && <meta name="google-adsense-account" content={ADS.adsenseClient} />}
+  </head>
+  <body class="min-h-dvh overflow-x-hidden">
+    <Consent />
+    <VisitCounter />
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-ink">Skip to content</a>
+
+    <!-- Header -->
+    <header id="site-header" class="fixed inset-x-0 top-0 z-50 transition-all duration-300">
+      <div class="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:h-20 lg:px-8">
+        <a href="/" class="flex items-center gap-2.5" aria-label={`${SITE.brand} home`}>
+          <Image src={logo} alt="" width={96} height={96} class="size-10 rounded-xl bg-white/95 object-contain p-0.5 shadow-lg shadow-cyan-500/20" loading="eager" />
+          <span class="leading-tight">
+            <span class="font-display block text-lg font-extrabold text-white">{SITE.brand}</span>
+            <span class="hidden text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300/80 sm:block">{SITE.company}</span>
+          </span>
+        </a>
+        <nav class="ml-auto hidden items-center gap-1 lg:flex" aria-label="Main">
+          {NAV.map((n) => (
+            <a
+              href={n.href}
+              class:list={[
+                'rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-white/10 hover:text-white',
+                path.startsWith(n.href) ? 'text-white' : 'text-slate-300',
+              ]}
+            >
+              {n.label}
+            </a>
+          ))}
+        </nav>
+        <div class="ml-auto flex items-center gap-2 lg:ml-4">
+          <a href={SITE.loginUrl} class="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 hover:text-white sm:inline-flex">Login</a>
+          <a href={SITE.registerUrl} class="btn-primary whitespace-nowrap !px-4 !py-2 text-sm">Free trial</a>
+          <button id="menu-btn" class="inline-flex size-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 lg:hidden" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+            <Icon name="menu" class="size-5" />
+          </button>
+        </div>
+      </div>
+      <div id="mobile-menu" class="hidden border-t border-white/10 bg-ink/95 px-4 pb-6 pt-2 backdrop-blur-xl lg:hidden">
+        {NAV.map((n) => <a href={n.href} class="block rounded-lg px-3 py-3 text-base font-medium text-slate-200 hover:bg-white/10">{n.label}</a>)}
+        <a href={SITE.loginUrl} class="mt-2 block rounded-lg px-3 py-3 text-base font-semibold text-cyan-300">Login to dashboard →</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative mt-24 border-t border-white/10 bg-black/30">
+      <div class="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
+        <div class="lg:col-span-1">
+          <div class="flex items-center gap-2.5">
+            <Image src={logo} alt="" width={96} height={96} class="size-10 rounded-xl bg-white/95 object-contain p-0.5" />
+            <span class="font-display text-lg font-extrabold text-white">{SITE.brand}</span>
+          </div>
+          <p class="urdu mt-3 text-lg text-cyan-200/90" dir="rtl" lang="ur">آپ کی زمین، آپ کے موبائل پر</p>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold uppercase tracking-widest text-white">Services</h2>
+          <ul class="mt-4 space-y-2 text-sm">
+            {SERVICES.map((s) => <li><a class="text-slate-400 hover:text-cyan-300" href={`/services/${s.slug}/`}>{s.title}</a></li>)}
+            <li><a class="text-slate-400 hover:text-cyan-300" href="/dashboard/">Naqsha Zameen Dashboard</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold uppercase tracking-widest text-white">Company</h2>
+          <ul class="mt-4 space-y-2 text-sm">
+            <li><a class="text-slate-400 hover:text-cyan-300" href="/about/">About us</a></li>
+            <li><a class="text-slate-400 hover:text-cyan-300" href="/contact/">Contact</a></li>
+            <li><a class="text-slate-400 hover:text-cyan-300" href={SITE.loginUrl}>Dashboard login</a></li>
+            <li><a class="text-slate-400 hover:text-cyan-300" href={SITE.registerUrl}>Create account</a></li>
+            <li><a class="text-slate-400 hover:text-cyan-300" href="/privacy/">Privacy Policy</a></li>
+            <li><a class="text-slate-400 hover:text-cyan-300" href="/terms/">Terms of Use</a></li>
+            {adsEnabled() && <li><a class="text-slate-400 hover:text-cyan-300" href="#" data-open-consent>Cookie settings</a></li>}
+          </ul>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold uppercase tracking-widest text-white">Get in touch</h2>
+          <ul class="mt-4 space-y-3 text-sm">
+            <li><a class="flex items-center gap-2 text-slate-300 hover:text-cyan-300" href={`tel:${SITE.phoneTel}`}><Icon name="phone" class="size-5 text-sky-400" />{SITE.phoneDisplay}</a></li>
+            <li><a class="flex items-center gap-2 text-slate-300 hover:text-emerald-300" href={waLink()} target="_blank" rel="noopener"><Icon name="whatsapp" class="size-5 text-green-400" />WhatsApp us</a></li>
+            <li><a class="flex items-center gap-2 text-slate-300 hover:text-cyan-300" href={`mailto:${SITE.email}`}><Icon name="mail" class="size-5 text-red-400" />{SITE.email}</a></li>
+            <li><a class="flex items-center gap-2 text-slate-300 hover:text-sky-300" href={SITE.facebook} target="_blank" rel="noopener"><Icon name="facebook" class="size-5 text-[#4f9bff]" />Facebook</a></li>
+            <li class="flex items-center gap-2 text-slate-400"><Icon name="pin" class="size-5 text-rose-400" />{SITE.region}</li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-white/5 py-6 text-center text-xs text-slate-500">
+        © {year} {SITE.company}. All rights reserved. · Digital land maps (zameen ka naqsha), RTK survey &amp; drone imagery in Punjab, Pakistan.
+      </div>
+    </footer>
+
+    <!-- Floating WhatsApp -->
+    <a
+      href={waLink()}
+      target="_blank"
+      rel="noopener"
+      aria-label="Chat on WhatsApp"
+      class="fixed bottom-5 right-5 z-40 inline-flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-green-600 text-white shadow-xl shadow-emerald-500/40 transition hover:scale-110"
+    >
+      <Icon name="whatsapp" class="size-8" />
+    </a>
+
+    <script>
+      // Header background on scroll, mobile menu, reveal-on-scroll.
+      const header = document.getElementById('site-header')!;
+      const sync = () => {
+        const s = window.scrollY > 10;
+        header.classList.toggle('bg-ink/80', s);
+        header.classList.toggle('backdrop-blur-xl', s);
+        header.classList.toggle('shadow-lg', s);
+      };
+      sync();
+      window.addEventListener('scroll', sync, { passive: true });
+
+      const btn = document.getElementById('menu-btn')!;
+      const menu = document.getElementById('mobile-menu')!;
+      btn.addEventListener('click', () => {
+        const open = menu.classList.toggle('hidden') === false;
+        btn.setAttribute('aria-expanded', String(open));
+        if (open) {
+          header.classList.add('bg-ink/80', 'backdrop-blur-xl');
+        }
+      });
+
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => e.isIntersecting && (e.target.classList.add('in'), io.unobserve(e.target))),
+        { threshold: 0.12 },
+      );
+      document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+    </script>
+  </body>
+</html>

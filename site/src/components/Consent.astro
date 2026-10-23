@@ -1,0 +1,54 @@
+---
+// Cookie consent + Google Consent Mode v2. Only rendered when ads are enabled.
+// Ads stay non-personalised until the visitor accepts.
+import { ADS, adsEnabled } from '../site';
+const on = adsEnabled();
+---
+{on && (
+  <>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      var c = null; try { c = localStorage.getItem('nz_consent'); } catch (e) {}
+      gtag('consent', 'default', {
+        ad_storage: c === 'granted' ? 'granted' : 'denied',
+        ad_user_data: c === 'granted' ? 'granted' : 'denied',
+        ad_personalization: c === 'granted' ? 'granted' : 'denied',
+        analytics_storage: c === 'granted' ? 'granted' : 'denied',
+        wait_for_update: 500
+      });
+      if (c !== 'granted') (window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;
+    </script>
+    <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADS.adsenseClient}`} crossorigin="anonymous"></script>
+
+    <div id="consent" role="dialog" aria-live="polite" aria-label="Cookie consent" class="fixed inset-x-3 bottom-3 z-[60] hidden rounded-2xl border border-white/15 bg-ink/95 p-5 shadow-2xl shadow-black/50 backdrop-blur-xl sm:inset-x-auto sm:left-5 sm:max-w-md">
+      <p class="font-semibold text-white">We value your privacy</p>
+      <p class="mt-1.5 text-sm text-slate-300">
+        We use cookies to show ads and understand how the site is used. You can accept personalised ads or keep only
+        essential cookies. See our <a href="/privacy/" class="text-cyan-300 underline">Privacy Policy</a>.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button data-consent="granted" class="btn-primary !px-4 !py-2 text-sm">Accept all</button>
+        <button data-consent="denied" class="btn-ghost !px-4 !py-2 text-sm">Essential only</button>
+      </div>
+    </div>
+    <script is:inline>
+      (function () {
+        var box = document.getElementById('consent');
+        var saved = null; try { saved = localStorage.getItem('nz_consent'); } catch (e) {}
+        if (!saved) box.classList.remove('hidden');
+        box.addEventListener('click', function (e) {
+          var v = e.target && e.target.getAttribute && e.target.getAttribute('data-consent');
+          if (!v) return;
+          try { localStorage.setItem('nz_consent', v); } catch (err) {}
+          gtag('consent', 'update', { ad_storage: v, ad_user_data: v, ad_personalization: v, analytics_storage: v });
+          box.classList.add('hidden');
+        });
+        // "Cookie settings" link in the footer reopens the banner.
+        document.querySelectorAll('[data-open-consent]').forEach(function (a) {
+          a.addEventListener('click', function (e) { e.preventDefault(); box.classList.remove('hidden'); });
+        });
+      })();
+    </script>
+  </>
+)}

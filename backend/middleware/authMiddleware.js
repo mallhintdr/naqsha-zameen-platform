@@ -8,15 +8,7 @@ const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || (process.env.NODE_ENV ==
 const _IS_PROD_AUTH = process.env.NODE_ENV === 'production' ||
     (process.env.CORS_ORIGIN || '').startsWith('https://');
 const COOKIE_SECURE = _IS_PROD_AUTH || COOKIE_SAMESITE === 'none';
-const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || (() => {
-    if (!_IS_PROD_AUTH) return undefined;
-    try {
-        const origin = process.env.CORS_ORIGIN || 'https://dashboard.naqsha-zameen.pk';
-        const hostname = new URL(origin).hostname;
-        const parts = hostname.split('.');
-        return parts.length >= 2 ? '.' + parts.slice(-2).join('.') : undefined;
-    } catch (_) { return undefined; }
-})();
+const { COOKIE_DOMAIN } = require('../utils/siteConfig');
 
 const isAuthenticated = async (req, res, next) => {
     // Extract all candidate authToken cookies from both req.cookies and raw header
