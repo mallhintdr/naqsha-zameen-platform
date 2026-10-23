@@ -2,6 +2,7 @@
  * 240px off-canvas sidebar below the 42px navbar (legacy src/App/NavigationMenu.js, inv-01 §3).
  * D7: the duplicate second "Shift Mouza" entry (#nav-link-shift) is removed.
  */
+import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -116,6 +117,29 @@ function Switch({ id, checked, onChange }: { id: string; checked: boolean; onCha
   );
 }
 
+/**
+ * Submenu panel. Desktop/tablet: a second column to the right of the 240px menu.
+ * Phones (<640px): slides in over the menu with a Back button (beside it there is no room).
+ * Rendered on <body> because the sliding menu clips anything that sticks out of it.
+ */
+function SubmenuFlyout({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  return createPortal(
+    <div className="submenu-flyout" role="menu" aria-label={title}>
+      <div className="submenu-flyout-head">
+        <button type="button" className="submenu-flyout-back" onClick={onClose} aria-label="Back to menu">
+          ‹ Back
+        </button>
+        <span className="submenu-flyout-title">{title}</span>
+        <button type="button" className="submenu-flyout-close" onClick={onClose} aria-label="Close submenu">
+          ×
+        </button>
+      </div>
+      <div className="submenu-flyout-body">{children}</div>
+    </div>,
+    document.body,
+  );
+}
+
 export default function NavigationMenu() {
   const { user, logout, clearAppData } = useAuth();
   const navigate = useNavigate();
@@ -227,7 +251,7 @@ export default function NavigationMenu() {
       onClick={() => toggleSubmenu(name)}
     >
       <span>{children}</span>
-      <span className="arrow text-[0.7rem] transition-transform duration-200" style={{ transform: openSubmenu === name ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+      <span className="arrow ml-auto pl-2 text-[0.7rem] text-[#9ca3af]" aria-hidden="true">▶</span>
     </button>
   );
 
@@ -319,7 +343,7 @@ export default function NavigationMenu() {
               <div className="submenu-wrapper">
                 {accordionHead('tutorials', '📚 Guided Tutorials')}
                 {openSubmenu === 'tutorials' && (
-                  <div className="submenu-accordion">
+                  <SubmenuFlyout title="📚 Guided Tutorials" onClose={() => setOpenSubmenu(null)}>
                     {availableTours.map((key) => (
                       <NavItem
                         key={key}
@@ -333,7 +357,7 @@ export default function NavigationMenu() {
                         {TOUR_ICONS[key]} {TOUR_TITLES[key]}
                       </NavItem>
                     ))}
-                  </div>
+                  </SubmenuFlyout>
                 )}
               </div>
             )}
@@ -350,7 +374,7 @@ export default function NavigationMenu() {
               <div className="submenu-wrapper">
                 {accordionHead('admin', '🛠️ Admin Tools')}
                 {openSubmenu === 'admin' && (
-                  <div className="submenu-accordion">
+                  <SubmenuFlyout title="🛠️ Admin Tools" onClose={() => setOpenSubmenu(null)}>
                     <NavItem className="submenu-item" onClick={() => go('/admin/register')}>➕ Register User</NavItem>
                     <NavItem className="submenu-item" onClick={() => go('/users')}>👥 Manage Users</NavItem>
                     <NavItem className="submenu-item" onClick={() => go('/admin/subadmins')}>🤝 Sub-admins</NavItem>
@@ -423,7 +447,7 @@ export default function NavigationMenu() {
                         })}
                       </div>
                     </div>
-                  </div>
+                  </SubmenuFlyout>
                 )}
               </div>
             )}
