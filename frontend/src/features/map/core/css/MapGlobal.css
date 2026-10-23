@@ -63,14 +63,21 @@
     width: 36px !important;
     height: 36px !important;
   }
+  /* Bigger touch target for the drawing buttons; the icon stays inside the button:
+     it fills the padded area and the picture is drawn at a fixed size, centred. */
   .map-container .leaflet-pm-toolbar .leaflet-buttons-control-button {
     width: 36px;
     height: 36px;
+    padding: 6px;
+    box-sizing: border-box;
+    overflow: hidden;
   }
-  .map-container .leaflet-pm-toolbar .leaflet-pm-icon-marker,
   .map-container .leaflet-pm-toolbar .control-icon {
-    width: 36px;
-    height: 36px;
+    width: 100%;
+    height: 100%;
+    background-size: 22px 22px;
+    background-position: center;
+    background-repeat: no-repeat;
   }
   .map-container .admin-toolbar-btn {
     width: 36px !important;
