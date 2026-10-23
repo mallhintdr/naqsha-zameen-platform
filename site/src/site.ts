@@ -82,7 +82,7 @@ export const SERVICES = [
     slug: 'land-consultancy',
     title: 'Revenue Record Consultancy',
     urdu: 'ریونیو ریکارڈ و زمینی تنازعات',
-    short: 'Senior advice on old land disputes: mutations (intiqal), inheritance, partition and record correction.',
+    short: 'Senior advice on old land disputes: mutations (intiqal), inheritance, partition, illegal possession and record correction.',
     icon: 'shield',
     accent: 'from-violet-500 to-fuchsia-400',
   },
