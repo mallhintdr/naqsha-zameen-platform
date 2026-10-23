@@ -21,14 +21,9 @@ Time needed: about 2 hours the first time, plus DNS waiting time.
 
 ## Step 1. Put the repository on GitHub (your PC, 10 min)
 
-1. On github.com create a **private** repository named `naqsha-zameen` (no README, no .gitignore).
-2. In a terminal on your PC:
-   ```bash
-   cd D:\temp-repo
-   git remote add origin https://github.com/<your-account>/naqsha-zameen.git
-   git push -u origin main
-   ```
-3. Check on GitHub that you see `backend/`, `frontend/`, `site/`, `docs/`, `deploy/` and `deploy.sh`, and that there is **no** `.env` file and no `old-repo/` folder. Both are excluded on purpose.
+**Done on 23 October 2026:** the code is in the private repository `https://github.com/mallhintdr/naqsha-zameen-platform` (branch `main`). To publish later changes from your PC: `git push`.
+
+Check on GitHub that you see `backend/`, `frontend/`, `site/`, `docs/`, `deploy/` and `deploy.sh`, and that there is **no** `.env` file and no `old-repo/` folder. Both are excluded on purpose.
 
 ---
 
