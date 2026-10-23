@@ -317,16 +317,17 @@ export const MultiUseSection = memo(function MultiUseSection({ form, ipPeriod, s
                   <td className={cn(td, 'font-semibold')}>{d.label || 'Device'}{d.sameTime && <Badge bg="danger" className="ml-1 !text-[0.6rem]">same time</Badge>}</td>
                   <td className={td} title="Networks / IP addresses (information only)">
                     {d.ips && d.ips.length
-                      ? d.ips.length === 1
-                        ? <><code className="text-[0.7rem] text-[#d63384]">{d.ips[0].ip}</code> <span className="text-ink-2">({d.ips[0].sessions})</span></>
-                        : (
-                          /* Collapsed by default so every row keeps the same height; click to see all addresses. */
+                      ? (
+                          /* Retracted by default so rows stay the same height; the admin opens it when needed. */
                           <details className="group">
                             <summary className="cursor-pointer list-none whitespace-nowrap">
-                              <code className="text-[0.7rem] text-[#d63384]">{d.ips[0].ip}</code> <span className="text-ink-2">({d.ips[0].sessions})</span>{' '}
-                              <span className="rounded bg-[#e9ecef] px-1 text-[0.65rem] font-semibold text-[#41464b] group-open:hidden">+{d.ips.length - 1} more</span>
+                              <span className="rounded bg-[#e9ecef] px-1.5 py-0.5 text-[0.68rem] font-semibold text-[#41464b]">
+                                {d.ips.length} IP{d.ips.length > 1 ? 's' : ''} <span className="group-open:hidden">▸</span><span className="hidden group-open:inline">▾</span>
+                              </span>
                             </summary>
-                            {d.ips.slice(1).map((x: any) => <div key={x.ip}><code className="text-[0.7rem] text-[#d63384]">{x.ip}</code> <span className="text-ink-2">({x.sessions})</span></div>)}
+                            <div className="mt-1">
+                              {d.ips.map((x: any) => <div key={x.ip}><code className="text-[0.7rem] text-[#d63384]">{x.ip}</code> <span className="text-ink-2">({x.sessions})</span></div>)}
+                            </div>
                           </details>
                         )
                       : <span className="text-ink-2">{d.networks || 0} network(s)</span>}

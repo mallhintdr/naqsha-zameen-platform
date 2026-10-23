@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeftRight, CheckCheck, Check, Copy, Eye, FileText, Info, KeyRound, Link2, LogIn, Paperclip, Trash2 } from 'lucide-react';
 import { api } from '@/shared/api/client';
-import { apiBase } from '@/shared/api/base';
 import { Alert, Badge, Button, Modal, PageSpinner, cn, toast, useDialog } from '@/shared/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { fmtDate, fmtDateTime } from '@/shared/lib/format';
@@ -105,16 +104,9 @@ export default function UserEditForm({ userId, handleClose, refreshUsers, initia
     const expiresInMinutes = Math.round(days * 24 * 60);
     try {
       const { data } = await api.post(`/api/users/${userId}/demo-links`, { expiresInMinutes });
+      // The server returns a link to this dashboard's /demo/:token page; fall back to building it here.
       const token = data?.token;
-      let shareLink = data?.url || '';
-      if (token) {
-        try {
-          const apiOrigin = new URL(apiBase()).origin;
-          shareLink = `${apiOrigin.replace(/\/$/, '')}/demo-access/${encodeURIComponent(token)}`;
-        } catch {
-          shareLink = data?.url || `${window.location.origin.replace(/\/$/, '')}/demo/${encodeURIComponent(token)}`;
-        }
-      }
+      const shareLink = data?.url || (token ? `${window.location.origin}/demo/${encodeURIComponent(token)}` : '');
       if (shareLink) {
         await copyToClipboard(shareLink);
         dialog.alert(<span className="whitespace-pre-wrap break-all">{`Demo link created and copied to clipboard:\n${shareLink}`}</span>);
@@ -587,7 +579,7 @@ export default function UserEditForm({ userId, handleClose, refreshUsers, initia
     { id: 'access', label: 'Access', icon: '🔐' },
     { id: 'multiuse', label: 'Multi-Use Info', icon: '🌐' },
   ].filter((t) => !(isSubAdmin && t.id === 'multiuse'));
-  const actionBtn = 'btn btn-sm h-7 w-full !gap-1 !px-2 !py-1 !text-[0.72rem] !font-semibold max-sm:h-9';
+  const actionBtn = 'btn btn-sm h-7 w-full min-w-0 !gap-1 !px-1 !py-0.5 !text-[0.7rem] !font-semibold max-sm:h-8 max-sm:!text-[0.66rem]';
 
   return (
     <>
@@ -604,7 +596,7 @@ export default function UserEditForm({ userId, handleClose, refreshUsers, initia
         )}
         <form onSubmit={save} className="flex min-h-0 flex-1 flex-col">
           <div className="user-detail-tabs-container sticky top-0 z-10 shrink-0 border-b border-[#e2e8f0] bg-white shadow-[0_2px_6px_rgba(0,0,0,0.05)]">
-            <div className="tab-navigation flex gap-1 overflow-x-auto px-2 pt-1.5 max-md:grid max-md:grid-cols-2 max-md:gap-1.5 max-md:bg-[#f8fafc] max-md:p-1.5">
+            <div className="tab-navigation flex gap-1 overflow-x-auto px-2 pt-1.5 max-md:grid max-md:grid-cols-3 max-md:gap-1 max-md:bg-[#f8fafc] max-md:p-1">
               {tabs.map((tab) => {
                 const active = selectedTab === tab.id;
                 const err = validationErrors[tab.id];
@@ -612,7 +604,7 @@ export default function UserEditForm({ userId, handleClose, refreshUsers, initia
                   <button key={tab.id} type="button"
                     className={cn(
                       'user-list-tab tab-nav-item inline-flex flex-[1_1_auto] items-center justify-center gap-0.5 whitespace-nowrap rounded-md border border-[rgba(0,150,180,0.6)] bg-white px-1 py-[0.35rem] text-[0.65rem] font-medium text-[#64748b] transition-all hover:border-[rgba(0,150,180,0.85)] hover:bg-[#f1f5f9] hover:text-[#0ea5e9]',
-                      'max-md:min-h-9 max-md:w-full max-md:border-[#cbd5e1] max-md:px-1 max-md:py-2 max-md:text-[0.75rem]',
+                      'max-md:min-h-8 max-md:w-full max-md:min-w-0 max-md:border-[#cbd5e1] max-md:px-0.5 max-md:py-1 max-md:text-[0.68rem]',
                       active && '!border-[#0ea5e9] !bg-[#e0f2fe] !text-[#0ea5e9] font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
                       err && 'has-error !border-[#fca5a5] !text-[#ef4444]',
                       active && 'active',
@@ -633,7 +625,7 @@ export default function UserEditForm({ userId, handleClose, refreshUsers, initia
               })}
             </div>
             {selectedTab === 'profile' && (
-              <div className={cn('mt-2 mb-2 grid gap-2 px-1', isSubAdmin ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3')}>
+              <div className="mt-1.5 mb-1.5 grid grid-cols-3 gap-1 px-1">
                 <button type="button" className={cn(actionBtn, 'btn-outline-success')} onClick={handleLoginAs}><LogIn size={14} color="#28a745" /><span>Login As</span></button>
                 <button type="button" className={cn(actionBtn, 'btn-outline-secondary')} onClick={() => resetAndCopy(true)}><KeyRound size={14} color="#fd7e14" /><span>Quick Login</span></button>
                 <button type="button" className={cn(actionBtn, 'btn-outline-secondary')} onClick={handleCreateDemoLink}><Link2 size={14} color="#0d6efd" /><span>Demo Link</span></button>

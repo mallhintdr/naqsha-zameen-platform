@@ -79,7 +79,7 @@ export function Modal({
             'shadow-[0_15px_35px_rgba(0,0,0,0.4),0_0_20px_rgba(0,255,255,0.1)] border border-white/10',
             sheet
               ? 'inset-x-0 bottom-0 max-h-[calc(100dvh-52px)] rounded-t-2xl animate-sheet-up pb-[env(safe-area-inset-bottom)] sm:pb-0'
-              : 'inset-x-2 top-[50px] bottom-2 rounded-xl animate-pop-in sm:bottom-auto',
+              : 'inset-x-2 top-[50px] max-h-[calc(100dvh-58px)] rounded-xl animate-pop-in',
             'sm:inset-x-0 sm:mx-auto sm:top-[calc(42px+50%)] sm:-translate-y-[calc(50%+21px)] sm:bottom-auto sm:w-full sm:max-h-[calc(100dvh-58px)] sm:rounded-xl sm:animate-pop-in',
             compact && 'sm:rounded-[10px]',
             WIDTH[size],
@@ -90,14 +90,14 @@ export function Modal({
             <div
               className={cn(
                 'flex items-center justify-between gap-2 shrink-0',
-                compact ? 'px-3.5 py-2.5' : 'px-4 py-1.5 min-h-[42px]',
+                compact ? 'px-3 py-2' : 'px-3.5 py-1 min-h-[38px]',
                 headerVariant === 'chrome' && 'modal-header-chrome',
                 headerVariant === 'table' && 'modal-header-table',
                 headerClassName,
               )}
               style={headerStyle}
             >
-              <Dialog.Title className={cn('m-0 font-semibold tracking-[0.5px] flex items-center gap-2 min-w-0', compact ? 'text-[0.85rem]' : 'text-base', headerVariant !== 'custom' && 'text-[#f8fbff]')}>
+              <Dialog.Title className={cn('m-0 font-semibold tracking-[0.5px] flex items-center gap-2 min-w-0', compact ? 'text-[0.85rem]' : 'text-[0.95rem]', headerVariant !== 'custom' && 'text-[#f8fbff]')}>
                 {title}
               </Dialog.Title>
               {closeButton && (
@@ -111,11 +111,11 @@ export function Modal({
             </div>
           )}
           {headerVariant === 'none' && <Dialog.Title className="sr-only">{title}</Dialog.Title>}
-          <div className={cn(scrollable && 'overflow-y-auto overscroll-contain', 'min-h-0 flex-1', compact ? 'px-4 py-3.5 text-[0.9rem]' : 'p-5 text-[0.95rem] max-sm:p-3', 'text-teal-ink', bodyClassName)}>
+          <div className={cn(scrollable && 'overflow-y-auto overscroll-contain', 'min-h-0 flex-1', compact ? 'px-3.5 py-3 text-[0.9rem]' : 'p-4 text-[0.95rem] max-sm:p-2.5', 'text-teal-ink', bodyClassName)}>
             {children}
           </div>
           {footer && (
-            <div className={cn('flex flex-wrap items-center justify-end gap-2 shrink-0 border-t border-[#e5e7eb] bg-[#f9fafb]', compact ? 'px-3.5 py-2.5' : 'px-4 py-3', footerClassName)}>
+            <div className={cn('flex flex-wrap items-center justify-end gap-2 shrink-0 border-t border-[#e5e7eb] bg-[#f9fafb]', compact ? 'px-3 py-2' : 'px-3.5 py-2', footerClassName)}>
               {footer}
             </div>
           )}

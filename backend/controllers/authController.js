@@ -24,6 +24,7 @@ const _IS_PROD = process.env.NODE_ENV === 'production' ||
 const COOKIE_SECURE = _IS_PROD || COOKIE_SAMESITE === 'none';
 // Cookie domain comes from COOKIE_DOMAIN, else APP_URL (utils/siteConfig.js).
 const { COOKIE_DOMAIN, APP_URL } = require('../utils/siteConfig');
+const { isOwnHost } = require('../utils/allowedOrigins');
 const axios = require('axios');
 const geoip = require('geoip-lite');
 
@@ -810,6 +811,13 @@ exports.demoAccess = async (req, res) => {
             return res.status(400).send('<h2>Invalid or expired link.</h2>');
         }
 
+        // WhatsApp, Facebook, Telegram etc. open every shared link once to build a preview.
+        // Those visits must not use up the link (5 uses) or receive a login cookie.
+        const ua = String(req.get('user-agent') || '');
+        if (/whatsapp|facebookexternalhit|facebot|telegrambot|twitterbot|slackbot|linkedinbot|skypeuripreview|discordbot|googlebot|bingbot|preview|crawler|spider/i.test(ua)) {
+            return res.status(200).send('<!doctype html><title>Naqsha Zameen demo</title><meta property="og:title" content="Naqsha Zameen – demo access"><p>Open this link in your browser to start the demo.</p>');
+        }
+
         const demoLink = await DemoLink.findOne({ token }).populate('user');
         if (!demoLink) {
             return res.status(400).send('<h2>Invalid or expired link.</h2>');
@@ -837,13 +845,17 @@ exports.demoAccess = async (req, res) => {
 
         // Issue a short-lived JWT (same duration as the link's remaining validity)
         const remaining = Math.max(0, demoLink.expiresAt - Date.now());
-        const authToken = jwt.sign({ userId: user.userId }, SECRET_KEY, { expiresIn: Math.floor(remaining / 1000) });
+        const authToken = jwt.sign({ userId: user.userId, tokenVersion: user.tokenVersion || 0 }, SECRET_KEY, { expiresIn: Math.floor(remaining / 1000) });
 
         // Where the React app lives. With FRONTEND_URL / CORS_ORIGIN unset on the
         // server this used to redirect to "/" on the API host, which answered
         // "Route not found". Fall back to the dashboard like server.js does, and
         // take the first entry when CORS_ORIGIN is a comma-separated list.
-        const redirectTarget = `${APP_URL}/`;
+        // Opened on a dashboard host (single-host setup): stay on that host. Opened on the
+        // API host (api.*): go to the configured dashboard (APP_URL), never the website.
+        const host = String(req.get('host') || '').split(':')[0].toLowerCase();
+        const onDashboardHost = isOwnHost(host) && !host.startsWith('api.') && !host.startsWith('www.') && host.split('.').length > 2;
+        const redirectTarget = onDashboardHost ? `https://${host}/` : `${APP_URL}/`;
 
         res
             .cookie('authToken', authToken, {

@@ -111,6 +111,7 @@ exports.resolveRenewalToken = async (req, res) => {
     }
 };
 
+const { frontendOrigin } = require('../utils/frontendOrigin');
 exports.createDemoLink = async (req, res) => {
     try {
         const { expiresInMinutes = 60 } = req.body || {};
@@ -129,22 +130,12 @@ exports.createDemoLink = async (req, res) => {
 
         await DemoLink.create({ user: user._id, token, expiresAt });
 
-        // BUG FIX: /demo-access/:token is a backend-only route (authRoutes.js) — it does
-        // NOT exist on the frontend dashboard app. FRONTEND_URL/CORS_ORIGIN point at the
-        // React SPA's origin, so using them here built a link to a host that 404s with
-        // "Route not found". Always base the link on this API server's own origin;
-        // DEMO_LINK_BASE_URL remains available as an explicit override for deployments
-        // behind a reverse proxy where the public hostname differs from req.get('host').
-        const forwarded = req.get('x-forwarded-proto');
-        const proto = forwarded ? forwarded.split(',')[0] : req.protocol;
-        const selfBaseUrl = process.env.DEMO_LINK_BASE_URL || `${proto}://${req.get('host')}`;
-
-        let shareUrl;
-        try {
-            shareUrl = new URL(`/demo-access/${token}`, selfBaseUrl).toString();
-        } catch (e) {
-            shareUrl = `${proto}://${req.get('host')}/demo-access/${token}`;
-        }
+        // The link opens the dashboard the admin is using (/demo/:token), which hands the
+        // token to the backend. Built from the request's own app origin, never from the
+        // Host header (behind a proxy that can be localhost) or the marketing website.
+        // DEMO_LINK_BASE_URL overrides it when needed.
+        const base = (process.env.DEMO_LINK_BASE_URL || frontendOrigin(req)).replace(/\/$/, '');
+        const shareUrl = `${base}/demo/${token}`;
 
         res.status(201).json({ token, expiresAt, url: shareUrl });
     } catch (error) {

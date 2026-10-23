@@ -180,7 +180,7 @@ export default function DetailModal({ userId, onHide, onChanged }: { userId: str
       onHide={onHide}
       size="wide"
       scrollable={false}
-      bodyClassName="!p-0 flex flex-col overflow-hidden sm:h-[calc(100dvh-150px)]"
+      bodyClassName="!p-0 flex flex-col overflow-hidden sm:max-h-[calc(100dvh-150px)]"
       title={
         <span className="flex min-w-0 flex-wrap items-center gap-1">
           Sub-admin: {d?.user?.userName || userId}
