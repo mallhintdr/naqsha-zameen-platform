@@ -4,7 +4,7 @@ import { RefreshCw } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Line, Legend } from 'recharts';
 import { api, errText } from '@/shared/api/client';
 import { Alert, Spinner } from '@/shared/ui';
-import { legendFormatter } from '../statsUtils';
+import { legendFormatter, useIsSmallScreen } from '../statsUtils';
 
 const n = (v: any) => Number(v || 0).toLocaleString('en-PK');
 const shortDay = (d: any) => new Date(`${d}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
@@ -20,6 +20,7 @@ const WINDOWS = [
 ];
 
 export default function VisitorsTab() {
+  const small = useIsSmallScreen();
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -60,7 +61,7 @@ export default function VisitorsTab() {
         </button>
       </div>
 
-      <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
+      <div className="fill-row fill-row-6 mb-3">
         {WINDOWS.map((x) => (
           <div key={x.key} className="card-plain h-full px-1 py-2 text-center">
             <div className="text-[0.68rem] font-bold uppercase text-ink-2" style={{ letterSpacing: '0.4px' }}>{x.label}</div>
@@ -73,9 +74,10 @@ export default function VisitorsTab() {
       <div className="card-plain mb-3 p-4 max-md:p-2">
         <div className="mb-2 text-center"><h6 className="m-0 font-bold text-teal-ink">Daily visitors</h6><div className="text-sm text-ink-2">Last 30 days</div></div>
         <ResponsiveContainer width="100%" height={260}>
-          <ComposedChart data={daily} margin={{ top: 5, right: 10, left: -10, bottom: 30 }}>
+          <ComposedChart data={daily} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="date" tickFormatter={shortDay} angle={-45} textAnchor="end" interval={0} tick={{ fontSize: 10 }} />
+            {/* A date every few days only (about 5 on phones, 10 on larger screens); each bar's tooltip still shows its exact day. */}
+            <XAxis dataKey="date" tickFormatter={shortDay} interval={Math.max(0, Math.ceil(daily.length / (small ? 5 : 10)) - 1)} tick={{ fontSize: 10 }} tickMargin={6} height={28} />
             <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
             <Tooltip labelFormatter={shortDay} />
             <Legend verticalAlign="top" height={24} formatter={legendFormatter} />

@@ -309,9 +309,9 @@ export default function InsightsPage() {
     <div className="page stats-page">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h2 className="page-title m-0">Analytics and Statistics</h2>
-        <div className="flex flex-col items-start gap-2 sm:items-end">
+        <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:items-end">
           {lastUpdated && <small className="text-ink-2">Updated {lastUpdated.toLocaleTimeString()}</small>}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="fill-row w-full sm:w-auto sm:flex-nowrap [&>*]:whitespace-normal [&>*]:sm:flex-none">
             <button className="btn btn-sm btn-outline-primary" onClick={() => navigate('/')}><Home size={14} /> Home</button>
             <button className="btn btn-sm btn-outline-success" onClick={() => setShowHeatmapModal(true)}>View Location Heatmap</button>
             <button className="btn btn-sm btn-outline-primary" onClick={() => setRefreshKey((k) => k + 1)} disabled={loading}>{loading ? 'Loading...' : 'Refresh'}</button>
