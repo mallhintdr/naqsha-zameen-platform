@@ -16,20 +16,48 @@ This replaces step 0 of `docs/NEXT-STEPS.md` and the o3host parts of `docs/DEPLO
 |---|---|---|
 | `https://naqsha-zameen.com` | Website (Astro, static files) | Main public address |
 | `https://www.naqsha-zameen.com` | 301 redirect to `naqsha-zameen.com` | One canonical domain for Google |
-| `https://app.naqsha-zameen.com` | The dashboard app and its API (`/api`, `/socket.io`, data files) | Same origin: no CORS, no cross-site cookies |
+| `https://dashboard.naqsha-zameen.com` | The dashboard app and its API (`/api`, `/socket.io`, data files) | Same origin: no CORS, no cross-site cookies |
 | `naqsha-zameen.pk`, `www.`, `dashboard.`, `api.` | 301 redirects to the matching `.com` address, keeping the path | Old links keep working |
 
-Everything runs on one VPS: nginx serves the website files directly and passes `app.` to the Node app (pm2) on port 5000.
+Everything runs on one VPS: nginx serves the website files directly and passes `dashboard.` to the Node app (pm2) on port 5000.
 
-`app.` is recommended over `dashboard.`: it is shorter to type on a phone and reads well in Urdu and English messages. If you prefer `dashboard.naqsha-zameen.com`, tell Claude Code before domain step 1; nothing else changes.
+The app keeps the familiar `dashboard.` name on the new domain.
 
-### What users will notice (one time only)
+## Parallel testing phase (the plan you chose)
+
+Customers keep using the `.pk` addresses, served by today's backend exactly as now. The new code runs **next to it** on the `.com` addresses for testing. Both use the **same MongoDB database**, so you test with real data.
+
+```
+customers  -> dashboard.naqsha-zameen.pk / api.naqsha-zameen.pk -> old backend  (pm2 "geo-dashboard",      port 5000, jobs ON)  \
+                                                                                                                             -> same MongoDB + Redis
+you (test) -> dashboard.naqsha-zameen.com                       -> new backend  (pm2 "geo-dashboard-test", port 5001, jobs OFF) /
+```
+
+### Is sharing the database safe? Yes, with these rules
+
+Checked in the code: the new backend differs from the running one in only three files (CORS, the `/stats` page fix, security headers). It has **no database or schema changes**, so both versions read and write the same data in the same way.
+
+The risks come from running two servers at once, and each has a rule:
+
+| Risk | Rule |
+|---|---|
+| Scheduled tasks would run twice: the hourly purge of unverified sign-ups, daily multi-device warnings, sub-admin expiry notices. The background workers (emails, push, and the nightly sub-admin bill closing at 00:00) would compete with production's. | The test copy runs with `JOBS_ENABLED=false` (added in domain step 1). It still *queues* emails and pushes, and the production copy sends them, so nothing is lost or doubled. |
+| Every action on `.com` is real: editing, renewing or deleting a user, recording a sub-admin payment, approving requests. | Make changes only on **test accounts** created for the purpose (for example `test.user1`, `test.subadmin1`). On real accounts, look but do not save. |
+| Logging in as a real customer on `.com` registers a "new device" for that customer, which can trigger a multi-device sharing warning to them. | Never log in as a real customer on `.com`, and do not use "Login as" on real customers there. Use your admin account (admins are not device-tracked) and the test accounts. |
+| Emails from actions on `.com` contain `.com` links; a real customer receiving one would be confused. | Give test accounts an email address you own. |
+| Payment proofs uploaded on one copy must be visible to the other. | Both copies use the same `backend/uploads` folder (symlink, domain step 3). |
+| Live notifications use the same Redis. | Harmless: a notification raised on either copy reaches the user on either site. |
+| Sessions | Separate and safe: `.com` and `.pk` login cookies cannot see each other. |
+
+When testing is done, the **cutover** (domain step 7) stops the old backend, turns jobs on in the new one, and makes `.pk` redirect to `.com`.
+
+### What users will notice at cutover (one time only)
 - **Everyone is logged out once.** Login cookies belong to the old domain.
 - **Browser-saved data starts fresh**: "Remember me", the unit choice on the map, the Aks Shajra draft, admin map mode. Export any Aks Shajra draft you need (Save → JSON) before the switch, and open it again afterwards.
 - **Phone and desktop notifications must be allowed again** on the new address. The app asks after the first tap.
 - **Devices get a new device id.** The backend also recognises devices by their fingerprint, so multi-device counts should mostly carry over. Watch the Multi-IP tab for a week and use "forget device" if a user is flagged wrongly.
 
-Announce it a day before, for example on WhatsApp: "From [date] the dashboard is at app.naqsha-zameen.com. Old links will forward automatically. Please log in once again."
+Announce it a day before, for example on WhatsApp: "From [date] the dashboard is at dashboard.naqsha-zameen.com. Old links will forward automatically. Please log in once again."
 
 ---
 
@@ -37,18 +65,19 @@ Announce it a day before, for example on WhatsApp: "From [date] the dashboard is
 
 Before anything changes on the server, the code must stop assuming `.pk`. Claude Code will:
 
-1. **Backend: one setting for addresses.** New env values `APP_URL=https://app.naqsha-zameen.com` and `SITE_URL=https://naqsha-zameen.com`. These replace every hard-coded `dashboard.naqsha-zameen.pk`: email links, the logout and demo-link redirects, the cookie domain and the CORS default.
+1. **Backend: one setting for addresses.** New env values `APP_URL=https://dashboard.naqsha-zameen.com` and `SITE_URL=https://naqsha-zameen.com`. These replace every hard-coded `dashboard.naqsha-zameen.pk`: email links, the logout and demo-link redirects, the cookie domain and the CORS default.
    Files: `utils/emailUtils.js`, `utils/frontendOrigin.js`, `controllers/authController.js`, `middleware/authMiddleware.js`, `server.js`, `services/visitorCounter.js`.
 2. **Backend: allowed origins for both domains during the move.** `utils/allowedOrigins.js` accepts https on `naqsha-zameen.com` and `naqsha-zameen.pk`, plus their subdomains (list set by an `ALLOWED_DOMAINS` env value).
 3. **Frontend:** remove the four `dashboard.naqsha-zameen.pk` fallbacks (the app always knows its own address), and include both domains in "Clear cache" cookie clean-up.
-4. **Tile workers:** add `https://app.naqsha-zameen.com` to the allowed origins of `cloudflare-worker/pmtiles-worker.js` and `pmtiles-worker-simple.js`.
+4. **Tile workers:** add `https://dashboard.naqsha-zameen.com` to the allowed origins of `cloudflare-worker/pmtiles-worker.js` and `pmtiles-worker-simple.js`.
 5. **Website:**
-   - `site/src/site.ts`: `url`, `dashboardUrl`, `registerUrl`, `loginUrl` move to `.com`; the visit counter points at `https://app.naqsha-zameen.com/api/visit.gif`.
+   - `site/src/site.ts`: `url`, `dashboardUrl`, `registerUrl`, `loginUrl` move to `.com`; the visit counter points at `https://dashboard.naqsha-zameen.com/api/visit.gif`.
    - `site/astro.config.mjs`: `site: 'https://naqsha-zameen.com'`.
    - Replace the visible `dashboard.naqsha-zameen.pk` text on 3 pages.
    - Delete the Apache `site/public/.htaccess` (nginx does redirects now).
-6. **Server config:**
-   - New `deploy/nginx.conf` with four server blocks: website, `www` redirect, app, and `.pk` redirects.
+6. **Parallel mode switch:** a `JOBS_ENABLED` env value (default `true`). When `false`, the server starts no scheduled tasks and no queue workers, but still adds jobs to the queues. The startup log states which mode it is in.
+7. **Server config:**
+   - New `deploy/nginx.conf`: website, `www` redirect, `dashboard.naqsha-zameen.com` (to port 5001 while testing, 5000 after cutover), and a `.pk` redirect block that stays disabled until cutover.
    - `deploy.sh` also builds the website into `/var/www/naqsha-zameen/site` (keeps the previous copy for rollback).
    - `.env.example` gets the new values.
 
@@ -67,7 +96,7 @@ Before anything changes on the server, the code must stop assuming `.pk`. Claude
    |---|---|---|
    | A | `@` | VPS IP |
    | A | `www` | VPS IP |
-   | A | `app` | VPS IP |
+   | A | `dashboard` | VPS IP |
 
    If hPanel shows an `AAAA` (IPv6) record for `@` or `www` that is not your VPS, delete it too. A wrong IPv6 record makes some phones open the wrong server.
 5. **Email**: leave `MX` records alone unless you set up Hostinger email for `.com`. Outgoing app email keeps using the `.pk` mail server (`SMTP_HOST` in `backend/.env`) until you choose to move it.
@@ -75,7 +104,7 @@ Before anything changes on the server, the code must stop assuming `.pk`. Claude
 **Check** (from your PC, after 5-30 minutes):
 ```bash
 nslookup naqsha-zameen.com
-nslookup app.naqsha-zameen.com
+nslookup dashboard.naqsha-zameen.com
 ```
 Both should return the VPS IP.
 
@@ -101,15 +130,18 @@ Connect: hPanel → VPS → Browser terminal, or `ssh root@<VPS IP>`.
 3. **Edit `backend/.env`**: add or replace these lines.
    ```
    NODE_ENV=production
-   APP_URL=https://app.naqsha-zameen.com
+   PORT=5001
+   JOBS_ENABLED=false
+   APP_URL=https://dashboard.naqsha-zameen.com
    SITE_URL=https://naqsha-zameen.com
-   FRONTEND_URL=https://app.naqsha-zameen.com
-   CORS_ORIGIN=https://app.naqsha-zameen.com
+   FRONTEND_URL=https://dashboard.naqsha-zameen.com
+   CORS_ORIGIN=https://dashboard.naqsha-zameen.com
    COOKIE_DOMAIN=.naqsha-zameen.com
    ALLOWED_DOMAINS=naqsha-zameen.com,naqsha-zameen.pk
    CLOUDFLARE_WORKER_URL=https://pmtiles-worker.mallhintdr.workers.dev
    ```
    Keep `MONGO_URI`, `SECRET_KEY`, `PMTILES_SIGNING_KEY`, `SMTP_*`, `VAPID_*` exactly as they were. `VAPID` keys must not change, or existing push subscriptions stop working.
+   Keep the old checkout and its `.env` untouched: production keeps running from there.
 4. **Install and build** (the app and the website):
    ```bash
    PUPPETEER_SKIP_DOWNLOAD= npm ci
@@ -138,34 +170,35 @@ Connect: hPanel → VPS → Browser terminal, or `ssh root@<VPS IP>`.
 3. Get certificates for the new names (DNS must already point here, from domain step 2):
    ```bash
    sudo apt install -y certbot python3-certbot-nginx   # if not installed
-   sudo certbot --nginx -d naqsha-zameen.com -d www.naqsha-zameen.com -d app.naqsha-zameen.com
+   sudo certbot --nginx -d naqsha-zameen.com -d www.naqsha-zameen.com -d dashboard.naqsha-zameen.com
    ```
    Certbot renews automatically. Check with `sudo certbot renew --dry-run`.
-4. Restart the app from the new folder:
+4. Start the new code **next to** production (do not stop `geo-dashboard`):
    ```bash
-   pm2 delete geo-dashboard
-   pm2 start backend/server.js --name geo-dashboard -i max --time
+   cd /var/www/naqsha-zameen
+   pm2 start backend/server.js --name geo-dashboard-test -i 2 --time
    pm2 save
+   pm2 logs geo-dashboard-test --lines 30
    ```
-   This briefly interrupts the old `.pk` site too, because both share the backend. Do it at a quiet hour.
+   The log should show port 5001 and "background jobs: OFF". Customers on `.pk` are not affected.
 
 ---
 
 ## Domain step 5. Test the new domain (You, ~30 minutes)
 
-The old `.pk` addresses are still untouched at this point, so users are not affected while you test.
+The `.pk` addresses still run the old code, so customers are not affected. Follow the rules in the parallel testing table: make changes only on test accounts.
 
 1. `https://naqsha-zameen.com`: the website loads, with the padlock.
 2. `https://www.naqsha-zameen.com/about`: redirects to `https://naqsha-zameen.com/about`.
-3. Website → Register button: opens `https://app.naqsha-zameen.com/register`. Complete a test registration and check the activation email link points to `app.naqsha-zameen.com`.
-4. `https://app.naqsha-zameen.com`: log in as admin, sub-admin and user, then run the smoke checklist in `docs/DEPLOYMENT.md` section 2. Pay attention to:
+3. Website → Register button: opens `https://dashboard.naqsha-zameen.com/register`. Register a test account with your own email, and check the activation link points to `dashboard.naqsha-zameen.com`. Keep the test account for future tests.
+4. `https://dashboard.naqsha-zameen.com`: log in as admin, sub-admin and user, then run the smoke checklist in `docs/DEPLOYMENT.md` section 2. Pay attention to:
    - the map: tehsil → chak → murabba, killa click, drawing and saving a layer;
    - notifications arriving live (an admin reply to a user);
    - Insights opens directly when you refresh on `/stats`;
    - on a real phone: the map, dropdowns, modals and the guided drawing toolbar.
 5. Insights → Visitors: the website visit you just made is counted.
 
-If something fails, nothing public is broken yet. Fix it, then repeat this step.
+If something fails, nothing public is broken. Fix it, update only the test copy (`git pull && npm run build && pm2 reload geo-dashboard-test`), and repeat. Stay in this phase as long as you like.
 
 ---
 
@@ -175,7 +208,7 @@ If something fails, nothing public is broken yet. Fix it, then repeat this step.
    ```bash
    cd cloudflare-worker && npx wrangler deploy
    ```
-2. **Cloudflare Turnstile** (only if you turn the captcha on): add `app.naqsha-zameen.com` to the site key's hostnames.
+2. **Cloudflare Turnstile** (only if you turn the captcha on): add `dashboard.naqsha-zameen.com` to the site key's hostnames.
 3. **Google Search Console**:
    - Add `naqsha-zameen.com` as a Domain property (verify with the TXT record hPanel shows you).
    - Submit `https://naqsha-zameen.com/sitemap-index.xml`.
@@ -184,32 +217,39 @@ If something fails, nothing public is broken yet. Fix it, then repeat this step.
 
 ---
 
-## Domain step 7. Turn the old `.pk` addresses into redirects (You, ~15 minutes, at a quiet hour)
+## Domain step 7. Cutover: customers move to `.com` (You, ~30 minutes, at a quiet hour)
 
-Once the new domain has worked for a day or two:
+Do this only when testing on `.com` is complete. Announce it a day before.
 
-1. **o3host DNS** for `naqsha-zameen.pk`: point these to the VPS IP.
-   - `A @` (the website)
-   - `A www`
-   - `A dashboard`
-
-   `api` already points there. Do not touch `MX` or `mail` records: the app sends email through `mail.naqsha-zameen.pk`.
-2. **VPS**: get certificates for the old names so the redirects work over https:
+1. **Switch the new copy to production mode.** In `/var/www/naqsha-zameen/backend/.env` set `PORT=5000` and `JOBS_ENABLED=true`.
+2. **Swap the processes** (about 10 seconds of downtime):
+   ```bash
+   pm2 stop geo-dashboard              # old code, from the old folder
+   pm2 delete geo-dashboard-test
+   cd /var/www/naqsha-zameen
+   pm2 delete geo-dashboard
+   pm2 start backend/server.js --name geo-dashboard -i max --time
+   pm2 save
+   ```
+3. **nginx:** in `/etc/nginx/sites-available/naqsha-zameen`, change the `dashboard.naqsha-zameen.com` upstream from port 5001 to 5000, and enable the `.pk` redirect block (instructions are in the file's comments). Then:
+   ```bash
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+4. **o3host DNS** for `naqsha-zameen.pk`: point `A @`, `A www` and `A dashboard` to the VPS IP (`api` already points there). Do not touch `MX` or `mail` records; the app sends email through `mail.naqsha-zameen.pk`.
+5. **Certificates for the old names**, so the redirects work over https (run after DNS has switched):
    ```bash
    sudo certbot --nginx -d naqsha-zameen.pk -d www.naqsha-zameen.pk -d dashboard.naqsha-zameen.pk -d api.naqsha-zameen.pk
    ```
-   The `.pk` redirect block from domain step 1 now answers every old address with a 301 to `.com`, path included. For example `dashboard.naqsha-zameen.pk/activate/abc` goes to `app.naqsha-zameen.com/activate/abc`, so activation and reset links already sent in emails keep working.
-3. Remove the old nginx site file for `api.naqsha-zameen.pk` if one is still enabled, then `sudo nginx -t && sudo systemctl reload nginx`.
+   Every old address now answers with a 301 to `.com`, path included. For example `dashboard.naqsha-zameen.pk/activate/abc` goes to `dashboard.naqsha-zameen.com/activate/abc`, so links already sent in emails keep working.
 
 **Check:**
 ```bash
+pm2 logs geo-dashboard --lines 50 | grep -i "jobs"     # background jobs: ON
 curl -sI https://dashboard.naqsha-zameen.pk/login | grep -i location
-# location: https://app.naqsha-zameen.com/login
-curl -sI https://naqsha-zameen.pk/about | grep -i location
-# location: https://naqsha-zameen.com/about
+# location: https://dashboard.naqsha-zameen.com/login
 ```
 
-**Undo:** point the `.pk` DNS records back to o3host. The old o3host files are still there until step 8.
+**Undo** (within minutes): `pm2 delete geo-dashboard`, then start the old code again from the old folder (`cd <old folder> && pm2 start backend/server.js --name geo-dashboard -i max --time`). Disable the `.pk` redirect block in nginx and reload; point the `.pk` DNS back to o3host if you already changed it.
 
 ---
 
@@ -226,10 +266,10 @@ curl -sI https://naqsha-zameen.pk/about | grep -i location
 ## Summary checklist
 
 - [ ] Domain step 1: code makes the domain a setting (Claude Code)
-- [ ] Domain step 2: Hostinger DNS `@`, `www`, `app` → VPS IP
-- [ ] Domain step 3: repo, secrets and data on the VPS; new `.env` values
-- [ ] Domain step 4: nginx config, certificates, restart pm2
-- [ ] Domain step 5: test everything on `.com` (users unaffected)
+- [ ] Domain step 2: Hostinger DNS `@`, `www`, `dashboard` → VPS IP
+- [ ] Domain step 3: repo, secrets and data on the VPS; test `.env` (port 5001, jobs off)
+- [ ] Domain step 4: nginx config, certificates, start `geo-dashboard-test` next to production
+- [ ] Domain step 5: test on `.com` with test accounts (customers stay on `.pk`)
 - [ ] Domain step 6: tile worker, Turnstile, Search Console
-- [ ] Domain step 7: `.pk` addresses become redirects
+- [ ] Domain step 7: cutover: new code becomes production, `.pk` redirects to `.com`
 - [ ] Domain step 8: clean up after 2-4 weeks
