@@ -23,6 +23,28 @@ Everything runs on one VPS: nginx serves the website files directly and passes `
 
 The app keeps the familiar `dashboard.` name on the new domain.
 
+### What happens to `api.naqsha-zameen.pk`
+
+The new codebase has **no separate API address**. The API lives on the same address as the app: `https://dashboard.naqsha-zameen.com/api/...`, plus `/socket.io`, `/Metadata`, `/pmtiles` and the other data paths. nginx sends everything for `dashboard.` to the Node app, which serves both the pages and the API. Demo links are built from the address the request arrived on, so they also use `dashboard.naqsha-zameen.com`.
+
+`api.naqsha-zameen.pk` existed only because the old frontend sat on o3host and the API on this VPS. Its life from here:
+
+| Phase | `api.naqsha-zameen.pk` |
+|---|---|
+| Parallel testing | Unchanged. It keeps serving the old `.pk` dashboard that customers use. |
+| After cutover (step 7) | 301 redirect to the same path on `dashboard.naqsha-zameen.com`. This keeps old demo links (`api.naqsha-zameen.pk/demo-access/...`) working. |
+| Clean-up (step 8) | Keep the redirect while the `.pk` domain is registered; no other change. |
+
+### One deploy for website and dashboard
+
+The website (`site/`) and the dashboard (`frontend/` + `backend/`) live in this one repository and go live with one command, `./deploy.sh`:
+
+1. builds the dashboard into `build/`, which the Node app serves on `dashboard.naqsha-zameen.com`;
+2. builds the website into `site/dist/` and copies it to `/var/www/naqsha-zameen-site`, which nginx serves on `naqsha-zameen.com`;
+3. keeps the previous copy of both for rollback, and reloads the app.
+
+Use `SKIP_SITE=1 ./deploy.sh` to update only the dashboard.
+
 ## Parallel testing phase (the plan you chose)
 
 Customers keep using the `.pk` addresses, served by today's backend exactly as now. The new code runs **next to it** on the `.com` addresses for testing. Both use the **same MongoDB database**, so you test with real data.
