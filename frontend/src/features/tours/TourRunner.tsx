@@ -140,7 +140,7 @@ export default function TourRunner({ steps, onEnd, actionMode = 'enter', onStop,
   };
 
   // Real tooltip height (texts differ in length) so placement never runs off-screen.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+   
   useLayoutEffect(() => {
     const h = tipRef.current?.offsetHeight;
     if (h && Math.abs(h - tipH) > 2) setTipH(h);

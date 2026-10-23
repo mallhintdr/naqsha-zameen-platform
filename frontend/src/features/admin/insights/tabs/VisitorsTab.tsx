@@ -1,9 +1,9 @@
 // Port of StatsTabs/VisitorsTab.js — self-loading, mounted on first visit.
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import {  } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Line, Legend } from 'recharts';
 import { api, errText } from '@/shared/api/client';
-import { Alert, Spinner } from '@/shared/ui';
+import { Alert, RefreshIconButton, Spinner } from '@/shared/ui';
 import { legendFormatter, useIsSmallScreen } from '../statsUtils';
 
 const n = (v: any) => Number(v || 0).toLocaleString('en-PK');
@@ -51,14 +51,12 @@ export default function VisitorsTab() {
   return (
     <div className="mt-4">
       {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <div>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="min-w-0">
           <h5 className="m-0 text-lg font-bold text-teal-ink">Website visitors</h5>
           <div className="text-sm text-ink-2">Website home page · unique visitors (page views) · avg {n(avg30)} visitors/day over 30 days</div>
         </div>
-        <button className="btn btn-sm btn-outline-primary" onClick={load} disabled={loading}>
-          {loading ? <Spinner size="sm" /> : <><RefreshCw size={13} />Refresh</>}
-        </button>
+        <div className="page-icons"><RefreshIconButton onClick={load} loading={loading} /></div>
       </div>
 
       <div className="tile-row-visitors mb-3">

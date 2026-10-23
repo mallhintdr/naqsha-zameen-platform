@@ -1,3 +1,4 @@
+import { House, RefreshCw } from 'lucide-react';
 import * as RTabs from '@radix-ui/react-tabs';
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from './cn';
@@ -145,3 +146,15 @@ export function Pager({ page, pages, onChange, className }: { page: number; page
 
 /* ---------------- Empty state ---------------- */
 export const Empty = ({ children }: { children: ReactNode }) => <div className="py-6 text-center text-sm italic text-ink-2">{children}</div>;
+
+/* ---------------- Icon-only page actions (Home / Refresh) ---------------- */
+export function HomeIconButton({ onClick }: { onClick: () => void }) {
+  return <button type="button" className="icon-btn" title="Home" aria-label="Home" onClick={onClick}><House size={17} /></button>;
+}
+export function RefreshIconButton({ onClick, loading }: { onClick: () => void; loading?: boolean }) {
+  return (
+    <button type="button" className="icon-btn" title="Refresh" aria-label="Refresh" onClick={onClick} disabled={loading}>
+      <RefreshCw size={16} className={loading ? 'animate-spin' : undefined} />
+    </button>
+  );
+}

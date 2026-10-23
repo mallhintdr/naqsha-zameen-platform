@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, Line, PieChart, Pie, Cell, ComposedChart } from 'recharts';
-import { LineChart as LineIcon, Receipt, RefreshCw, Globe, Inbox, Wallet, Home } from 'lucide-react';
-import { Alert, Badge, PageSpinner, StatTile, Tabs, type Tone } from '@/shared/ui';
+import { LineChart as LineIcon, Receipt, RefreshCw, Globe, Inbox, Wallet } from 'lucide-react';
+import { Alert, Badge, PageSpinner, StatTile, Tabs, type Tone, HomeIconButton } from '@/shared/ui';
 import RenewalsTab from '@/features/admin/insights/tabs/RenewalsTab';
 import {
   COLORS, DarkHeader, NumberPager, Panel, bucketRenewalsByGranularity, getRenewalViewConfig, useIsSmallScreen,
@@ -502,10 +502,12 @@ export default function SubAdminDashboardPage() {
   const overdue = me.money.overdue > 0;
   return (
     <div className="page stats-page">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-2 flex items-start justify-between gap-2">
         <h2 className="m-0 text-2xl font-medium text-teal-ink">My Business</h2>
+        <div className="page-icons"><HomeIconButton onClick={() => navigate('/')} /></div>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <button className="btn btn-sm btn-outline-primary" onClick={() => navigate('/')}><Home size={13} /> Home</button>
           <button className="btn btn-sm btn-outline-success" onClick={() => navigate('/subadmin/users')}>My customers</button>
           <CopyMouzaListButton />
         </div>

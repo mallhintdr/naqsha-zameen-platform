@@ -1,11 +1,9 @@
 // /users — admin user management (legacy components/User/UserList.js).
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import {
-  AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, ChevronsLeft, ChevronLeft, ChevronsRight, Home, Pencil, UserCog, Users, XCircle,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, ChevronsLeft, ChevronLeft, ChevronsRight, Pencil, UserCog, Users, XCircle } from 'lucide-react';
 import { api, isCancel } from '@/shared/api/client';
-import { Alert, Badge, Button, Spinner, cn, useDialog } from '@/shared/ui';
+import { Alert, Badge, Spinner, cn, useDialog, HomeIconButton } from '@/shared/ui';
 import { fetchTehsils } from '@/shared/lib/mouzaApi';
 import { fmtDateTime } from '@/shared/lib/format';
 import UserEditForm from './UserEditForm';
@@ -317,7 +315,7 @@ export default function UserListPage() {
     <div className="user-list-container flex min-h-[calc(100dvh-42px)] flex-col overflow-y-auto bg-white p-6 text-teal-ink max-md:p-3">
       <div className="mb-4 flex items-center justify-between gap-2 border-b border-[#dee2e6] pb-2">
         <h3 className="m-0 text-[1.75rem] font-bold text-[#0A2540] max-sm:text-[1.3rem]">User Management</h3>
-        <Button variant="outline-primary" onClick={() => navigate('/')}><Home size={15} /> Home</Button>
+        <div className="page-icons"><HomeIconButton onClick={() => navigate('/')} /></div>
       </div>
 
       {/* Tabs */}

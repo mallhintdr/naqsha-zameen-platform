@@ -1,11 +1,11 @@
 // /stats — port of components/Admin/EnhancedStatistics.js ("Analytics and Statistics").
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { BarChart3, Globe, Home, LogIn, MapPinned, Network, RefreshCw, TriangleAlert, User as UserIcon, UserPlus } from 'lucide-react';
+import { BarChart3, Globe, LogIn, MapPinned, Network, RefreshCw, TriangleAlert, User as UserIcon, UserPlus } from 'lucide-react';
 import { api, errText, isCancel } from '@/shared/api/client';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { GlobalHeatmapModal, UserLocationModal } from '@/features/users/LocationComponents';
-import { Alert, Badge, Modal, Spinner, Tabs } from '@/shared/ui';
+import { UserLocationModal } from '@/features/users/LocationComponents';
+import { Alert, Badge, HomeIconButton, Modal, RefreshIconButton, Spinner, Tabs } from '@/shared/ui';
 import { bucketRenewalsByGranularity, formatDateTime, getIPGeolocation, getRenewalViewConfig } from './statsUtils';
 
 const OverviewTab = lazy(() => import('./tabs/OverviewTab'));
@@ -60,7 +60,6 @@ export default function InsightsPage() {
   const [selectedUserIPs, setSelectedUserIPs] = useState<any[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [showHeatmapModal, setShowHeatmapModal] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('last24h');
   const [onlinePage, setOnlinePage] = useState(1);
 
@@ -313,15 +312,14 @@ export default function InsightsPage() {
 
   return (
     <div className="page stats-page">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="page-title m-0">Analytics and Statistics</h2>
-        <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:items-end">
+      <div className="mb-6 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="page-title m-0">Analytics and Statistics</h2>
           {lastUpdated && <small className="text-ink-2">Updated {lastUpdated.toLocaleTimeString()}</small>}
-          <div className="fill-row w-full sm:w-auto sm:flex-nowrap [&>*]:whitespace-normal [&>*]:sm:flex-none">
-            <button className="btn btn-sm btn-outline-primary" onClick={() => navigate('/')}><Home size={14} /> Home</button>
-            <button className="btn btn-sm btn-outline-success" onClick={() => setShowHeatmapModal(true)}>View Location Heatmap</button>
-            <button className="btn btn-sm btn-outline-primary" onClick={() => setRefreshKey((k) => k + 1)} disabled={loading}>{loading ? 'Loading...' : 'Refresh'}</button>
-          </div>
+        </div>
+        <div className="page-icons">
+          <RefreshIconButton onClick={() => setRefreshKey((k) => k + 1)} loading={loading} />
+          <HomeIconButton onClick={() => navigate('/')} />
         </div>
       </div>
 
@@ -440,7 +438,6 @@ export default function InsightsPage() {
         </Suspense>
       )}
       <UserLocationModal show={showLocationModal} onHide={() => setShowLocationModal(false)} user={selectedUser} />
-      <GlobalHeatmapModal show={showHeatmapModal} onHide={() => setShowHeatmapModal(false)} />
     </div>
   );
 }

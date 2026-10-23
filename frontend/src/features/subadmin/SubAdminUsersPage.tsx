@@ -1,11 +1,8 @@
 // Sub-admin: their own customers (legacy SubAdminUsers.js). Route /subadmin/users (?tab, ?new=1, ?edit=<id>).
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import {
-  Users, CheckCircle2, TriangleAlert, XCircle, Hourglass, Gift, Ban, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Home,
-  UserCircle, Receipt, MapPinned, MessageCircle,
-} from 'lucide-react';
-import { Alert, Badge, Modal, Spinner } from '@/shared/ui';
+import { Users, CheckCircle2, TriangleAlert, XCircle, Hourglass, Gift, Ban, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, UserCircle, Receipt, MapPinned, MessageCircle } from 'lucide-react';
+import { Alert, Badge, Modal, Spinner, HomeIconButton } from '@/shared/ui';
 import UserEditForm from '@/features/users/UserEditForm';
 import { fetchConsolidatedTehsils } from '@/shared/lib/mouzaApi';
 import { withoutAkar } from '@/shared/lib/akar';
@@ -209,10 +206,12 @@ export default function SubAdminUsersPage() {
 
   return (
     <div className="page stats-page">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[#dee2e6] pb-2">
+      <div className="mb-2 flex items-start justify-between gap-2 border-b border-[#dee2e6] pb-2">
         <h3 className="m-0 text-2xl font-bold" style={{ color: '#0A2540' }}>My Customers</h3>
+        <div className="page-icons"><HomeIconButton onClick={() => navigate('/')} /></div>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <button className="btn btn-sm btn-outline-primary" onClick={() => navigate('/')}><Home size={13} /> Home</button>
           <button className="btn btn-sm btn-outline-success" onClick={() => navigate('/subadmin')}>Dashboard</button>
           <button className="btn btn-sm btn-primary" onClick={() => setShowCreate(true)} disabled={!writable}>+ New customer</button>
         </div>

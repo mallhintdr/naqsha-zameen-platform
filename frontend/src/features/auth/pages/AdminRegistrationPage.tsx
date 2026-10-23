@@ -1,9 +1,9 @@
 /** Port of legacy components/Auth/UserRegistration.js (inv-02 §4). Route: /admin/register (admin only). */
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { Eye, EyeOff, Home, MousePointer, Receipt, ShieldHalf, UserCircle, X } from 'lucide-react';
+import { Eye, EyeOff, MousePointer, Receipt, ShieldHalf, UserCircle, X } from 'lucide-react';
 import { api } from '@/shared/api/client';
-import { Badge, Spinner, toast, cn } from '@/shared/ui';
+import { Badge, Spinner, toast, cn, HomeIconButton } from '@/shared/ui';
 import { fetchConsolidatedTehsils, fetchMauzas } from '@/shared/lib/mouzaApi';
 import { formatPhoneNumber, uniqSort } from '@/shared/lib/formUtils';
 import { getCurrentDate, subscriptionOptions } from '@/shared/lib/userUtils';
@@ -311,9 +311,7 @@ export default function AdminRegistrationPage() {
 
       <div className="mb-6 flex items-center justify-between gap-2 border-b border-[#dee2e6] pb-2">
         <h3 className="m-0 text-[1.5rem] font-bold text-[#0A2540] max-sm:text-[1.25rem]">Admin User Registration</h3>
-        <button type="button" className="btn btn-outline-primary min-h-9 shrink-0" onClick={() => navigate('/')}>
-          <Home size={15} /> Home
-        </button>
+        <div className="page-icons"><HomeIconButton onClick={() => navigate('/')} /></div>
       </div>
 
       <form onSubmit={handleSubmit}>

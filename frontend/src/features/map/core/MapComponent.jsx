@@ -316,7 +316,7 @@ const MapComponent = forwardRef(({
       setLeafletMap(null);
       map.remove();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [mapKey]);
 
   const mustateelLayers = useRef([]);

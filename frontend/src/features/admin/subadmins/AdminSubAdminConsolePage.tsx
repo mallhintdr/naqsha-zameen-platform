@@ -1,9 +1,9 @@
 // /admin/subadmins — legacy AdminSubAdminConsole.js ("Sub-admins").
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router';
-import { Cog, House, Inbox, Tags, Trophy, UserCog } from 'lucide-react';
+import { Cog, Inbox, Tags, Trophy, UserCog } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, PieChart, Pie, Cell } from 'recharts';
-import { Alert, Button, Spinner, StatTile, cn, type Tone } from '@/shared/ui';
+import { Alert, Button, HomeIconButton, Spinner, StatTile, cn, type Tone } from '@/shared/ui';
 import { api, errText, rs, SUBADMIN_STATUS } from '@/features/subadmin/subAdminApi';
 import { COLORS, Panel } from '@/features/admin/insights/statsUtils';
 import { RequestsTable, StatusBadge, axisTick, tabTitle } from './shared';
@@ -331,10 +331,12 @@ export default function AdminSubAdminConsolePage() {
 
   return (
     <div className="page stats-page">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-2 flex items-start justify-between gap-2">
         <h2 className="page-title m-0">Sub-admins</h2>
+        <div className="page-icons"><HomeIconButton onClick={() => navigate('/')} /></div>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline-primary" size="sm" onClick={() => navigate('/')}><House size={14} /> Home</Button>
           <Button variant="outline-success" size="sm" onClick={() => navigate('/users?owner=subadmins')}>Their customers</Button>
           <Button size="sm" onClick={() => setShowAppoint(true)}>+ Appoint sub-admin</Button>
         </div>

@@ -19,9 +19,7 @@ const Shell = ({ title, children }: { title: string; children: ReactNode }) => (
       <div className="p-6 max-sm:p-4">
         <div className="mb-4 flex items-start justify-between gap-2">
           <h4 className="m-0 text-[1.5rem] font-medium max-sm:text-[1.25rem]">{title}</h4>
-          <Link to="/" className="btn btn-outline-primary btn-sm min-h-8 shrink-0">
-            <Home size={13} /> Home
-          </Link>
+          <Link to="/" className="icon-btn shrink-0" title="Home" aria-label="Home"><Home size={17} /></Link>
         </div>
         {children}
       </div>

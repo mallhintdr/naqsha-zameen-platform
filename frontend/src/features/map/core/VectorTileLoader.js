@@ -1411,7 +1411,7 @@ const VectorTileLoader = ({
       isLoadingRef.current = false;
       cleanupAllLayers();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [tehsil, mouza, map, resetFlag, adminMapMode]); // Include resetFlag/adminMapMode for forced reloads
 
   // Handle programmatic murabba selection from dropdown
