@@ -40,7 +40,7 @@ function CompactButton({ tone = 'primary', href, className, style, ...props }: {
 
 function CompactModal({ show, onHide, icon, title, children, footer }: { show: boolean; onHide: () => void; icon: ReactNode; title: ReactNode; children: ReactNode; footer: ReactNode }) {
   return (
-    <Modal show={show} onHide={onHide} size="sm" headerVariant="custom" headerStyle={PROFILE_HEADER_STYLE} headerClassName="text-white"
+    <Modal id="change-mouzas-modal" show={show} onHide={onHide} size="sm" headerVariant="custom" headerStyle={PROFILE_HEADER_STYLE} headerClassName="text-white"
       title={<span className="flex items-center gap-2 text-[0.95rem] font-semibold">{icon}{title}</span>}
       bodyClassName="!px-3 !py-2.5 !text-[0.8rem]" footerClassName="!flex-nowrap !px-3 !py-2 !border-[#e9ecef]" footer={footer}>
       {children}

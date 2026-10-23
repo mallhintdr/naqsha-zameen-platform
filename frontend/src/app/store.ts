@@ -7,7 +7,9 @@ import { api } from '@/shared/api/client';
 import { apiUrl } from '@/shared/api/base';
 
 export type AdminMapMode = 'auto' | 'geojson' | 'pmtiles';
-export type TourType = '' | 'navigation' | 'baseLayers' | 'location' | 'drawing' | 'savedLayers' | 'shift' | 'clearCache' | 'multiUse' | 'changePassword' | 'login';
+export type TourType =
+  | '' | 'welcome' | 'navigation' | 'killa' | 'baseLayers' | 'location' | 'goto' | 'compass' | 'drawing' | 'savedLayers'
+  | 'notifications' | 'account' | 'changeMouza' | 'shift' | 'clearCache' | 'multiUse' | 'changePassword' | 'login';
 
 export interface MurabbaOption { value: string; label: string; centroid?: [number, number] }
 export interface GoToMarker { id: number; coords: [number, number] }

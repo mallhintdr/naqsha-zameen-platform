@@ -18,11 +18,11 @@ export default function MultiDeviceTour({ onEnd }: { onEnd: () => void }) {
     },
   });
   const steps: TourStep[] = [
-    s('Multi-Device Security Monitoring 🛡️', 'Welcome to the Multi-Device Security Tour! We open the Multi-Device & IP monitoring security modal.', null, 1000),
-    s('IPs Used (Last 7 Days) 🌐', 'This parameter tracks the total number of distinct IP addresses used to access your account in the last 7 days.', '#multi-device-ip7-row'),
-    s('Device & 30-Day Activity 📱', 'This parameter displays overall device usage and location activity sessions across the past 30 days.', '#multi-device-ip30-row'),
-    s('Account Misuse Warning ⚠️', 'Sharing account credentials or simultaneous multi-device usage violates security terms and risks account locking.', '#multi-device-warning-banner'),
-    s('Acknowledge & Comply ✅', 'Click "I Understand & Comply" to confirm compliance with security policy and close the warning modal.', '#multi-device-comply-btn'),
+    s('Multi-Device Security Monitoring 🛡️', 'Each account is for one person. This window explains how account sharing is detected. We open it for you.', null, 1000),
+    s('IPs Used (Last 7 Days) 🌐', 'How many different devices or networks used your account in the last 7 days.', '#multi-device-ip7-row'),
+    s('Device & 30-Day Activity 📱', 'The same for the last 30 days, with the devices listed.', '#multi-device-ip30-row'),
+    s('Account Misuse Warning ⚠️', 'Sharing your password, or using the account on many devices at once, breaks the terms of use and can lead to the account being blocked. Using your own phone and computer is fine.', '#multi-device-warning-banner'),
+    s('Acknowledge & Comply ✅', 'Press "I Understand & Comply" to close the window. If a device you no longer use is listed, ask your provider to remove it.', '#multi-device-comply-btn'),
   ];
   return (
     <TourRunner

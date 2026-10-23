@@ -56,6 +56,7 @@ const GoToLocationForm = ({ show = true, onClose, onGoToLocation, onClearMarkers
 
   return (
     <Modal
+      id="goto-location-modal"
       show={show}
       onHide={onClose}
       size="compact"
@@ -118,7 +119,7 @@ const GoToLocationForm = ({ show = true, onClose, onGoToLocation, onClearMarkers
         )}
 
         <div className="flex gap-2">
-          <button type="submit" className="btn btn-primary btn-sm flex-1 font-semibold max-sm:min-h-[36px]">Go To Location</button>
+          <button id="goto-submit-btn" type="submit" className="btn btn-primary btn-sm flex-1 font-semibold max-sm:min-h-[36px]">Go To Location</button>
           <button type="button" className="btn btn-outline-danger btn-sm font-semibold max-sm:min-h-[36px]" onClick={handleClearAll}>Clear</button>
         </div>
       </form>

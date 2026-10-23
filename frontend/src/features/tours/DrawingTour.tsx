@@ -100,15 +100,15 @@ export default function DrawingTour({ onEnd }: { onEnd: () => void }) {
   });
 
   const steps: TourStep[] = [
-    intro('Map Drawing Tools Toolbar ✏️', 'Welcome to the Map Drawing Tools Tour! This toolbar houses vector shape drawing, vertex editing, and deletion controls.', toolbar),
-    intro('1. Polyline Tool 📐', 'Draw connected line segments on the map. Displays real-time segment distance badges along line paths.', tool('polyline')),
-    intro('2. Polygon Tool 🔷', 'Draw multi-sided custom boundary shapes. Automatically calculates total enclosed land parcel area.', tool('polygon')),
-    intro('3. Rectangle Tool 🟦', 'Click and drag to draw rectangular bounding boxes for survey zones and Murabba sub-divisions.', tool('rectangle')),
-    intro('4. Circle Tool ⭕', 'Click center point and drag to draw circular buffers, radius zones, or radial boundary coverage.', tool('circle')),
-    intro('5. Pin Drop / Marker Tool 📍', 'Drop point location markers onto specific landmarks or field coordinates.', tool('marker')),
-    intro('6. Edit Shapes & Vertices ✏️', 'Modify drawn spatial shapes by dragging boundary node vertices in real-time.', tool('edit')),
-    intro('7. Delete Shapes Tool 🗑️', 'Remove unwanted vector shapes or markers from the map canvas.', tool('remove')),
-    demo('Polyline Creation & Length Badges 📏', 'Map zoomed to Level 18! A Polyline has been drawn, displaying real-time segment distance measurements.', tool('polyline'), (L, map, g) => {
+    intro('Map Drawing Tools Toolbar ✏️', 'These tools let you draw on the map to measure distances and areas. On a phone, a cross-hair appears in the middle of the map: move the map under it and tap + to add each point.', toolbar),
+    intro('1. Polyline Tool 📐', 'Draw a line to measure distance, for example along a road or a field edge. Each section shows its length.', tool('polyline')),
+    intro('2. Polygon Tool 🔷', 'Draw around a piece of land to get its area in acres, kanal and marla.', tool('polygon')),
+    intro('3. Rectangle Tool 🟦', 'Draw a rectangle by dragging from one corner to the opposite corner. Its area and side lengths are shown.', tool('rectangle')),
+    intro('4. Circle Tool ⭕', 'Tap the centre and drag outwards to draw a circle, for example the area around a well. Its radius and area are shown.', tool('circle')),
+    intro('5. Pin Drop / Marker Tool 📍', 'Drop a pin on a place, such as a well, a gate or a corner. Tap its label to copy the coordinates.', tool('marker')),
+    intro('6. Edit Shapes & Vertices ✏️', 'Move the corner points of anything you have drawn. Measurements update as you move them.', tool('edit')),
+    intro('7. Delete Shapes Tool 🗑️', 'Tap a drawing to remove it from the map.', tool('remove')),
+    demo('Polyline Creation & Length Badges 📏', 'Here is an example line. Each section shows its length; the unit button (Ft / Km / m) changes the units.', tool('polyline'), (L, map, g) => {
       map.flyTo(map.getCenter(), 18, { animate: true, duration: 1.2 });
       const c = map.getCenter();
       const pts = [L.latLng(c.lat + 0.0003, c.lng - 0.0004), L.latLng(c.lat + 0.0005, c.lng), L.latLng(c.lat + 0.0003, c.lng + 0.0004)];
@@ -117,7 +117,7 @@ export default function DrawingTour({ onEnd }: { onEnd: () => void }) {
       drawLabels(pts);
       return 1200;
     }),
-    demo('Edit Polyline & Vertex Recalculation 🔄', 'Polyline vertex adjusted in real-time! Segment distance badges recalculate dynamically as node positions shift.', tool('edit'), (L, map) => {
+    demo('Edit Polyline & Vertex Recalculation 🔄', 'We moved one point of the line. The lengths updated straight away.', tool('edit'), (L, map) => {
       openEdit();
       const c = map.getCenter();
       const pts = [L.latLng(c.lat + 0.00045, c.lng - 0.0005), L.latLng(c.lat + 0.00065, c.lng + 0.0001), L.latLng(c.lat + 0.00035, c.lng + 0.00055)];
@@ -127,8 +127,8 @@ export default function DrawingTour({ onEnd }: { onEnd: () => void }) {
       }
       drawLabels(pts);
     }),
-    demo('Save Polyline Edits & Close Menu 💾', 'Highlighting Save option! Saves Polyline changes to the drawing layer group and closes the edit menu.', saveBtn, () => saveAndClose()),
-    demo('Polygon Boundary Creation 🔷', 'A multi-sided Polygon shape has been drawn at a non-overlapping position, displaying total land area calculations.', tool('polygon'), (L, map, g) => {
+    demo('Save Polyline Edits & Close Menu 💾', 'Press Finish or Save to keep the change and leave edit mode.', saveBtn, () => saveAndClose()),
+    demo('Polygon Boundary Creation 🔷', 'Here is an example area. The box shows its size in acres, kanal and marla, and each side shows its length.', tool('polygon'), (L, map, g) => {
       const c = map.getCenter();
       if (!r.current.polygon)
         r.current.polygon = L.polygon(
@@ -136,13 +136,13 @@ export default function DrawingTour({ onEnd }: { onEnd: () => void }) {
           { color: '#ffd700', fillColor: '#ffd700', fillOpacity: 0.35, weight: 3 },
         ).addTo(g);
     }),
-    demo('Edit Polygon Vertex 📐', 'Polygon vertex modified in real-time! Boundary shifts automatically update enclosed land area metrics.', tool('edit'), (L, map) => {
+    demo('Edit Polygon Vertex 📐', 'We moved one corner. The area updated straight away.', tool('edit'), (L, map) => {
       openEdit();
       const c = map.getCenter();
       r.current.polygon?.setLatLngs([L.latLng(c.lat + 0.0001, c.lng + 0.0006), L.latLng(c.lat + 0.00055, c.lng + 0.00105), L.latLng(c.lat + 0.0001, c.lng + 0.00135), L.latLng(c.lat - 0.0002, c.lng + 0.0009)]);
     }),
-    demo('Save Polygon Edits & Close Menu 💾', 'Highlighting Save option! Saves Polygon changes to the layer group and closes the edit menu.', saveBtn, () => saveAndClose()),
-    demo('Rectangle Parcel Creation 🟦', 'A distinct rectangular survey parcel shape has been drawn at a non-overlapping position.', tool('rectangle'), (L, map, g) => {
+    demo('Save Polygon Edits & Close Menu 💾', 'Press Finish or Save to keep the change.', saveBtn, () => saveAndClose()),
+    demo('Rectangle Parcel Creation 🟦', 'Here is an example rectangle with its area and side lengths.', tool('rectangle'), (L, map, g) => {
       const c = map.getCenter();
       if (!r.current.rectangle)
         r.current.rectangle = L.rectangle(L.latLngBounds(L.latLng(c.lat - 0.0005, c.lng - 0.0003), L.latLng(c.lat - 0.0002, c.lng + 0.0003)), {
@@ -152,14 +152,14 @@ export default function DrawingTour({ onEnd }: { onEnd: () => void }) {
           weight: 3,
         }).addTo(g);
     }),
-    demo('Edit Rectangle Bounds 📐', 'Modifying rectangle boundary handles in real-time with Edit controls displayed.', tool('edit'), () => openEdit()),
-    demo('Save Rectangle Edits & Close Menu 💾', 'Highlighting Save option! Saves Rectangle changes to the layer group and closes the edit menu.', saveBtn, () => saveAndClose()),
-    demo('Circle Buffer Creation ⭕', 'A circular radial buffer zone shape has been drawn at a non-overlapping position.', tool('circle'), (L, map, g) => {
+    demo('Edit Rectangle Bounds 📐', 'Drag its corner points to resize it.', tool('edit'), () => openEdit()),
+    demo('Save Rectangle Edits & Close Menu 💾', 'Press Finish or Save to keep the change.', saveBtn, () => saveAndClose()),
+    demo('Circle Buffer Creation ⭕', 'Here is an example circle with its radius and area.', tool('circle'), (L, map, g) => {
       const c = map.getCenter();
       if (!r.current.circle)
         r.current.circle = L.circle(L.latLng(c.lat - 0.0003, c.lng - 0.0007), { radius: 35, color: '#00ffff', fillColor: '#00ffff', fillOpacity: 0.35, weight: 3 }).addTo(g);
     }),
-    demo('Pin Drop / Marker Placement 📍', 'A location pin marker has been dropped to mark a specific point coordinate feature. Tap its coordinates tooltip to copy them!', tool('marker'), (L, map, g) => {
+    demo('Pin Drop / Marker Placement 📍', 'Here is an example pin. Tap its coordinates label to copy them and share on WhatsApp.', tool('marker'), (L, map, g) => {
       const c = map.getCenter();
       const pos = L.latLng(c.lat + 0.0001, c.lng - 0.0008);
       if (!r.current.marker) {
@@ -185,7 +185,7 @@ export default function DrawingTour({ onEnd }: { onEnd: () => void }) {
         labels.current.push(label);
       }
     }),
-    demo('Delete Shapes Tool 🗑️', 'Activating the Delete tool to clean up drawn vector shapes and restore the map canvas.', tool('remove'), () => removeTourLayers()),
+    demo('Delete Shapes Tool 🗑️', 'Finally the delete tool removes the example drawings. To keep your own drawings for later, use Save Layer in the menu.', tool('remove'), () => removeTourLayers()),
   ];
   return <TourRunner steps={steps} sideOnDesktop onEnd={onEnd} onStop={removeTourLayers} />;
 }

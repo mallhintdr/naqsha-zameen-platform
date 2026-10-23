@@ -84,6 +84,7 @@ export default function NotificationPanel({ onClose, onProfile }: { onClose: () 
   return (
     <div
       className="absolute right-0 top-[calc(100%+10px)] z-[9999] flex max-h-[calc(100dvh-80px)] w-[360px] max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-xl shadow-[0_12px_32px_rgba(0,0,0,0.45)] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-[48px] max-sm:w-auto max-sm:max-w-none"
+      id="notification-panel"
       role="dialog"
       aria-label="Notifications"
     >

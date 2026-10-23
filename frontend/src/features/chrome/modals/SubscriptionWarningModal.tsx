@@ -96,6 +96,7 @@ export default function SubscriptionWarningModal({ show, onHide, warningContent 
 
   return (
     <Modal
+      id="subscription-warning-modal"
       show={show}
       onHide={onHide}
       size="warning"

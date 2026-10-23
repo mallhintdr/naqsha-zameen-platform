@@ -38,6 +38,7 @@ export default function ProfileModal({ show, onHide }: { show: boolean; onHide: 
   return (
     <>
       <Modal
+        id="profile-modal"
         show={show}
         onHide={onHide}
         size="compact"
@@ -99,6 +100,7 @@ export default function ProfileModal({ show, onHide }: { show: boolean; onHide: 
             </select>
           </div>
 
+          <div id="profile-subscription">
           <Row label="Plan">
             <span className="rounded px-1.5 py-[3px] text-[0.7rem] font-semibold text-white" style={{ background: '#5bc0de' }}>{u.subscriptionType}</span>
           </Row>
@@ -109,9 +111,11 @@ export default function ProfileModal({ show, onHide }: { show: boolean; onHide: 
               {calculateDaysRemaining(u.startDate, u.subscriptionType)} days
             </span>
           </Row>
+          </div>
 
           {u.userType === 'user' && (
             <ChromeButton
+              id="profile-change-mouza-btn"
               className="mt-1 !flex-none !py-1.5"
               background="radial-gradient(circle at 20% 20%, rgba(45, 152, 255, 0.45), transparent 60%), linear-gradient(135deg, rgba(11, 14, 40, 1), rgba(18, 26, 54, 1))"
               disabled={!changeOk}

@@ -12,7 +12,7 @@ export default function ShiftMouzaTour({ onEnd }: { onEnd: () => void }) {
   const steps: TourStep[] = [
     {
       title: 'Tehsil Selection 📍',
-      text: 'Welcome to the Shift Mouza Offsets Tour! We highlight the Tehsil dropdown and select the first Tehsil.',
+      text: 'Sometimes the boundaries sit a little off the satellite photo. Shift Mouza lets you move them into place for your own view. We start by choosing a tehsil.',
       target: () => q('#tehsil-dropdown', '#mauza-dropdown'),
       action: async () => {
         const t = user?.tehsilAccess?.[0]?.tehsil || (user as any)?.tehsilList?.[0] || user?.activeTehsil;
@@ -22,7 +22,7 @@ export default function ShiftMouzaTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Mouza (Chak) Selection 🗺️',
-      text: 'Next, we highlight the Mouza dropdown and select the first Mouza entry. Its vector layers load onto the map.',
+      text: 'Next we open a chak so its boundaries appear on the map.',
       target: () => q('#mauza-dropdown'),
       action: () => {
         const m = firstMouza(user) || useAppStore.getState().selectedMauza;
@@ -32,7 +32,7 @@ export default function ShiftMouzaTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Zoom to Level 17 🔍',
-      text: 'The map zooms to level 17 so you can view boundary offsets clearly across the Mouza.',
+      text: 'We zoom in so you can compare the boundary lines with roads and field edges in the photo.',
       target: () => q('#map', '.leaflet-container'),
       action: () => {
         window.dispatchEvent(new CustomEvent('tourFlyToLevel', { detail: { zoom: 17, level: 17, duration: 1.5 } }));
@@ -41,7 +41,7 @@ export default function ShiftMouzaTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Open Shift Mouza Dialog 🔄',
-      text: 'Now, we open the Shift Mouza adjustment form modal to configure boundary coordinate offsets.',
+      text: 'Now we open the Shift Mouza window from the menu.',
       target: shiftModal,
       avoid: shiftModal,
       action: () => {
@@ -51,7 +51,7 @@ export default function ShiftMouzaTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Compass Direction Controls 🧭',
-      text: 'Select a cardinal direction (N, S, E, or W) to push the boundaries. We click East (E) for this demo.',
+      text: 'Choose the direction to move the boundaries: North, South, East or West. We choose East for this example.',
       target: () => q('.shift-compass'),
       avoid: shiftModal,
       action: () => {
@@ -62,7 +62,7 @@ export default function ShiftMouzaTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Input Distance Offset 📏',
-      text: 'We input an offset distance of 50 feet into the distance parameter field.',
+      text: 'Enter how far to move them, in feet. We enter 50 feet.',
       target: () => q('.shift-distance-input-wrap', '.shift-distance-group'),
       avoid: shiftModal,
       action: () => {
@@ -82,7 +82,7 @@ export default function ShiftMouzaTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Apply Coordinate Shift 🚀',
-      text: 'Click "Apply Shift" to update the database adjustments. The boundaries immediately shift by 50 feet on the map!',
+      text: '"Apply Shift" moves the boundaries straight away. The change is saved for your account only; other users are not affected.',
       target: () => q('.shift-btn-apply'),
       avoid: shiftModal,
       action: () => {
@@ -93,7 +93,7 @@ export default function ShiftMouzaTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Reset Original Position ↺',
-      text: 'Finally, click "Reset" to restore the Mouza boundaries back to their original unmodified positions.',
+      text: '"Reset" puts the boundaries back in their original position. This tour resets them for you when it ends.',
       target: () => q('.shift-btn-reset'),
       avoid: shiftModal,
       action: () => {

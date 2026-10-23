@@ -67,7 +67,11 @@ export function Modal({
         <Dialog.Content
           id={id}
           aria-describedby={undefined}
-          onInteractOutside={(e) => backdrop === 'static' && e.preventDefault()}
+          onInteractOutside={(e) => {
+            // Guided tours drive modals from their own tooltip: clicks there must not close the modal.
+            const t = e.target as Element | null;
+            if (backdrop === 'static' || t?.closest?.('.tour-tooltip')) e.preventDefault();
+          }}
           onEscapeKeyDown={(e) => backdrop === 'static' && e.preventDefault()}
           style={{ zIndex }}
           className={cn(

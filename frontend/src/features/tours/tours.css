@@ -13,6 +13,8 @@
   transition: top 0.15s ease, left 0.15s ease, width 0.15s ease, height 0.15s ease;
 }
 .tour-tooltip {
+  /* stays clickable while a modal (which disables the rest of the page) is open */
+  pointer-events: auto !important;
   position: fixed;
   width: min(290px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);

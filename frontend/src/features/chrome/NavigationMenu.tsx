@@ -15,21 +15,32 @@ import './chrome.css';
 
 /** Tour titles (legacy TutorialTour.js TOURS registry, titles only). */
 export const TOUR_TITLES: Record<string, string> = {
+  welcome: 'Dashboard Quick Tour (start here)',
   navigation: 'Mouza & Murabba Selection Tour',
+  killa: 'Killa Area & Measurements Tour',
   baseLayers: 'Base Map Layers Tour',
   location: 'Location & Tracking Tour',
+  goto: 'Go to Coordinates Tour',
+  compass: 'Compass & Map Rotation Tour',
   drawing: 'Map Drawing Tools Tour',
   savedLayers: 'Save & Open Custom Layers Tour',
+  notifications: 'Notifications Tour',
+  account: 'Profile, Subscription & Renewal Tour',
+  changeMouza: 'Request a Mouza Change Tour',
   shift: 'Shift Mouza (Offsets) Tour',
   clearCache: 'Cache & Performance Tour',
   multiUse: 'Multi-Device Security Tour',
   changePassword: 'Change Password Tour',
 };
 const TOUR_ICONS: Record<string, string> = {
-  login: '🔑', baseLayers: '🗺️', navigation: '📍', drawing: '✍️', savedLayers: '💾', location: '📡',
+  login: '🔑', welcome: '👋', navigation: '📍', killa: '🌾', baseLayers: '🗺️', location: '📡', goto: '🔍', compass: '🧭',
+  drawing: '✍️', savedLayers: '💾', notifications: '🔔', account: '👤', changeMouza: '🔁',
   shift: '🔄', clearCache: '🧹', multiUse: '🛡️', changePassword: '🔑',
 };
-const TOUR_ORDER: TourType[] = ['navigation', 'baseLayers', 'location', 'drawing', 'savedLayers', 'shift', 'clearCache', 'multiUse', 'changePassword'];
+const TOUR_ORDER: TourType[] = [
+  'welcome', 'navigation', 'killa', 'baseLayers', 'location', 'goto', 'compass', 'drawing', 'savedLayers',
+  'notifications', 'account', 'changeMouza', 'shift', 'clearCache', 'multiUse', 'changePassword',
+];
 
 function NavItem({
   id, onClick, disabled, className, style, title, children,
@@ -198,6 +209,7 @@ export default function NavigationMenu() {
   const availableTours = TOUR_ORDER.filter((key) => {
     if (!TOUR_TITLES[key]) return false;
     if (!user) return key === 'changePassword';
+    if (key === 'changeMouza') return user.userType === 'user'; // customers only
     return true;
   });
 

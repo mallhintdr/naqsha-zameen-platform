@@ -11,14 +11,14 @@ export default function LocationTour({ onEnd }: { onEnd: () => void }) {
   const steps: TourStep[] = [
     {
       title: 'Live Location Tracking 🎯',
-      text: 'Welcome to the Location Tracking Tour! We highlight the GPS location control button on the map. Click Next to trigger live GPS tracking.',
+      text: 'This button shows where you are standing on the killa map. Press Next and we will switch it on. Your browser may ask for permission to use your location.',
       target: locBtn,
       circle: true,
       action: () => 1000,
     },
     {
       title: 'Acquiring GPS Position 🛰️',
-      text: 'The app uses high-accuracy GPS to obtain your live coordinates, adds a pulsing location marker and accuracy circle, and flies to level 18.',
+      text: 'A blinking red dot marks your position and the blue circle shows how precise it is. The map follows you as you walk. Tap the button again to stop.',
       target: locBtn,
       action: () => {
         (locBtn() as HTMLElement | null)?.click();
@@ -27,7 +27,7 @@ export default function LocationTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'GPS Accuracy Indicator 📊',
-      text: 'Placed directly below the compass, this badge displays real-time GPS accuracy in feet (e.g. ±15ft HIGH) to confirm fix precision.',
+      text: 'Below the compass, this badge shows the GPS accuracy in feet (for example ±15ft HIGH). Out in open fields it is usually best; near buildings and trees it may be lower.',
       target: () => badge() || locBtn(),
       circle: true,
       action: () => {

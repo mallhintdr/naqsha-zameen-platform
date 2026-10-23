@@ -10,7 +10,7 @@ export default function MouzaMurabbaTour({ onEnd }: { onEnd: () => void }) {
 
   const tehsilStep: TourStep = {
     title: 'Tehsil Selection 📍',
-    text: 'We highlight the Tehsil dropdown and select the first Tehsil. This populates all authorized Mouzas (Chaks) for this region.',
+    text: 'Start by choosing a tehsil. The next list then shows every chak (mouza) you have access to in that tehsil.',
     target: () => q('#tehsil-dropdown'),
     action: async () => {
       const t = user?.tehsilAccess?.[0]?.tehsil || user?.activeTehsil;
@@ -20,7 +20,7 @@ export default function MouzaMurabbaTour({ onEnd }: { onEnd: () => void }) {
   };
   const mouzaStep: TourStep = {
     title: 'Mouza (Chak) Selection 🗺️',
-    text: 'Next, we highlight the Mouza dropdown and select the first Mouza. The dashboard loads vector PMTiles/GeoJSON layers onto the map with smooth flyTo animation and renders Murabba tooltips.',
+    text: 'Now choose a chak. Type a few letters to search the list. The map flies to the chak and draws every murabba in red, with its number in green.',
     target: () => q('#mauza-dropdown'),
     action: () => {
       const m = useAppStore.getState().selectedMauza || firstMouza(user);
@@ -30,7 +30,7 @@ export default function MouzaMurabbaTour({ onEnd }: { onEnd: () => void }) {
   };
   const murabbaStep: TourStep = {
     title: 'Murabba Search & Selection 🔢',
-    text: 'Finally, we highlight the Murabba dropdown and select a random Murabba number. The map immediately loads its GeoJSON / Killa PMTile layer and flies directly to its boundary!',
+    text: 'Finally, choose a murabba number. The map zooms in and shows its killas as gold dotted lines with their numbers. You can also tap any murabba on the map to open it.',
     target: () => q('#murabba-dropdown'),
     action: () => {
       const opts = useAppStore.getState().murabbaOptions;

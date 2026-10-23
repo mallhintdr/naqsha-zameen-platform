@@ -3,7 +3,8 @@
  * Every legacy tour duplicated: step state, target measuring, a lock while the step's side
  * effect runs, the red pulsing highlight and the dark-cyan tooltip. That lives here once.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import './tours.css';
 
 export interface TourStep {
@@ -61,6 +62,8 @@ export default function TourRunner({ steps, onEnd, actionMode = 'enter', onStop,
   const [avoid, setAvoid] = useState<Rect | null>(null);
   const [customTop, setCustomTop] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const tipRef = useRef<HTMLDivElement | null>(null);
+  const [tipH, setTipH] = useState(POPUP_H);
   const [, force] = useState(0);
   const lockTimer = useRef<number | undefined>(undefined);
   const stepsRef = useRef(steps);
@@ -136,6 +139,13 @@ export default function TourRunner({ steps, onEnd, actionMode = 'enter', onStop,
     goTo(step - 1);
   };
 
+  // Real tooltip height (texts differ in length) so placement never runs off-screen.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useLayoutEffect(() => {
+    const h = tipRef.current?.offsetHeight;
+    if (h && Math.abs(h - tipH) > 2) setTipH(h);
+  });
+
   if (!coords) return null;
   const s = steps[step];
   const vw = window.innerWidth;
@@ -152,8 +162,10 @@ export default function TourRunner({ steps, onEnd, actionMode = 'enter', onStop,
     left = Math.max(12, (vw - popupW) / 2);
   } else if (isMobile) {
     left = Math.max(12, (vw - popupW) / 2);
-    if (avoid) top = Math.max(avoid.bottom + 8, vh - 195);
-    else top = coords.top > vh / 2 ? Math.max(12, coords.top - POPUP_H) : Math.min(vh - POPUP_H, tBottom + 12);
+    if (avoid) {
+      // Phone windows are bottom sheets: put the tour above them when there is room, else at the top.
+      top = avoid.top - tipH - 8 >= 50 ? avoid.top - tipH - 8 : avoid.bottom + tipH + 8 <= vh ? avoid.bottom + 8 : 50;
+    } else top = coords.top > vh / 2 ? Math.max(12, coords.top - tipH - 12) : Math.min(vh - tipH - 10, tBottom + 12);
   } else if (avoid) {
     if (avoid.right + popupW + 20 <= vw) {
       left = avoid.right + 16;
@@ -172,17 +184,19 @@ export default function TourRunner({ steps, onEnd, actionMode = 'enter', onStop,
     left = Math.max(12, Math.min(coords.left, vw - popupW - 12));
     top = Math.min(tBottom + 12, vh - 220);
   }
-  top = Math.max(10, Math.min(top, vh - 180));
+  top = Math.max(10, Math.min(top, vh - tipH - 10));
   left = Math.max(12, Math.min(left, vw - popupW - 12));
 
   const hl = s.circle
     ? { top: coords.top + coords.height / 2 - size / 2 - 6, left: coords.left + coords.width / 2 - size / 2 - 6, width: size + 12, height: size + 12, borderRadius: '50%' }
     : { top: coords.top - 4, left: coords.left - 4, width: coords.width + 8, height: coords.height + 8 };
 
-  return (
+  // Portal to <body>: the map page's fixed layout creates a stacking context that would
+  // otherwise keep the tour below any open modal, whatever its z-index.
+  return createPortal(
     <>
       <div className="tour-highlight" style={hl} />
-      <div className="tour-tooltip" style={{ top, left }} role="dialog" aria-label={s.title}>
+      <div ref={tipRef} className="tour-tooltip" style={{ top, left }} role="dialog" aria-label={s.title}>
         <h6>{s.title}</h6>
         <p>{s.text}</p>
         <div className="flex items-center justify-between gap-2">
@@ -205,6 +219,7 @@ export default function TourRunner({ steps, onEnd, actionMode = 'enter', onStop,
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }

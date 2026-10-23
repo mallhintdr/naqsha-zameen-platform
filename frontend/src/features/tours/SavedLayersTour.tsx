@@ -43,7 +43,7 @@ export default function SavedLayersTour({ onEnd }: { onEnd: () => void }) {
   const steps: TourStep[] = [
     {
       title: 'Save & Open Custom Layers Tour 💾',
-      text: 'Welcome! Before saving a spatial layer, you MUST first draw vector shapes on the map canvas. Each user account can save up to 30 custom layers in database storage.',
+      text: 'You can save your drawings (lines, areas, markers) and open them again later on any device. First something must be drawn on the map. You can keep up to 10 saved drawings.',
       target: mapEl,
       action: () => {
         closeModals();
@@ -52,7 +52,7 @@ export default function SavedLayersTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Zooming to Level 19 🔍',
-      text: 'Zooming map camera to Level 19 for high-resolution vector precision.',
+      text: 'We zoom in close so the example shapes are easy to see.',
       target: mapEl,
       action: () => {
         const { map } = leaflet();
@@ -62,7 +62,7 @@ export default function SavedLayersTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Drawing Shapes on Canvas 🎨',
-      text: 'Drawing vector shapes (Line, Polygon, Rectangle, Circle) on screen so that active spatial features exist on the map.',
+      text: 'We have drawn a few example shapes: a line, an area, a rectangle and a circle.',
       target: mapEl,
       action: () => {
         drawTourShapes();
@@ -71,7 +71,7 @@ export default function SavedLayersTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Open Navigation Sidebar ☰',
-      text: 'Opening the navigation menu where layer management actions reside.',
+      text: 'Saving and opening drawings is done from the menu.',
       target: () => q('.navbar-brand-custom', '.modern-sidebar'),
       avoid: sidebar,
       action: () => {
@@ -80,8 +80,8 @@ export default function SavedLayersTour({ onEnd }: { onEnd: () => void }) {
       },
     },
     {
-      title: 'Save Layer Option ENABLED! 💾',
-      text: 'Notice that "Save Layer" is now ENABLED in the sidebar menu because vector shapes exist on the map canvas!',
+      title: 'Save Layer is Ready 💾',
+      text: '"Save Layer" can now be used because there are drawings on the map.',
       target: () => q('#nav-link-save-layer', '.modern-sidebar', '.navbar-brand-custom'),
       avoid: sidebar,
       action: () => {
@@ -91,7 +91,7 @@ export default function SavedLayersTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Name & Save Custom Layer 📝',
-      text: 'Opening the Save Layer dialog box. Entering "Test Layer 101" as the layer name. Click Save to store it in your cloud library!',
+      text: 'Give the drawing a name you will recognise, for example the chak and the owner\'s name, then press Save. We use "Test Layer 101" here.',
       target: () => q('#layerName') || modalEl(),
       avoid: () => modalEl(),
       action: () => {
@@ -101,7 +101,7 @@ export default function SavedLayersTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Access Saved Layers Catalog 📂',
-      text: 'Canvas cleared behind scenes! Re-opened sidebar menu highlighting "Saved Layers". Click to view your stored library of spatial parcels.',
+      text: 'We cleared the map. "Open Saved Layers" in the menu lists everything you have saved.',
       target: () => q('#nav-link-saved-layers', '.modern-sidebar', '.navbar-brand-custom'),
       avoid: sidebar,
       action: () => {
@@ -113,7 +113,7 @@ export default function SavedLayersTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Open Saved Layer Action 📂',
-      text: "Highlighting the OPEN action button! Clicking this folder icon loads the saved layer's vector shapes directly onto the map canvas.",
+      text: "The folder button opens a saved drawing on the map, with all its measurements.",
       target: () => q('#btn-open-layer-0', '.btn-open-layer') || savedModal(),
       avoid: savedModal,
       action: () => {
@@ -123,7 +123,7 @@ export default function SavedLayersTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Delete Saved Layer Action 🗑️',
-      text: 'Highlighting the DELETE action button! Clicking this trash icon permanently removes unwanted spatial layers from your cloud storage library.',
+      text: 'The bin button deletes a saved drawing for good. You are asked to confirm first.',
       target: () => q('#btn-delete-layer-0', '.btn-delete-layer') || savedModal(),
       avoid: savedModal,
       action: () => {
@@ -133,7 +133,7 @@ export default function SavedLayersTour({ onEnd }: { onEnd: () => void }) {
     },
     {
       title: 'Saved Layer Loaded & Rendered! 🎉',
-      text: 'Your custom layer has been loaded and rendered back onto the map canvas! (Canvas is purged on tour finish).',
+      text: 'Your saved drawing is back on the map. The example drawing is removed when this tour ends.',
       target: () => q('#map', '.leaflet-container'),
       action: () => {
         closeModals();

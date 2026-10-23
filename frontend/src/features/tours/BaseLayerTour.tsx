@@ -12,10 +12,10 @@ function apply(layer: string) {
 export default function BaseLayerTour({ onEnd }: { onEnd: () => void }) {
   const target = () => q('#map-base-layer-select');
   const content = [
-    { title: 'Base Map Layers Tour 🗺️', text: "Let's explore how changing the base map layer updates the dashboard view. We've highlighted the selector dropdown in red." },
-    { title: 'Street Map Style 🗺️', text: 'We have switched the map to the Street Map layer. This view uses vector street details, ideal for reading names and routes clearly.' },
-    { title: 'Satellite Imagery Style 🛰️', text: 'Next, we switch to Satellite Imagery. This displays pure raw satellite photography of the land parcels.' },
-    { title: 'Google Hybrid Satellite Style 🛰️', text: 'Finally, we switch back to Google Hybrid Satellite. This combines high-resolution satellite imagery with street outlines and place labels.' },
+    { title: 'Base Map Layers Tour 🗺️', text: "This list, at the bottom right, changes the map background under your land boundaries. Watch the map change as we try a few." },
+    { title: 'Street Map Style 🗺️', text: 'Street Map: roads, towns and place names are easy to read. Useful for finding your way to a field.' },
+    { title: 'Satellite Imagery Style 🛰️', text: 'Satellite: a clear photo of the ground with no labels, best for seeing crops, buildings and field edges.' },
+    { title: 'Google Hybrid Satellite Style 🛰️', text: 'Google Hybrid Satellite (the default): the satellite photo with road and place names on top. Your choice stays until you change it.' },
   ];
   const steps: TourStep[] = content.map((c, i) => ({
     ...c,
