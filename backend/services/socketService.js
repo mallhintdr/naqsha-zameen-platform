@@ -1,3 +1,4 @@
+const { isAllowedOrigin } = require('../utils/allowedOrigins');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const { createAdapter } = require('@socket.io/redis-adapter');
@@ -20,24 +21,10 @@ const parseCookies = (cookieHeader) => {
 };
 
 const init = (server, corsOrigin) => {
-    const allowed = [
-        'https://dashboard.naqsha-zameen.pk',
-        'https://api.naqsha-zameen.pk',
-        'http://localhost:3000',
-        'http://localhost:5000'
-    ];
-    if (corsOrigin) {
-        allowed.push(corsOrigin);
-    }
-
     io = new Server(server, {
         cors: {
             origin: function (origin, callback) {
-                if (!origin || allowed.indexOf(origin) !== -1 || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-                    callback(null, true);
-                } else {
-                    callback(new Error('Not allowed by CORS'));
-                }
+                callback(null, isAllowedOrigin(origin));
             },
             methods: ["GET", "POST"],
             credentials: true

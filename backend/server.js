@@ -31,6 +31,7 @@ const compression = require('compression');
 const uuidv4 = () => require('crypto').randomUUID();
 const logger = require('./utils/logger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { isAllowedOrigin } = require('./utils/allowedOrigins');
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -51,23 +52,12 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || (_IS_PROD_SERVER ? 'https://dashb
 
 // ─── 1. Core Security & CORS (Must be first) ──────────────────────────────────────
 const corsOptions = {
+  // www / apex / dashboard / api and any https subdomain of naqsha-zameen.pk, localhost, CORS_ORIGIN list.
+  // Unknown origins get no CORS headers (browser blocks) instead of a 500 error.
   origin: function (origin, callback) {
-    const allowed = [
-      'https://dashboard.naqsha-zameen.pk',
-      'https://api.naqsha-zameen.pk',
-      'http://localhost:3000',
-      'http://localhost:5000'
-    ];
-    if (CORS_ORIGIN) {
-      allowed.push(CORS_ORIGIN);
-    }
-    // Allow if no origin (like mobile apps/curl/postman), matched in allowed list, or runs on localhost
-    if (!origin || allowed.indexOf(origin) !== -1 || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    callback(null, isAllowedOrigin(origin));
   },
+
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'X-Requested-With', 'Accept'],
