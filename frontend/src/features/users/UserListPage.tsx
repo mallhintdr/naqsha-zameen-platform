@@ -319,12 +319,12 @@ export default function UserListPage() {
       </div>
 
       {/* Tabs */}
-      <div className="user-list-tabs mb-8 flex flex-wrap gap-4 max-md:mb-3 max-md:gap-[0.6rem]">
+      <div className="user-list-tabs mb-4 flex flex-wrap gap-2 max-md:mb-3 max-md:gap-1.5">
         {tabs.map((t) => (
           <button key={t.id} type="button" onClick={() => handleTabChange(t.id)}
             className={cn(
-              'user-list-tab inline-flex items-center gap-2 rounded-md border border-[rgba(0,150,180,0.6)] bg-white px-4 py-2 text-[0.85rem] font-medium text-[#64748b] transition-all hover:border-[rgba(0,150,180,0.85)] hover:bg-[#f1f5f9] hover:text-[#0ea5e9] [&>svg]:size-[1.1rem]',
-              'max-md:min-h-9 max-md:flex-[1_1_calc(50%-0.3rem)] max-md:justify-center max-md:px-2 max-md:py-[0.4rem] max-md:font-semibold max-md:[&_.badge]:px-[0.35rem] max-md:[&_.badge]:py-[0.2rem] max-md:[&_.badge]:text-[0.7rem]',
+              'user-list-tab inline-flex min-w-0 items-center justify-start gap-1.5 whitespace-nowrap rounded-md border border-[rgba(0,150,180,0.6)] bg-white px-2.5 py-1 text-left text-[0.82rem] font-medium leading-tight text-[#64748b] transition-all hover:border-[rgba(0,150,180,0.85)] hover:bg-[#f1f5f9] hover:text-[#0ea5e9] [&>svg]:size-[1rem] [&>svg]:shrink-0',
+              'max-md:min-h-8 max-md:flex-[1_1_calc(50%-0.25rem)] max-md:gap-1 max-md:px-1.5 max-md:py-1 max-md:text-[0.74rem] max-md:font-semibold max-md:[&_.badge]:px-[0.3rem] max-md:[&_.badge]:py-[0.1rem] max-md:[&_.badge]:text-[0.65rem]',
               activeTab === t.id && 'active !border-[#0ea5e9] !bg-[#e0f2fe] !text-[#0ea5e9] shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
             )}>
             {t.icon} {t.label} {t.badge}
