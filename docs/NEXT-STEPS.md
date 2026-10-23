@@ -16,6 +16,9 @@ This turns `docs/REVIEW.md` into an ordered checklist. Each step says what chang
 ## Phase A: get the new code live safely (week 1)
 
 ### Step 0. Put the repo on GitHub and run it on the VPS
+
+> **Superseded:** the app and website are moving to `naqsha-zameen.com` on Hostinger. Follow `docs/DOMAIN-MIGRATION.md` instead of the deployment items below; only item 1 (push to GitHub) and item 2 (commit the website) still apply as written.
+
 Today production still runs the old code. The new repo also carries the CORS fix for `www`, so going live fixes the website's registration as well.
 
 1. **You**: create a private GitHub repository, then from `D:\temp-repo`:
