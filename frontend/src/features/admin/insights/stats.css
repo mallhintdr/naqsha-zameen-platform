@@ -16,9 +16,10 @@ tr.tone-row > td:first-child { background: var(--row-solid); border-left: 4px so
   .renewal-view-buttons .btn { flex: 1 1 0; padding: 0.2rem 0.3rem; font-size: 0.75rem; }
 }
 /* sa-page-tabs (inv-03 §2.2) */
-.sa-page-tabs > .tab { flex: 1 1 0; min-height: 44px; white-space: normal; text-align: center; }
+/* Icon and caption on one line, so the buttons stay compact. */
+.sa-page-tabs > .tab { flex: 1 1 0; min-height: 36px; white-space: normal; text-align: left; line-height: 1.2; gap: 0.35rem; padding: 0.35rem 0.6rem; }
 @media (max-width: 768px) {
-  .sa-page-tabs > .tab { flex: 1 1 33.333%; min-height: 52px; font-size: 0.74rem; padding: 0.35rem 0.3rem; flex-direction: column; gap: 2px; }
+  .sa-page-tabs > .tab { flex: 1 1 calc(33.333% - 0.5rem); min-height: 34px; font-size: 0.72rem; padding: 0.3rem 0.35rem; gap: 0.25rem; }
 }
 /* sa-detail-tabs (§14.1) */
 .sa-detail-tabs > .tab { flex: 1 1 0; white-space: nowrap; margin-bottom: 0; }
