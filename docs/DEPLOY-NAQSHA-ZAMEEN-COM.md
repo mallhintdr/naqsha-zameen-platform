@@ -11,9 +11,10 @@ The complete, ordered steps to put this repository live on the new domain, next 
 During testing customers keep using `.pk`, exactly as now. Both copies share the same MongoDB and Redis. The test copy runs on port 5001 with background jobs off; see "Is sharing the database safe?" in `docs/DOMAIN-MIGRATION.md` for the rules.
 
 Facts used below (checked 23 October 2026):
-- VPS IP: `46.202.153.115` (Ubuntu, nginx 1.18, pm2 app `geo-dashboard` on port 5000).
+- VPS IP: `46.202.153.115` (Ubuntu, nginx 1.18). Current production: pm2 app **`backend`** (cluster) running `/root/gis-dashboard/backend/server.js` on port 5000.
+- **Other apps share this VPS and the same pm2:** `kiln-api`, `kpi-api`, `kpi-worker`. Never run `pm2 update`, `pm2 kill`, `pm2 delete all` or `pm2 restart all`; always name the app.
 - `naqsha-zameen.com`, `www` and `dashboard` currently point to Hostinger's parking server (IPv6 records `2a02:4780:...`). These must be removed.
-- Code repository: `github.com/mallhintdr/naqsha-zameen-platform` (private). The older private `geo-dashboard` repository is what the current `.pk` production pulls from; leave it unchanged until cutover.
+- Code repository: `github.com/mallhintdr/naqsha-zameen-platform` (public; contains no secrets). The older private `geo-dashboard` repository is what the current `.pk` production pulls from; leave it unchanged until cutover.
 
 Time needed: about 2 hours the first time, plus DNS waiting time.
 
@@ -57,11 +58,11 @@ Open a terminal on the VPS: hPanel → **VPS** → **Browser terminal**, or `ssh
 1. **Find the current app**, and note the folder it runs from:
    ```bash
    pm2 list
-   pm2 describe geo-dashboard | grep -E "exec cwd|script path"
+   pm2 describe backend | grep -E "exec cwd|script path"
    ```
-   Write down the folder, for example `/root/geo-dashboard`. Below it is called `OLD`. Set it now:
+   On this VPS it is `/root/gis-dashboard`. Below it is called `OLD`. Set it now:
    ```bash
-   export OLD=/root/geo-dashboard        # use the folder from the command above
+   export OLD=/root/gis-dashboard
    ls $OLD/backend/.env $OLD/backend/data $OLD/backend/uploads
    ```
 2. **Node.js version.** The new frontend build needs Node 20.19 or newer (22 recommended):
@@ -73,8 +74,8 @@ Open a terminal on the VPS: hPanel → **VPS** → **Browser terminal**, or `ssh
    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
    sudo apt-get install -y nodejs
    node -v && npm -v
-   sudo npm install -g pm2 && pm2 update
    ```
+   Do **not** run `pm2 update` or reinstall pm2. On 23 October 2026 `pm2 update` on this VPS restarted the pm2 daemon and every app on it stopped (Naqsha Zameen, kiln-api, kpi-api, kpi-worker) until `pm2 resurrect` was run. The installed pm2 works with Node 22 as it is.
 3. **Tools:**
    ```bash
    sudo apt-get update
@@ -91,25 +92,12 @@ Open a terminal on the VPS: hPanel → **VPS** → **Browser terminal**, or `ssh
 
 ## Step 4. Get the code onto the VPS (10 min)
 
-1. Create a read-only **deploy key**, so the server can pull from your private repository:
-   ```bash
-   ssh-keygen -t ed25519 -C "vps-deploy" -f ~/.ssh/naqsha_deploy -N ""
-   cat ~/.ssh/naqsha_deploy.pub
-   ```
-   On GitHub: repository → **Settings** → **Deploy keys** → **Add deploy key**. Paste the line and leave "Allow write access" off.
-2. Tell ssh to use it:
-   ```bash
-   cat >> ~/.ssh/config <<'EOF'
-   Host github.com
-     IdentityFile ~/.ssh/naqsha_deploy
-     IdentitiesOnly yes
-   EOF
-   ssh -T git@github.com     # answer "yes"; it should greet you by account name
-   ```
-3. Clone into a **new** folder. The old folder stays untouched and production keeps running from it.
+The repository is public, so no key is needed.
+
+1. Clone into a **new** folder. The old folder stays untouched and production keeps running from it.
    ```bash
    sudo mkdir -p /var/www && cd /var/www
-   git clone git@github.com:mallhintdr/naqsha-zameen-platform.git naqsha-zameen
+   git clone https://github.com/mallhintdr/naqsha-zameen-platform.git naqsha-zameen
    cd /var/www/naqsha-zameen
    ```
 
@@ -163,10 +151,10 @@ Open a terminal on the VPS: hPanel → **VPS** → **Browser terminal**, or `ssh
    sudo rsync -a --delete site/dist/ /var/www/naqsha-zameen-site/
    ls /var/www/naqsha-zameen-site/index.html
    ```
-3. **Start the test copy next to production.** Do not stop `geo-dashboard`.
+3. **Start the test copy next to production.** Do not stop `backend`, and do not touch the other apps.
    ```bash
    pm2 start backend/server.js --name geo-dashboard-test -i 2 --time
-   pm2 save
+   pm2 save            # saves the whole list (all apps), so everything comes back after a reboot
    pm2 logs geo-dashboard-test --lines 40 --nostream
    ```
    The log must contain `Server running on port 5001` and `Background jobs: OFF`. If it says port 5000 or jobs ON, fix `backend/.env` (step 5.1) and run `pm2 restart geo-dashboard-test --update-env`.
@@ -259,10 +247,9 @@ Do this only when step 9 is complete. Send customers a WhatsApp message the day 
    ```
 2. **Swap the processes** (about 10 seconds of downtime):
    ```bash
-   pm2 stop geo-dashboard
+   pm2 stop backend                      # old code in /root/gis-dashboard (kept for rollback)
    pm2 delete geo-dashboard-test
-   pm2 delete geo-dashboard
-   pm2 start backend/server.js --name geo-dashboard -i max --time
+   pm2 start backend/server.js --name geo-dashboard -i 2 --time
    pm2 save
    pm2 logs geo-dashboard --lines 40 --nostream     # port 5000, Background jobs: ON
    ```
@@ -289,6 +276,8 @@ Do this only when step 9 is complete. Send customers a WhatsApp message the day 
    curl -sI https://naqsha-zameen.pk/about | grep -i location             # https://naqsha-zameen.com/about
    ```
 
+After one stable week, remove the old process: `pm2 delete backend && pm2 save`.
+
 From now on, update with:
 ```bash
 cd /var/www/naqsha-zameen && ./deploy.sh
@@ -302,7 +291,7 @@ cd /var/www/naqsha-zameen && ./deploy.sh
 |---|---|
 | A test-copy update is broken | `cd /var/www/naqsha-zameen && mv build build_bad && mv build_prev build && pm2 reload geo-dashboard-test` |
 | A website update is broken | `sudo rsync -a --delete /var/www/naqsha-zameen-site_prev/ /var/www/naqsha-zameen-site/` |
-| Problems right after cutover | `pm2 delete geo-dashboard && cd $OLD && pm2 start backend/server.js --name geo-dashboard -i max --time && pm2 save`; put the `#` back on the `.pk` redirect block, re-enable the old site file, reload nginx; point `.pk` DNS back to o3host if you changed it |
+| Problems right after cutover | `pm2 stop geo-dashboard && pm2 start backend && pm2 save` (the old `backend` process is still in pm2 until you delete it); put the `#` back on the `.pk` redirect block, re-enable the old site file, reload nginx; point `.pk` DNS back to o3host if you changed it |
 
 Keep `$OLD` and the o3host files for 2-4 weeks after cutover.
 
@@ -319,4 +308,5 @@ Keep `$OLD` and the o3host files for 2-4 weeks after cutover.
 | Map stays empty on `.com` but works on `.pk` | The worker was not redeployed (step 8). In the browser's developer tools (F12 → Console) you will see a CORS error for `pmtiles-worker`. |
 | Activation or reset emails link to `.pk` | `APP_URL` / `FRONTEND_URL` in `backend/.env` still point to `.pk`. |
 | `npm run build` fails with "Vite requires Node.js version 20.19+" | Install Node 22 (step 3.2). |
+| `pm2 list` is suddenly empty and sites are down | The pm2 daemon restarted without loading its list. Run `pm2 resurrect`, then `pm2 list`; if still empty, start each app from its folder (see the chat log of 23 October 2026), then `pm2 save` and `pm2 startup`. |
 | Customers get two copies of a daily email | The test copy has `JOBS_ENABLED` missing or `true`. Set it to `false` and restart it. |
