@@ -44,6 +44,11 @@ async function mock(route) {
   if (p.startsWith('/api/mauza-list/')) return json(Object.keys(MOUZAS));
   if (p.startsWith('/api/geo/')) return json({ latOffset: 0, lngOffset: 0 });
   if (p === '/api/user-layers') return json([]);
+  // Mouza metadata (store.selectMauza -> shiftResult). Arrives after the GeoJSON, like on the live server.
+  if (/^\/Metadata\/[^/]+\/[^/]+\.json$/.test(p) && !/-(Murabba|Killa|Metadata)\.json$/.test(p)) {
+    await new Promise((r) => setTimeout(r, Number(process.env.META_DELAY || 0)));
+    return json({ murabbas: {} });
+  }
   if (p.startsWith('/Shajra Parcha/')) { await new Promise((r) => setTimeout(r, Number(process.env.SHAJRA_DELAY || 0))); return json({ message: 'nf' }, 404); }
   const m = p.match(/^\/JSON Murabba\/[^/]+\/(.+)\.geojson$/);
   if (m && m[1] in MOUZAS) {

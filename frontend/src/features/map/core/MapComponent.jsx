@@ -658,6 +658,17 @@ const MapComponent = forwardRef(({
   useEffect(() => {
     if (!shiftResult || !shiftResult.geojson || !geoJsonLayerInstance) return;
 
+    // Only replace the mouza layer with real GeoJSON. The app sets shiftResult.geojson to a file
+    // path string when a mouza is selected; clearing first and then failing on addData(string)
+    // emptied the layer whenever that metadata arrived after the layer had loaded (the first
+    // mouza after page load), so its murabba outlines vanished until another mouza was picked.
+    const g = shiftResult.geojson;
+    const isGeoJson = g && typeof g === 'object' && (g.type === 'FeatureCollection' || g.type === 'Feature');
+    if (!isGeoJson) {
+      if (typeof onShiftResultApplied === 'function') onShiftResultApplied();
+      return;
+    }
+
     try {
       geoJsonLayerInstance.clearLayers();
       geoJsonLayerInstance.addData(shiftResult.geojson);
