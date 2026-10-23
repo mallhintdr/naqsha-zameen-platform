@@ -1,0 +1,22 @@
+# Upload as ".htaccess" into the document root of dashboard.naqsha-zameen.pk on o3host
+# (the folder that contains index.html and static/). Needed while the dashboard is still
+# hosted on o3host's Apache: it sends every app URL (/login, /register, /users, ...) to
+# index.html so the single-page app can render it. Real files are served as usual.
+Options -MultiViews
+RewriteEngine On
+RewriteBase /
+
+# Existing files and folders are served directly
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Everything else is an app route
+RewriteRule ^ index.html [L]
+
+# Always fetch the latest index.html and meta.json (version checker); hashed assets can cache
+<IfModule mod_headers.c>
+  <FilesMatch "^(index\.html|meta\.json)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>
