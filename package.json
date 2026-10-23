@@ -1,16 +1,23 @@
 {
   "name": "naqsha-zameen",
   "private": true,
-  "version": "5.0.0",
-  "workspaces": ["frontend", "backend"],
-  "engines": { "node": ">=20" },
+  "version": "5.0.1",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "npm run dev -w frontend",
     "dev:backend": "npm run dev -w backend",
     "build": "npm run build -w frontend",
     "start": "npm start -w backend",
     "lint": "npm run lint -w frontend",
-    "test": "npm test -w frontend",
-    "typecheck": "npm run typecheck -w frontend"
+    "test": "npm test -w frontend && node --test scripts/bump-version.test.mjs",
+    "typecheck": "npm run typecheck -w frontend",
+    "setup-hooks": "git config core.hooksPath .githooks",
+    "version:bump": "node scripts/bump-version.mjs"
   }
 }

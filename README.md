@@ -16,6 +16,11 @@ npm run dev:backend       # API on :5000 (needs backend/.env)
 npm run dev               # app on http://localhost:3000, proxies /api, data folders and sockets
 ```
 
+## Versioning
+
+Every commit raises the app version by one step, rolling over at 9 (`5.1.9` -> `5.2.0`, `5.9.9` -> `6.0.0`). The version shows in the menu footer, and the dashboard reloads itself in open browsers when a newer build is deployed.
+Enable the commit hook once per clone: `npm run setup-hooks`. Skip it for one commit with `SKIP_VERSION_BUMP=1 git commit ...`.
+
 ## Check
 
 ```bash

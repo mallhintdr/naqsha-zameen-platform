@@ -1,0 +1,17 @@
+#!/bin/sh
+# Raise the app version on every commit (5.1.9 -> 5.2.0, 5.9.9 -> 6.0.0).
+# Enabled once per clone with:  npm run setup-hooks
+# Skip for one commit:          SKIP_VERSION_BUMP=1 git commit ...
+[ -n "$SKIP_VERSION_BUMP" ] && exit 0
+
+# Nothing staged (e.g. an empty commit): leave the version alone.
+git diff --cached --quiet && exit 0
+
+# If the version was changed by hand in this commit, keep that value.
+if git diff --cached -U0 -- frontend/package.json | grep -q '^+  "version"'; then
+  exit 0
+fi
+
+root=$(git rev-parse --show-toplevel)
+node "$root/scripts/bump-version.mjs" || exit 1
+git add "$root/frontend/package.json" "$root/package.json"
