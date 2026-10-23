@@ -323,7 +323,7 @@ export default function UserListPage() {
         {tabs.map((t) => (
           <button key={t.id} type="button" onClick={() => handleTabChange(t.id)}
             className={cn(
-              'user-list-tab inline-flex min-w-0 items-center justify-start gap-1.5 whitespace-nowrap rounded-md border border-[rgba(0,150,180,0.6)] bg-white px-2.5 py-1 text-left text-[0.82rem] font-medium leading-tight text-[#64748b] transition-all hover:border-[rgba(0,150,180,0.85)] hover:bg-[#f1f5f9] hover:text-[#0ea5e9] [&>svg]:size-[1rem] [&>svg]:shrink-0',
+              'user-list-tab inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-[rgba(0,150,180,0.6)] bg-white px-2.5 py-1 text-center text-[0.82rem] font-medium leading-tight text-[#64748b] transition-all hover:border-[rgba(0,150,180,0.85)] hover:bg-[#f1f5f9] hover:text-[#0ea5e9] [&>svg]:size-[1rem] [&>svg]:shrink-0',
               'max-md:min-h-8 max-md:flex-[1_1_calc(50%-0.25rem)] max-md:gap-1 max-md:px-1.5 max-md:py-1 max-md:text-[0.74rem] max-md:font-semibold max-md:[&_.badge]:px-[0.3rem] max-md:[&_.badge]:py-[0.1rem] max-md:[&_.badge]:text-[0.65rem]',
               activeTab === t.id && 'active !border-[#0ea5e9] !bg-[#e0f2fe] !text-[#0ea5e9] shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
             )}>
