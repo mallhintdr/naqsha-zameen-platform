@@ -211,6 +211,7 @@ exports.getMauzaList = async (req, res) => {
     }
 };
 
+const { sendVectorObject } = require('../services/vectorResponder');
 exports.serveGeoJson = async (req, res) => {
     try {
         const { tehsil, mauza } = req.params;
@@ -221,7 +222,7 @@ exports.serveGeoJson = async (req, res) => {
         if (redisClient && isRedisReady()) {
             const cached = await redisClient.get(cacheKey);
             if (cached) {
-                return res.json(JSON.parse(cached));
+                return sendVectorObject(req, res, JSON.parse(cached));
             }
         }
         
@@ -244,9 +245,8 @@ exports.serveGeoJson = async (req, res) => {
             await redisClient.set(cacheKey, JSON.stringify(geoJson.data), 'EX', 3600);
         }
 
-        // Set private browser caching for 5 minutes (LOW-03)
-        res.setHeader('Cache-Control', 'private, max-age=300');
-        res.json(geoJson.data);
+        // Land-record data: private, no-store; optional watermark / envelope (docs/security/GEOJSON.md)
+        sendVectorObject(req, res, geoJson.data);
     } catch (error) {
         logger.error('serveGeoJson error:', { error: error.message, stack: error.stack });
         res.status(500).json({ message: 'Error serving GeoJSON' });

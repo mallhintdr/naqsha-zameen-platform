@@ -95,6 +95,7 @@ const customIcon = new L.Icon({
 
 
 import { storeTileInIndexedDB } from './shajraCache';
+import { vectorFetch } from '@/shared/lib/vectorFetch';
 
 /* ======================================================================= */
 
@@ -1058,7 +1059,7 @@ const MapComponent = forwardRef(({
 
       try {
 
-        const res = await fetch(metaPath, { cache: 'no-store', credentials: 'include' });
+        const res = await vectorFetch(metaPath, { cache: 'no-store', credentials: 'include' });
 
         const isJson = (res.headers.get('Content-Type') || '').includes('application/json');
 
@@ -1397,7 +1398,7 @@ const MapComponent = forwardRef(({
 
       try {
 
-        const res = await fetch(labelGeoJsonUrl, { cache: 'no-store', credentials: 'include' });
+        const res = await vectorFetch(labelGeoJsonUrl, { cache: 'no-store', credentials: 'include' });
 
         const txt = await res.text();
 

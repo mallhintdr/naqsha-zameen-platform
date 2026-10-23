@@ -164,6 +164,29 @@ const subAdminWriteLimiter = rateLimit({
     ...makeStore('rl:subadmin:')
 });
 
+// Per-user limiter for land-record vector data (GeoJSON / metadata). Keyed by
+// the authenticated userId (not IP: many users share mobile-carrier NAT IPs).
+// `getMax` is read per request so thresholds follow env changes; admins exempt.
+// `onLimit(req)` lets the caller write an audit event before the 429.
+const makeVectorLimiter = ({ name, windowMs, getMax, onLimit }) => rateLimit({
+    windowMs,
+    limit: () => getMax(),
+    skip: (req) => req.user?.userType === 'admin' || !(getMax() > 0),
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => `u_${String(req.user?.userId || req.ip).toLowerCase()}`,
+    validate: false,
+    handler: (req, res) => {
+        try { onLimit && onLimit(req, name); } catch (_) { /* never block the 429 */ }
+        res.status(429).json({
+            message: 'Too many map data requests in a short time. Please wait a minute and try again.',
+            code: 'VECTOR_RATE_LIMITED',
+            window: name,
+        });
+    },
+    ...makeStore(`rl:vector:${name}:`)
+});
+
 // Per-user limits on minting signed PMTiles URLs (POST /api/pmtiles/signed-url[s]).
 // A normal map session needs a few signatures per mouza plus a refresh every
 // ~10 minutes per open file; bulk scraping needs thousands.
@@ -183,6 +206,7 @@ const pmtilesSignLimiterHour = makePmtilesSignLimiter('h', 60 * 60 * 1000, Numbe
 module.exports = {
     pmtilesSignLimiterMinute,
     pmtilesSignLimiterHour,
+    makeVectorLimiter,
     subAdminWriteLimiter,
     limiterStrict,
     registrationLimiter,

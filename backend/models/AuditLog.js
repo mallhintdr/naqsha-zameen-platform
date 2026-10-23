@@ -18,6 +18,10 @@ const auditLogSchema = new mongoose.Schema({
             'GEOJSON_RESET',
             'SUBSCRIPTION_RENEWAL',
             'DEMO_LINK_CREATE',
+            'VECTOR_ACCESS_DENIED',
+            'VECTOR_RATE_LIMITED',
+            'VECTOR_QUOTA_EXCEEDED',
+            'VECTOR_CLIENT_HEADER_MISSING',
         ],
     },
     adminId: {

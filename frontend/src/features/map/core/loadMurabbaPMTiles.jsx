@@ -12,6 +12,7 @@ import { isKillaBandiMouza } from '@/shared/lib/killaBandi';
 import MustateelGeojson from './Map/MustateelGeojson';
 import { bindKillaTooltip } from './Map/bindTooltips';
 import { transformGeoJsonWithTurf } from './Map/geoJsonTransform';
+import { vectorFetch } from '@/shared/lib/vectorFetch';
 
 // Initialize secure PMTiles fetch
 setupSecurePMTilesFetch();
@@ -39,7 +40,7 @@ const murabbaGeoJsonUrl = (murabbaNo, tehsil, mouza) => {
 export function getMurabbaGeoJson(murabbaNo, tehsil, mouza) {
   const url = murabbaGeoJsonUrl(murabbaNo, tehsil, mouza);
   if (!murabbaGeoJsonCache.has(url)) {
-    const p = fetch(url, { credentials: 'include' }).then(async (res) => {
+    const p = vectorFetch(url, { credentials: 'include' }).then(async (res) => {
       if (!res.ok) throw new Error(`GeoJSON not found: ${res.status}`);
       return res.json();
     });
@@ -547,7 +548,7 @@ export const loadMurabbaPMTiles = async (murabbaNo, tehsil, mouza, map, mustatee
 
             console.log(`🔍 Fetching metadata:`, jsonUrl);
 
-            const response = await fetch(jsonUrl, { credentials: 'include' });
+            const response = await vectorFetch(jsonUrl, { credentials: 'include' });
             if (response.ok) {
               const consolidatedData = await response.json();
 

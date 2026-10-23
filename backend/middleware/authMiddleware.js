@@ -27,6 +27,7 @@ const isAuthenticated = async (req, res, next) => {
     }
 
     let authenticatedUser = null;
+    let authSession = null;
 
     for (const token of candidateTokens) {
         try {
@@ -39,6 +40,7 @@ const isAuthenticated = async (req, res, next) => {
 
             if (user && (decoded.tokenVersion === undefined || decoded.tokenVersion === (user.tokenVersion || 0))) {
                 authenticatedUser = user;
+                authSession = { iat: decoded.iat }; // vector envelope keys are per session
                 break;
             }
         } catch (_) {}
@@ -55,6 +57,7 @@ const isAuthenticated = async (req, res, next) => {
 
     req.user = authenticatedUser;
     req.userId = authenticatedUser.userId;
+    req.authSession = authSession;
     next();
 };
 

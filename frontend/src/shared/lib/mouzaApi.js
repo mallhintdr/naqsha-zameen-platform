@@ -6,6 +6,7 @@ import { apiBase } from '@/shared/api/base';
 
 import { getCloudflareListingUrl, getPMTilesMode } from '@/features/map/config/pmtiles';
 import { murabbaMetaFromKillas, markKillaBandiMouza } from './killaBandi';
+import { vectorFetch } from './vectorFetch';
 
 // ========== HELPER FUNCTIONS ==========
 
@@ -15,7 +16,7 @@ import { murabbaMetaFromKillas, markKillaBandiMouza } from './killaBandi';
 async function fetchFromLocal(path, silent = false) {
   try {
     const base = apiBase();
-    const res = await fetch(`${base}${path}`, { cache: 'no-store', credentials: 'include' });
+    const res = await vectorFetch(`${base}${path}`, { cache: 'no-store', credentials: 'include' });
     if (!res.ok) return null;
 
     // Check if response is actually JSON to avoid "Unexpected token <" errors from HTML 404 pages
@@ -198,7 +199,7 @@ async function fetchMurabbaJsonFromLocalMetadata(tehsil, mouza) {
     const base = apiBase();
     const url = `/Metadata/${encodeURIComponent(tehsil)}/${encodeURIComponent(mouza)}-Murabba.json`;
     console.log(`[Local Metadata] Attempting to fetch Murabba JSON: ${url}`);
-    const res = await fetch(`${base}${url}`, { cache: 'no-store', credentials: 'include' });
+    const res = await vectorFetch(`${base}${url}`, { cache: 'no-store', credentials: 'include' });
     if (!res.ok) {
       console.log(`[Local Metadata] Murabba JSON failed: HTTP ${res.status} for ${mouza}`);
       return null;
@@ -415,7 +416,7 @@ export async function fetchMurabbaJson(tehsil, mouza) {
       ];
       for (const u of urls) {
         try {
-          const res = await fetch(u, { cache: 'no-store', credentials: 'include' });
+          const res = await vectorFetch(u, { cache: 'no-store', credentials: 'include' });
           if (res.ok) {
             const data = await res.json();
             if (data && data.murabbas) {
@@ -505,7 +506,7 @@ export async function fetchKillaJson(tehsil, mouza) {
     // PRIORITY 1: Local /Metadata/{tehsil}/{mouza}-Killa.json
     try {
       const url = `${base}/Metadata/${encodeURIComponent(tehsil)}/${encodeURIComponent(mouza)}-Killa.json`;
-      const res = await fetch(url, { cache: 'no-store', credentials: 'include' });
+      const res = await vectorFetch(url, { cache: 'no-store', credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         const parsed = parseConsolidatedMetadata(data);
@@ -517,7 +518,7 @@ export async function fetchKillaJson(tehsil, mouza) {
     if (metadataBase) {
       try {
         const url = `${metadataBase}/${encodeURIComponent(tehsil)}/${encodeURIComponent(mouza)}-Killa.json`;
-        const res = await fetch(url, { cache: 'no-store', credentials: 'include' });
+        const res = await vectorFetch(url, { cache: 'no-store', credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           const parsed = parseConsolidatedMetadata(data);
@@ -537,7 +538,7 @@ export async function fetchKillaJson(tehsil, mouza) {
 
       for (const u of urls) {
         try {
-          const res = await fetch(u, { cache: 'no-store', credentials: 'include' });
+          const res = await vectorFetch(u, { cache: 'no-store', credentials: 'include' });
           if (res.ok) {
             const data = await res.json();
             const parsed = parseConsolidatedMetadata(data);

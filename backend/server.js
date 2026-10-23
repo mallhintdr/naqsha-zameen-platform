@@ -61,7 +61,7 @@ const corsOptions = {
 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'X-Requested-With', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'X-Requested-With', 'Accept', 'X-NZ-Client'],
   exposedHeaders: ['X-Request-ID']
 };
 
@@ -306,17 +306,21 @@ app.use('/api/config', require('./routes/configRoutes'));
 const fsPromises = require('fs').promises;
 const User = require('./models/User');
 
-const serveCaseInsensitiveStatic = (basePath) => {
+// `onFile(req, res, file)` sends a found file (default: res.sendFile).
+const serveCaseInsensitiveStatic = (basePath, onFile = (req, res, file) => res.sendFile(file)) => {
+  const baseResolved = path.resolve(basePath);
+  const inside = (p) => path.resolve(p) === baseResolved || path.resolve(p).startsWith(baseResolved + path.sep);
   return async (req, res, next) => {
     try {
       const decodedUrlPath = decodeURIComponent(req.path);
       const fullPath = path.join(basePath, decodedUrlPath);
+      if (!inside(fullPath)) return next(); // no "../" escapes from the data root
       
       // Try exact match first
       try {
         const stats = await fsPromises.stat(fullPath);
         if (stats.isFile()) {
-          return res.sendFile(fullPath);
+          return onFile(req, res, fullPath);
         }
       } catch (e) {
         // Proceed to case-insensitive search
@@ -345,11 +349,11 @@ const serveCaseInsensitiveStatic = (basePath) => {
         }
       }
 
-      if (!matchFailed) {
+      if (!matchFailed && inside(currentPath)) {
         try {
           const stats = await fsPromises.stat(currentPath);
           if (stats.isFile()) {
-            return res.sendFile(currentPath);
+            return onFile(req, res, currentPath);
           }
         } catch (e) {
           // Not a file
@@ -430,10 +434,20 @@ const serveCaseInsensitiveStatic = (basePath) => {
   // Linked tehsils: a request under the group (or any linked) name is served from
   // whichever linked tehsil folder actually holds the file.
   const { linkedTehsilRewrite } = require('./utils/linkedTehsilPath');
-  const dataRoute = (sub) => [verifyAuthCookie, checkTehsilAccessForStatic, linkedTehsilRewrite(path.join(PRIVATE_DATA_ROOT, sub)), serveCaseInsensitiveStatic(path.join(PRIVATE_DATA_ROOT, sub))];
+  // Land-record vector data (docs/security/GEOJSON.md): session auth, mouza-level
+  // entitlement, X-NZ-Client header, per-user rate limits + distinct-mouza quota,
+  // no-store headers, optional per-user watermark and obfuscated envelope.
+  // .png / .pmtiles under these roots only get the entitlement check.
+  const { isAuthenticated: isAuthenticatedVector } = require('./middleware/authMiddleware');
+  const { vectorGuards } = require('./middleware/vectorDataGuard');
+  const { sendVectorFile, vectorKeyHandler } = require('./services/vectorResponder');
+  const sendDataFile = (req, res, file) => (/\.(geo)?json$/i.test(file) ? sendVectorFile(req, res, file) : res.sendFile(file));
+  const dataRoute = (sub) => [isAuthenticatedVector, ...vectorGuards(), linkedTehsilRewrite(path.join(PRIVATE_DATA_ROOT, sub)), serveCaseInsensitiveStatic(path.join(PRIVATE_DATA_ROOT, sub), sendDataFile)];
+  app.get('/api/vector-key', isAuthenticatedVector, vectorKeyHandler);
   app.use('/JSON%20Murabba', ...dataRoute('JSON Murabba'));
   app.use('/JSON Murabba', ...dataRoute('JSON Murabba'));
   app.use('/Metadata', ...dataRoute('Metadata'));
+  app.use('/Shajra%20Parcha', ...dataRoute('Shajra Parcha'));
   app.use('/Shajra Parcha', ...dataRoute('Shajra Parcha'));
   app.use('/tiles', ...dataRoute('tiles'));
 

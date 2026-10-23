@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { api } from '@/shared/api/client';
 import { apiUrl } from '@/shared/api/base';
+import { vectorFetch } from '@/shared/lib/vectorFetch';
 
 export type AdminMapMode = 'auto' | 'geojson' | 'pmtiles';
 export type TourType =
@@ -131,7 +132,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectMauza: async (tehsil, mouza) => {
     set({ selectedMauza: mouza, selectedMurabba: null, murabbaOptions: [], shajraEnabled: false, shajraVisible: false, murabbaLoading: true, userLayerToLoad: null });
     try {
-      const { data } = await api.get(apiUrl(`/Metadata/${encodeURIComponent(tehsil)}/${encodeURIComponent(mouza)}.json`));
+      const res = await vectorFetch(apiUrl(`/Metadata/${encodeURIComponent(tehsil)}/${encodeURIComponent(mouza)}.json`));
+      if (!res.ok) throw new Error(`metadata ${res.status}`);
+      const data = await res.json();
       set({ shiftResult: { mouza, tehsil, geojson: `${tehsil}/${mouza}.json`, murabbaSummary: data?.murabbas || null, timestamp: Date.now() } });
     } catch {
       /* metadata optional */

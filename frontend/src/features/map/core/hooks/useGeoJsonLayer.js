@@ -6,6 +6,7 @@ import { showKaramSegmentLengths, clearActiveKillaSelection } from '../measureme
 import { normalizeKillaBandi, byPlotNumber } from '@/shared/lib/killaBandi';
 import { focusPoint, focusBounds, afterMove } from '../utils/murabbaCamera';
 import { prefetchMurabbaGeoJson, loadMurabbaPMTiles } from '../loadMurabbaPMTiles';
+import { vectorFetch } from '@/shared/lib/vectorFetch';
 
 // Killa-bandi plot (killa used as murabba): highlight it with its karam lengths and
 // zoom to it. There are no murabba sub-divisions to load for these mouzas.
@@ -72,7 +73,7 @@ export function useGeoJsonLayer({
       const geoJsonUrl = `${apiBase}/JSON Murabba/${encodeURIComponent(tehsil)}/${encodeURIComponent(mouza)}.geojson?t=${Date.now()}`;
       try {
         console.log('Fetching GeoJSON from:', geoJsonUrl);
-        const response = await fetch(geoJsonUrl, {
+        const response = await vectorFetch(geoJsonUrl, {
           credentials: 'include',
           cache: 'no-store'
         });
@@ -88,7 +89,7 @@ export function useGeoJsonLayer({
         try {
           const apiGeoJsonUrl = `${apiBase}/api/geojson/${encodeURIComponent(tehsil)}/${encodeURIComponent(mouza)}?t=${Date.now()}`;
           console.log('Trying GeoJSON API database route:', apiGeoJsonUrl);
-          const response = await fetch(apiGeoJsonUrl, {
+          const response = await vectorFetch(apiGeoJsonUrl, {
             credentials: 'include',
             cache: 'no-store'
           });

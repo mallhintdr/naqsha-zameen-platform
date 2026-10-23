@@ -3,6 +3,7 @@ import L from "leaflet";
 import MustateelGeojson from "./MustateelGeojson";
 import { bindKillaTooltip } from "./bindTooltips";
 import { focusBounds } from "../utils/murabbaCamera";
+import { vectorFetch } from '@/shared/lib/vectorFetch';
 
 export const transformGeoJsonWithTurf = (geojsonData, topLeft, topRight, bottomRight, bottomLeft) => {
   const matrixSize = 5;
@@ -103,7 +104,7 @@ export const handleMurabbaClick = async (
 
     console.log('🔍 Fetching murabba GeoJSON:', murabbaUrl);
     try {
-      const res = await fetch(murabbaUrl, { cache: 'no-store', credentials: 'include' });
+      const res = await vectorFetch(murabbaUrl, { cache: 'no-store', credentials: 'include' });
       if (res.ok) {
         const murabbaGeo = await res.json();
         console.log('✅ Murabba GeoJSON loaded successfully:', {

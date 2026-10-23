@@ -4,6 +4,7 @@ import L from 'leaflet';
 import { loadMurabbaPMTiles } from '../loadMurabbaPMTiles';
 import { showKaramSegmentLengths, clearActiveKillaSelection } from '../measurementUtils';
 import { focusPoint } from '../utils/murabbaCamera';
+import { vectorFetch } from '@/shared/lib/vectorFetch';
 
 // Helper function to load individual murabba PMTiles (delegates to external module)
 const loadMurabbaGeoJSON = async (murabbaNo, tehsil, mouza, map, mustateelLayers, preferGeoJson, skipZoom = false) => {
@@ -145,7 +146,7 @@ export function useFallbackGeoJSON({
       try {
         const apiBase = getApiBase();
         const metaUrl = `${apiBase}/Metadata/${tehsil}/${mouza}-Murabba.json`;
-        const res = await fetch(metaUrl, { credentials: 'include' });
+        const res = await vectorFetch(metaUrl, { credentials: 'include' });
         if (res.ok) {
           metadata = await res.json();
         }
@@ -220,7 +221,7 @@ export function useFallbackGeoJSON({
           const url = `${apiBase}/JSON Murabba/${encodeURIComponent(tehsil)}/${encodeURIComponent(mouza)}/${encodeURIComponent(sanitized)}.geojson`;
 
           try {
-            const res = await fetch(url, { credentials: 'include' });
+            const res = await vectorFetch(url, { credentials: 'include' });
             if (!res.ok) {
               console.warn(`Failed to fetch fallback GeoJSON: ${url} (Status: ${res.status})`);
               return;

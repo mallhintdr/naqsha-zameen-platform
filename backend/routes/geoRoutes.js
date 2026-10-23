@@ -4,12 +4,13 @@ const geoController = require('../controllers/geoController');
 const { isAuthenticated, maybeAuthenticated, isSubscribed, isSubscribedOrLimitedZoom, isAdmin } = require('../middleware/authMiddleware');
 const { limiterGeo, apiLimiter, pmtilesSignLimiterMinute, pmtilesSignLimiterHour } = require('../middleware/rateLimiters');
 const signedPMTilesUrl = require('../middleware/signedPMTilesUrl');
+const { vectorGuards } = require('../middleware/vectorDataGuard');
 const { pathParamValidation } = require('../middleware/validationMiddleware');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 router.get('/api/tehsil-list', maybeAuthenticated, apiLimiter, asyncHandler(geoController.getTehsilList));
 router.get('/api/mauza-list/:tehsil', maybeAuthenticated, apiLimiter, pathParamValidation, asyncHandler(geoController.getMauzaList));
-router.get('/api/geojson/:tehsil/:mauza', isAuthenticated, isSubscribedOrLimitedZoom, limiterGeo, pathParamValidation, asyncHandler(geoController.serveGeoJson));
+router.get('/api/geojson/:tehsil/:mauza', isAuthenticated, isSubscribedOrLimitedZoom, limiterGeo, pathParamValidation, ...vectorGuards({ paramsFrom: 'params' }), asyncHandler(geoController.serveGeoJson));
 router.post('/api/geojson/:tehsil/:mauza/shift', isAuthenticated, isAdmin, isSubscribedOrLimitedZoom, limiterGeo, asyncHandler(geoController.shiftGeoJson));
 router.post('/api/geojson/:tehsil/:mauza/reset', isAuthenticated, isAdmin, isSubscribedOrLimitedZoom, limiterGeo, asyncHandler(geoController.resetGeoJson));
 

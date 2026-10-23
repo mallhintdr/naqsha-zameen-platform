@@ -27,6 +27,7 @@ import { usePMTilesLoader } from './hooks/usePMTilesLoader';
 import { useGeoJsonLayer } from './hooks/useGeoJsonLayer';
 import { buildMurabbaBoundsMap, applyMurabbaSelection } from './utils/tooltipBuilder';
 import { focusPoint, afterMove } from './utils/murabbaCamera';
+import { vectorFetch } from '@/shared/lib/vectorFetch';
 
 // Initialize secure PMTiles fetch (runs once)
 setupSecurePMTilesFetch();
@@ -236,7 +237,7 @@ const VectorTileLoader = ({
       const apiBase = getApiBase();
       const geoJsonUrl = `${apiBase}/JSON Murabba/${encodeURIComponent(tehsil)}/${encodeURIComponent(mouza)}.geojson?t=${Date.now()}`;
 
-      const response = await fetch(geoJsonUrl, {
+      const response = await vectorFetch(geoJsonUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
