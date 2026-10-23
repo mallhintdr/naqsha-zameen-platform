@@ -24,9 +24,9 @@ export const SITE = {
   /** Paste the content value from Google Search Console's HTML-tag verification. */
   googleSiteVerification: '',
   tagline: 'Every killa, every murabba — on your phone.',
-  seoTitle: 'Naqsha Zameen – Digital Land Maps (Zameen ka Naqsha), RTK Survey, Drone Imagery & Land Consultancy in Punjab',
+  seoTitle: 'Naqsha Zameen – Digital Land Maps (Zameen ka Naqsha), RTK Survey, Drone Imagery & Revenue Record Consultancy in Punjab',
   description:
-    'Naqsha Zameen by GeoMatrix Technologies: online mouza, murabba and killa maps (zameen ka naqsha) on satellite imagery, centimetre-accurate RTK land measurement with printed maps, and drone surveys and expert land-dispute consultancy across Punjab, Pakistan.',
+    'Naqsha Zameen by GeoMatrix Technologies: online mouza, murabba and killa maps (zameen ka naqsha) on satellite imagery, centimetre-accurate RTK land measurement with printed maps, drone surveys, and expert revenue-record consultancy for land disputes across Punjab, Pakistan.',
 };
 
 // Advertising. Leave adsenseClient empty to keep ads (and their cookies) completely off.
@@ -80,9 +80,9 @@ export const SERVICES = [
   },
   {
     slug: 'land-consultancy',
-    title: 'Land Dispute Consultancy',
-    urdu: 'زمینی تنازعات میں مشاورت',
-    short: 'Expert advice on boundary, partition and record disputes, backed by revenue-record review and RTK evidence.',
+    title: 'Revenue Record Consultancy',
+    urdu: 'ریونیو ریکارڈ و زمینی تنازعات',
+    short: 'Senior advice on old land disputes: mutations (intiqal), inheritance, partition and record correction.',
     icon: 'shield',
     accent: 'from-violet-500 to-fuchsia-400',
   },
