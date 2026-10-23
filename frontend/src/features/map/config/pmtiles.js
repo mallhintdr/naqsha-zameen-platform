@@ -1,4 +1,5 @@
-// Ported from legacy src/config/pmtiles.js. Signed URLs always come from the backend.
+// Ported from legacy src/config/pmtiles.js. Signed URLs always come from the backend
+// (15-minute lifetime, re-signed 4 minutes before expiry); there is no unsigned fallback.
 /**
  * PMTiles Configuration
  * 
@@ -20,6 +21,56 @@ import { apiBase, CLOUDFLARE_WORKER_URL } from '@/shared/api/base';
 // Cache for signed URLs to avoid repeated backend requests
 // Key format: "tehsil/mouza/murabba" -> { url: string, expiresAt: timestamp }
 const signedUrlCache = new Map();
+
+// Signed URLs live 15 min (backend PMTILES_URL_TTL_SECONDS). A cached URL is
+// reused until it is within this buffer of expiry, then re-signed.
+export const SIGNED_URL_REFRESH_BUFFER_MS = 240000; // 4 min
+
+// Worker pathname (as signed) -> file spec, so a long-lived PMTiles reader can
+// swap an about-to-expire URL for a fresh one (see securePMTilesProtocol.js).
+const issuedSpecs = new Map();
+
+function specCacheKey({ tehsil, mouza, murabba, filename }) {
+  return filename
+    ? `${tehsil}/${filename}`
+    : murabba
+      ? `${tehsil}/${mouza}/${murabba}`
+      : `${tehsil}/${mouza}`;
+}
+
+function rememberIssued(url, spec) {
+  try {
+    const u = new URL(url);
+    issuedSpecs.set(u.pathname, spec);
+    if (issuedSpecs.size > 500) issuedSpecs.delete(issuedSpecs.keys().next().value);
+  } catch { /* relative or invalid URL: nothing to refresh later */ }
+}
+
+/** True for a URL that points at the PMTiles worker. */
+export function isWorkerUrl(url) {
+  const base = getCloudflareWorkerUrl();
+  if (!base || typeof url !== 'string') return false;
+  try { return new URL(url).origin === new URL(base).origin; } catch { return false; }
+}
+
+/**
+ * Returns a usable signed worker URL for `url`: the same one while it has more
+ * than `minRemainingMs` left, otherwise a freshly signed URL for the same file.
+ * URLs that are not worker URLs (or were not issued here) come back unchanged.
+ */
+export async function refreshSignedWorkerUrl(url, { force = false, minRemainingMs = 60000 } = {}) {
+  if (!isWorkerUrl(url)) return url;
+  let u;
+  try { u = new URL(url); } catch { return url; }
+  const exp = Number(u.searchParams.get('exp'));
+  if (!force && exp && exp * 1000 - Date.now() > minRemainingMs) return url;
+  const spec = issuedSpecs.get(u.pathname);
+  if (!spec) return url;
+  const key = specCacheKey(spec);
+  const cached = signedUrlCache.get(key);
+  if (force || (cached && cached.url === url)) signedUrlCache.delete(key);
+  return getSignedUrlFromBackend(spec.tehsil, spec.mouza, spec.murabba, spec.filename);
+}
 
 /**
  * Get current PMTiles serving mode
@@ -80,48 +131,33 @@ export function getCloudflareListingUrl() {
 async function getSignedUrlFromBackend(tehsil, mouza, murabba, filename) {
   const apiUrl = apiBase();
 
-  // Check cache first (with 4-minute buffer before expiration)
-  const cacheKey = filename
-    ? `${tehsil}/${filename}`
-    : murabba
-      ? `${tehsil}/${mouza}/${murabba}`
-      : `${tehsil}/${mouza}`;
+  // Check cache first (re-sign once within SIGNED_URL_REFRESH_BUFFER_MS of expiry)
+  const cacheKey = specCacheKey({ tehsil, mouza, murabba, filename });
   const cached = signedUrlCache.get(cacheKey);
 
-  if (cached && cached.expiresAt > Date.now() + 240000) { // 240s (4 min) buffer for aggressive caching
+  if (cached && cached.expiresAt > Date.now() + SIGNED_URL_REFRESH_BUFFER_MS) {
     console.log(`[PMTiles Cache] Using cached signed URL for ${cacheKey} (expires in ${Math.floor((cached.expiresAt - Date.now()) / 1000)}s)`);
     return cached.url;
   }
 
-  try {
-    const response = await api.post(`${apiUrl}/api/pmtiles/signed-url`, {
-      tehsil, mouza, murabba, filename
-    });
+  const response = await api.post(`${apiUrl}/api/pmtiles/signed-url`, {
+    tehsil, mouza, murabba, filename
+  });
 
-    const data = response.data;
+  const data = response.data;
+  if (!data || !data.url) throw new Error('Signed URL missing in response');
 
-    // Cache the signed URL (expires in 15 minutes = 900 seconds)
-    const expiresAt = data.expiresAt ? new Date(data.expiresAt).getTime() : Date.now() + 900000;
-    signedUrlCache.set(cacheKey, {
-      url: data.url,
-      expiresAt
-    });
+  // Backend signs for 15 minutes; never assume longer than that.
+  const expiresAt = data.expiresAt ? new Date(data.expiresAt).getTime() : Date.now() + 900000;
+  signedUrlCache.set(cacheKey, {
+    url: data.url,
+    expiresAt
+  });
+  rememberIssued(data.url, { tehsil, mouza, murabba, filename });
 
-    console.log(`[PMTiles Cache] Cached new signed URL for ${cacheKey} (expires in ${Math.floor((expiresAt - Date.now()) / 1000)}s)`);
+  console.log(`[PMTiles Cache] Cached new signed URL for ${cacheKey} (expires in ${Math.floor((expiresAt - Date.now()) / 1000)}s)`);
 
-    return data.url;
-
-  } catch (error) {
-    console.error('Error fetching signed PMTiles URL:', error);
-
-    // If we have an expired cached URL, return it anyway (better than nothing)
-    if (cached) {
-      console.warn('[PMTiles Cache] Returning expired cached URL as fallback');
-      return cached.url;
-    }
-
-    throw error;
-  }
+  return data.url;
 }
 
 /**
@@ -146,16 +182,11 @@ export async function getBatchSignedUrls(files) {
 
   // Check cache first
   for (const fileSpec of files) {
-    const { tehsil, mouza, murabba, filename } = fileSpec;
-    const cacheKey = filename
-      ? `${tehsil}/${filename}`
-      : murabba
-        ? `${tehsil}/${mouza}/${murabba}`
-        : `${tehsil}/${mouza}`;
+    const cacheKey = specCacheKey(fileSpec);
 
     const cached = signedUrlCache.get(cacheKey);
 
-    if (cached && cached.expiresAt > Date.now() + 240000) {
+    if (cached && cached.expiresAt > Date.now() + SIGNED_URL_REFRESH_BUFFER_MS) {
       console.log(`[PMTiles Batch Cache] Using cached URL for ${cacheKey}`);
       urlMap.set(cacheKey, cached.url);
     } else {
@@ -196,6 +227,10 @@ export async function getBatchSignedUrls(files) {
           url,
           expiresAt: expiresAtMs
         });
+        if (matchingFile) {
+          const { tehsil, mouza, murabba, filename } = matchingFile;
+          rememberIssued(url, { tehsil, mouza, murabba, filename });
+        }
 
         urlMap.set(cacheKey, url);
       }
@@ -205,11 +240,10 @@ export async function getBatchSignedUrls(files) {
     } catch (error) {
       console.error('Error fetching batch signed URLs:', error);
 
-      // Fallback to individual requests with frontend fallback support
+      // Fall back to individual signed requests; files that cannot be signed are left out.
       console.warn('[PMTiles Batch] Falling back to individual URL requests');
       for (const fileSpec of uncachedFiles) {
         try {
-          // Try to get signed URL with built-in frontend fallback
           const url = await getSignedPMTilesUrl(
             fileSpec.tehsil,
             fileSpec.mouza,
@@ -219,14 +253,6 @@ export async function getBatchSignedUrls(files) {
           urlMap.set(fileSpec.cacheKey, url);
         } catch (err) {
           console.error(`[PMTiles] Failed to get URL for ${fileSpec.cacheKey}:`, err);
-          // Last resort: use frontend URL
-          const frontendUrl = getFrontendPMTilesUrl(
-            fileSpec.tehsil,
-            fileSpec.mouza,
-            fileSpec.murabba,
-            fileSpec.filename
-          );
-          urlMap.set(fileSpec.cacheKey, frontendUrl);
         }
       }
     }
@@ -256,28 +282,6 @@ function getLocalPMTilesUrl(tehsil, mouza, murabba) {
 }
 
 /**
- * Generate frontend static PMTiles URL (served from public folder)
- * 
- * @param {string} tehsil - Tehsil name
- * @param {string} mouza - Mouza name
- * @param {string} [murabba] - Optional murabba number
- * @param {string} [filename] - Optional filename (e.g., 'Mouza-complete.pmtiles')
- * @returns {string} Frontend static URL
- */
-function getFrontendPMTilesUrl(tehsil, mouza, murabba, filename) {
-  if (filename) {
-    // Custom filename: /pmtiles/tehsil/filename
-    return `/pmtiles/${tehsil}/${filename}`;
-  } else if (murabba) {
-    // Individual murabba: /pmtiles/tehsil/mouza/murabba.pmtiles
-    return `/pmtiles/${tehsil}/${mouza}/${murabba}.pmtiles`;
-  } else {
-    // Mouza-level: /pmtiles/tehsil/mouza.pmtiles
-    return `/pmtiles/${tehsil}/${mouza}.pmtiles`;
-  }
-}
-
-/**
  * Get PMTiles URL - automatically handles local vs Cloudflare mode
  * 
  * @param {string} tehsil - Tehsil name (e.g., 'yazman')
@@ -295,17 +299,14 @@ function getFrontendPMTilesUrl(tehsil, mouza, murabba, filename) {
  * const url = await getSignedPMTilesUrl('yazman', 'chak-1', '123-45');
  */
 export async function getSignedPMTilesUrl(tehsil, mouza, murabba, filename) {
-  const frontendUrl = getFrontendPMTilesUrl(tehsil, mouza, murabba, filename);
-
+  // No unsigned fallback: if the backend will not sign (not logged in, not
+  // entitled to the mouza, rate limited) the caller gets an error.
   try {
-    const signedUrl = await getSignedUrlFromBackend(tehsil, mouza, murabba, filename);
-    if (signedUrl) return signedUrl;
+    return await getSignedUrlFromBackend(tehsil, mouza, murabba, filename);
   } catch (e) {
     console.warn(`[PMTiles] Backend signed URL request failed:`, e.message);
+    throw e;
   }
-
-  // Fallback to Frontend Static (Served from public folder) if backend fails to give a URL
-  return frontendUrl;
 }
 
 /**

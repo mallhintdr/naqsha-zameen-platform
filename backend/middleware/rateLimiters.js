@@ -164,7 +164,25 @@ const subAdminWriteLimiter = rateLimit({
     ...makeStore('rl:subadmin:')
 });
 
+// Per-user limits on minting signed PMTiles URLs (POST /api/pmtiles/signed-url[s]).
+// A normal map session needs a few signatures per mouza plus a refresh every
+// ~10 minutes per open file; bulk scraping needs thousands.
+const makePmtilesSignLimiter = (name, windowMs, max) => rateLimit({
+    windowMs,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => `u_${String(req.user?.userId || req.ip).toLowerCase()}`,
+    validate: false,
+    message: { success: false, message: 'Too many map file requests. Please wait a minute and try again.', code: 'PMTILES_SIGN_RATE_LIMITED' },
+    ...makeStore(`rl:pmsign:${name}:`)
+});
+const pmtilesSignLimiterMinute = makePmtilesSignLimiter('m', 60 * 1000, Number(process.env.PMTILES_SIGN_MAX_PER_MINUTE) || 120);
+const pmtilesSignLimiterHour = makePmtilesSignLimiter('h', 60 * 60 * 1000, Number(process.env.PMTILES_SIGN_MAX_PER_HOUR) || 1500);
+
 module.exports = {
+    pmtilesSignLimiterMinute,
+    pmtilesSignLimiterHour,
     subAdminWriteLimiter,
     limiterStrict,
     registrationLimiter,

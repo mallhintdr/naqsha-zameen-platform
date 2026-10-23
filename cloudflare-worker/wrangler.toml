@@ -1,13 +1,15 @@
-# Cloudflare Worker Configuration for PMTiles Serving (Simplified - No Auth)
-# 
-# IMPORTANT: Before deploying, you must:
-# 1. Run: wrangler login
-# 2. Get your account ID: wrangler whoami
-# 3. Replace YOUR_ACCOUNT_ID below with your actual account ID
-# 4. Deploy: wrangler deploy
+# Cloudflare Worker: secure PMTiles gateway (HMAC-signed URLs, range-only).
+# See docs/security/PMTILES.md for rollout and rollback.
+#
+# Before the first deploy of this version:
+#   npx wrangler secret put PMTILES_SIGNING_KEY   # SAME value as backend/.env (and old production backend)
+#   npx wrangler deploy
+# Rollback: npx wrangler rollback
+#
+# pmtiles-worker-simple.js (no auth) is kept for reference only; do not deploy it.
 
 name = "pmtiles-worker"
-main = "pmtiles-worker-simple.js"
+main = "pmtiles-worker.js"
 compatibility_date = "2024-11-03"
 
 # Cloudflare Account ID
@@ -18,7 +20,26 @@ account_id = "22d46ada0d50df7bc038985cdcb55de2"
 binding = "PMTILES_BUCKET"
 bucket_name = "geo-dashboard-pmtiles"
 
-# Environment Variables (non-secret)
-# Secrets (like PMTILES_SIGNING_KEY) must be set via: wrangler secret put PMTILES_SIGNING_KEY
+# Per-user rate limiting (Workers Rate Limiting binding; key = uid).
+# period must be 10 or 60 seconds. namespace_id is any account-unique integer string.
+# If this binding is missing the worker falls back to a per-isolate in-memory limiter.
+[[ratelimits]]
+name = "PMTILES_RATE_LIMITER"
+namespace_id = "4101"
+
+  [ratelimits.simple]
+  limit = 1200
+  period = 60
+
+# Workers Logs: keeps the worker's structured JSON logs (uid, path, range, status, ip).
+[observability]
+enabled = true
+
 [vars]
-# Add any non-secret environment variables here if needed
+# Largest byte range a single .pmtiles request may ask for.
+MAX_RANGE_BYTES = "2097152"
+# Data requests must come from an allowed browser Origin ("false" to disable).
+ENFORCE_ORIGIN = "true"
+# Seconds an expired token is still accepted (0 = strict). Raise only if long-open
+# tabs on the old production frontend report tiles failing after 1 hour.
+EXPIRY_GRACE_SECONDS = "0"

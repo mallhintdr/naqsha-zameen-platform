@@ -283,4 +283,4 @@ const maybeAuthenticated = async (req, res, next) => {
     });
 };
 
-module.exports = { isAuthenticated, isAuthenticatedLight, maybeAuthenticated, isSubscribed, isSubscribedOrLimitedZoom, isAdmin, isSelfOrAdmin, isSelfAdminOrOwner, isAdminOrOwner, isSubAdmin, requireSubAdminWritable };
+module.exports = { hasAccess, isAuthenticated, isAuthenticatedLight, maybeAuthenticated, isSubscribed, isSubscribedOrLimitedZoom, isAdmin, isSelfOrAdmin, isSelfAdminOrOwner, isAdminOrOwner, isSubAdmin, requireSubAdminWritable };

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const geoController = require('../controllers/geoController');
 const { isAuthenticated, maybeAuthenticated, isSubscribed, isSubscribedOrLimitedZoom, isAdmin } = require('../middleware/authMiddleware');
-const { limiterGeo, apiLimiter } = require('../middleware/rateLimiters');
+const { limiterGeo, apiLimiter, pmtilesSignLimiterMinute, pmtilesSignLimiterHour } = require('../middleware/rateLimiters');
 const signedPMTilesUrl = require('../middleware/signedPMTilesUrl');
 const { pathParamValidation } = require('../middleware/validationMiddleware');
 const { asyncHandler } = require('../middleware/errorHandler');
@@ -30,8 +30,8 @@ router.get('/api/geo/ip-lookup', isAuthenticated, isAdmin, apiLimiter, asyncHand
 // PMTiles
 router.get('/pmtiles/:tehsil/:mouza.pmtiles', isAuthenticated, isSubscribedOrLimitedZoom, pathParamValidation, asyncHandler(geoController.servePMTiles));
 
-// Unified for GeoJSON & PMTiles
-router.post('/api/pmtiles/signed-url', isAuthenticated, isSubscribedOrLimitedZoom, asyncHandler(signedPMTilesUrl.generateSignedUrlMiddleware));
-router.post('/api/pmtiles/signed-urls', isAuthenticated, isSubscribedOrLimitedZoom, asyncHandler(signedPMTilesUrl.generateBatchSignedUrlsMiddleware));
+// Signed Cloudflare-worker URLs (mouza entitlement is checked inside the handler)
+router.post('/api/pmtiles/signed-url', isAuthenticated, isSubscribedOrLimitedZoom, pmtilesSignLimiterMinute, pmtilesSignLimiterHour, asyncHandler(signedPMTilesUrl.generateSignedUrlMiddleware));
+router.post('/api/pmtiles/signed-urls', isAuthenticated, isSubscribedOrLimitedZoom, pmtilesSignLimiterMinute, pmtilesSignLimiterHour, asyncHandler(signedPMTilesUrl.generateBatchSignedUrlsMiddleware));
 
 module.exports = router;
