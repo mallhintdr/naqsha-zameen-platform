@@ -6,6 +6,7 @@ import Icon from '../components/Icon.astro';
 import Consent from '../components/Consent.astro';
 import VisitCounter from '../components/VisitCounter.astro';
 import { ADS, NAV, SERVICES, SITE, adsEnabled, waLink } from '../site';
+import { TOPICS } from '../consultancy-topics';
 
 interface Props {
   title?: string;
@@ -55,7 +56,7 @@ const orgLd = {
   knowsLanguage: ['en', 'ur'],
   hasOfferCatalog: {
     '@type': 'OfferCatalog',
-    name: 'Survey & mapping services',
+    name: 'Mapping, survey & revenue consultancy services',
     itemListElement: SERVICES.map((s) => ({ '@type': 'Offer', itemOffered: { '@type': 'Service', name: s.title, url: `${SITE.url}/services/${s.slug}/` } })),
   },
 };
@@ -174,6 +175,10 @@ const jsonLd = [orgLd, siteLd, breadcrumbLd, ...schema].filter(Boolean);
             {SERVICES.map((s) => <li><a class="text-slate-400 hover:text-cyan-300" href={`/services/${s.slug}/`}>{s.title}</a></li>)}
             <li><a class="text-slate-400 hover:text-cyan-300" href="/dashboard/">Naqsha Zameen Dashboard</a></li>
           </ul>
+          <h2 class="mt-8 text-sm font-semibold uppercase tracking-widest text-white">Revenue Matters</h2>
+          <ul class="mt-4 space-y-2 text-sm">
+            {TOPICS.map((t) => <li><a class="text-slate-400 hover:text-cyan-300" href={`/services/land-consultancy/${t.slug}/`}>{t.name}</a></li>)}
+          </ul>
         </div>
         <div>
           <h2 class="text-sm font-semibold uppercase tracking-widest text-white">Company</h2>
@@ -198,7 +203,7 @@ const jsonLd = [orgLd, siteLd, breadcrumbLd, ...schema].filter(Boolean);
         </div>
       </div>
       <div class="border-t border-white/5 py-6 text-center text-xs text-slate-500">
-        © {year} {SITE.company}. All rights reserved. · Digital land maps (zameen ka naqsha), RTK survey &amp; drone imagery in Punjab, Pakistan.
+        © {year} {SITE.company}. All rights reserved. · Digital land maps (zameen ka naqsha), RTK survey, drone imagery &amp; revenue record consultancy in Punjab, Pakistan.
       </div>
     </footer>
 

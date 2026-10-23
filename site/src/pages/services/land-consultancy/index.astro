@@ -1,9 +1,10 @@
 ---
-import Service from '../../layouts/Service.astro';
+import Service from '../../../layouts/Service.astro';
+import TopicLinks from '../../../components/TopicLinks.astro';
 ---
 <Service
   title="Revenue Record & Land Dispute Consultancy"
-  seoTitle="Revenue Record Consultancy in Punjab – Old Land Disputes, Mutation (Intiqal), Partition, Inheritance & Illegal Possession | Naqsha Zameen"
+  seoTitle="Revenue Record & Land Dispute Consultancy in Punjab | Naqsha Zameen"
   slug="land-consultancy"
   urdu="ریونیو ریکارڈ، انتقال، تقسیم، وراثت اور ناجائز قبضہ کے پرانے تنازعات میں ماہرانہ مشاورت"
   description="Senior consultancy in Punjab for old land disputes in the revenue record: mutations (intiqal), partition (taqseem), inheritance (wirasat), illegal possession and encroachment (qabza), record correction and revenue-court proceedings."
@@ -45,4 +46,6 @@ import Service from '../../layouts/Service.astro';
     { q: 'Is my case kept confidential?', a: 'Yes. Your documents and details are used only for your case and are never shared without your permission.' },
     { q: 'What does consultancy cost?', a: 'It depends on the case. Share a short description on WhatsApp for an initial assessment and a quote.' },
   ]}
-/>
+>
+  <TopicLinks />
+</Service>

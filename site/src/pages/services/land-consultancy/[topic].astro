@@ -1,0 +1,29 @@
+---
+import Service from '../../../layouts/Service.astro';
+import TopicLinks from '../../../components/TopicLinks.astro';
+import { TOPICS, type Topic } from '../../../consultancy-topics';
+
+export function getStaticPaths() {
+  return TOPICS.map((t) => ({ params: { topic: t.slug }, props: { t } }));
+}
+const { t } = Astro.props as { t: Topic };
+---
+<Service
+  title={t.title}
+  seoTitle={t.seoTitle}
+  slug={`land-consultancy/${t.slug}`}
+  urdu={t.urdu}
+  description={t.description}
+  icon={t.icon}
+  accent="from-violet-500 to-fuchsia-400"
+  lead={t.lead}
+  waText={t.waText}
+  ctaLabel="Book a confidential consultation"
+  benefits={t.benefits}
+  deliverables={t.deliverables}
+  useCases={t.useCases}
+  process={t.process}
+  faqs={t.faqs}
+>
+  <TopicLinks current={t.slug} title="Related Revenue Matters" />
+</Service>

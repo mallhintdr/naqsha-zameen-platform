@@ -432,3 +432,7 @@
     .fill-row-6 > * { flex-basis: calc((100% - 5 * var(--fill-gap)) / 6); }
   }
 }
+
+/* Charts: no black focus box when a chart is clicked. */
+.recharts-wrapper, .recharts-wrapper *, .recharts-surface, .recharts-sector, .recharts-rectangle { outline: none !important; }
+.recharts-wrapper:focus, .recharts-wrapper *:focus, .recharts-wrapper *:focus-visible { outline: none !important; }

@@ -24,9 +24,9 @@ export const SITE = {
   /** Paste the content value from Google Search Console's HTML-tag verification. */
   googleSiteVerification: '',
   tagline: 'Every killa, every murabba — on your phone.',
-  seoTitle: 'Naqsha Zameen – Digital Land Maps (Zameen ka Naqsha), RTK Survey, Drone Imagery & Revenue Record Consultancy in Punjab',
+  seoTitle: 'Naqsha Zameen – Land Maps, RTK Survey & Revenue Consultancy, Punjab',
   description:
-    'Naqsha Zameen by GeoMatrix Technologies: online mouza, murabba and killa maps (zameen ka naqsha) on satellite imagery, centimetre-accurate RTK land measurement with printed maps, drone surveys, and expert revenue-record consultancy for land disputes across Punjab, Pakistan.',
+    'Mouza, murabba & killa maps (zameen ka naqsha) online, RTK land measurement, drone surveys and revenue record consultancy for land disputes in Punjab.',
 };
 
 // Advertising. Leave adsenseClient empty to keep ads (and their cookies) completely off.
