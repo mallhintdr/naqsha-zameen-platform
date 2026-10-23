@@ -38,7 +38,7 @@ const faqs = [
     <div class="absolute left-1/2 top-0 -z-10 h-[600px] w-[1000px] -translate-x-1/2 rounded-full bg-gradient-to-b from-indigo-600/30 via-cyan-500/10 to-transparent blur-3xl"></div>
     <div class="mx-auto grid max-w-7xl items-center gap-16 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
       <div>
-        <span class="eyebrow"><span class="size-1.5 animate-pulse rounded-full bg-emerald-400"></span> Mapping · RTK · Drone</span>
+        <span class="eyebrow"><span class="size-1.5 animate-pulse rounded-full bg-emerald-400"></span> Mapping · RTK · Drone · Consultancy</span>
         <h1 class="font-display mt-6 text-4xl font-extrabold text-white sm:text-6xl">
           Your Land, <span class="text-gradient">Mapped to the Killa.</span>
         </h1>
@@ -68,7 +68,7 @@ const faqs = [
         ['cm-level', 'RTK accuracy'],
         ['25', 'Killas per murabba, numbered'],
         ['24/7', 'Online map access'],
-        ['3-in-1', 'Maps · Survey · Drone'],
+        ['4-in-1', 'Maps · Survey · Drone · Advice'],
       ].map(([v, l]) => (
         <div>
           <div class="font-display text-3xl font-extrabold text-gradient sm:text-4xl">{v}</div>
@@ -82,9 +82,9 @@ const faqs = [
   <section id="services" class="mx-auto mt-28 max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="reveal mx-auto max-w-2xl text-center">
       <span class="eyebrow">What we do</span>
-      <h2 class="font-display mt-4 text-3xl font-extrabold text-white sm:text-5xl">Three Services. One Clear Picture of Your Land.</h2>
+      <h2 class="font-display mt-4 text-3xl font-extrabold text-white sm:text-5xl">Four Services. One Clear Picture of Your Land.</h2>
     </div>
-    <div class="mt-14 grid gap-6 md:grid-cols-3">
+    <div class="mt-14 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
       {SERVICES.map((s) => (
         <a href={`/services/${s.slug}/`} class="card reveal group relative overflow-hidden">
           <div class={`absolute -right-16 -top-16 size-48 rounded-full bg-gradient-to-br ${s.accent} opacity-20 blur-2xl transition group-hover:opacity-40`}></div>
