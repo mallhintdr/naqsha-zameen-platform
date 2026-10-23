@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'node:path';
 import fs from 'node:fs';
 
-const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'));
+const pkg = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf8'));
 const BUILD_META = { version: pkg.version as string, buildDate: Date.now() };
 
 /** Emits /meta.json and exposes the same object to the bundle (VersionChecker contract). */
@@ -34,7 +34,7 @@ const PROXIED = [
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), buildMeta()],
-  resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
+  resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   server: {
     port: 3000,
     proxy: {
@@ -45,7 +45,8 @@ export default defineConfig({
             target: BACKEND,
             changeOrigin: true,
             // Browser navigations to SPA pages that share a prefix with an API route (/stats) get index.html
-            bypass: (req: any) => (req.headers.accept?.includes('text/html') ? '/index.html' : undefined),
+            bypass: (req: any) =>
+              req.url?.split('?')[0] === '/stats' && req.headers.accept?.includes('text/html') ? '/index.html' : undefined,
           },
         ]),
       ),
@@ -53,7 +54,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: path.resolve(__dirname, '..', process.env.OUT_DIR || 'build'),
+    outDir: path.resolve(import.meta.dirname, '..', process.env.OUT_DIR || 'build'),
     emptyOutDir: true,
     sourcemap: false,
     chunkSizeWarningLimit: 1500,
