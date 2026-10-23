@@ -266,13 +266,13 @@ export default function SubAdminDashboardPage() {
   const recent: any[] = stats.recentRenewals || [];
   const tick = small ? { ...axisTick, fontSize: 9 } : axisTick;
   const tile = (label: string, value: ReactNode, tone: Tone, onClick?: () => void) => (
-    <div className="min-w-0 grow basis-[calc(33.333%-0.5rem)] lg:basis-[calc(25%-0.75rem)]"><StatTile tone={tone} value={value} label={label} onClick={onClick} /></div>
+    <div><StatTile tone={tone} value={value} label={label} onClick={onClick} /></div>
   );
   const lineType = (t: string) => t.replace(/_/g, ' ').toLowerCase();
 
   const business = (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2 sm:gap-3">
+      <div className="tile-row">
         {tile('Customers', o.total, 'primary', () => navigate('/subadmin/users'))}
         {tile('Active', o.active, 'success', () => navigate('/subadmin/users?tab=active'))}
         {tile('Expiring in 7 days', o.expiring, 'warning', () => navigate('/subadmin/users?tab=expiring'))}

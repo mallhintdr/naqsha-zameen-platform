@@ -15,6 +15,7 @@ const UserRegistrationsTab = lazy(() => import('./tabs/UserRegistrationsTab'));
 const RenewalsTab = lazy(() => import('./tabs/RenewalsTab'));
 const MultiIpTab = lazy(() => import('./tabs/MultiIpTab'));
 const VisitorsTab = lazy(() => import('./tabs/VisitorsTab'));
+const UserEditForm = lazy(() => import('@/features/users/UserEditForm'));
 
 const DAY = 24 * 60 * 60 * 1000;
 const IP_HEADER = {
@@ -225,6 +226,10 @@ export default function InsightsPage() {
     return slots.map((s) => ({ time: s.time, users: s.users.size, sessions: s.sessions }));
   }, [processedStats]);
 
+  // Clicking a user's name opens their form straight on the Multi-Use (devices) tab.
+  const [devicesUserId, setDevicesUserId] = useState<string | null>(null);
+  const openDevices = (u: any) => { if (u?.userId) setDevicesUserId(u.userId); };
+
   const handleUserClick = (u: any) => {
     setSelectedUser(u);
     setSelectedUserIPs([]);
@@ -256,7 +261,7 @@ export default function InsightsPage() {
     {
       key: 'online-users',
       title: <TabTitle icon={Globe} color="#198754">Online ({onlineUsers.length})</TabTitle>,
-      content: <Lazy><OnlineUsersTab onlineUsers={onlineUsers} onlinePage={onlinePage} setOnlinePage={setOnlinePage} handleUserClick={handleUserClick} /></Lazy>,
+      content: <Lazy><OnlineUsersTab onlineUsers={onlineUsers} onlinePage={onlinePage} setOnlinePage={setOnlinePage} handleUserClick={handleUserClick} openDevices={openDevices} /></Lazy>,
     },
     {
       key: 'activity',
@@ -295,6 +300,7 @@ export default function InsightsPage() {
             multiIpActiveLegend={multiIpActiveLegend}
             setMultiIpActiveLegend={setMultiIpActiveLegend}
             handleUserClick={handleUserClick}
+            openDevices={openDevices}
           />
         </Lazy>
       ),
@@ -428,6 +434,11 @@ export default function InsightsPage() {
         )}
       </Modal>
 
+      {devicesUserId && (
+        <Suspense fallback={null}>
+          <UserEditForm userId={devicesUserId} initialTab="multiuse" handleClose={() => setDevicesUserId(null)} refreshUsers={() => {}} />
+        </Suspense>
+      )}
       <UserLocationModal show={showLocationModal} onHide={() => setShowLocationModal(false)} user={selectedUser} />
       <GlobalHeatmapModal show={showHeatmapModal} onHide={() => setShowHeatmapModal(false)} />
     </div>

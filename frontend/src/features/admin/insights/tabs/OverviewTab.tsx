@@ -39,16 +39,16 @@ function OverviewTab({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* KPI tiles: 3 per row on phones */}
-      <div className="fill-row">
+      {/* KPI tiles in one row like .pk: 3 per row on phones, 4 on desktop; Online Now keeps a third */}
+      <div className="tile-row">
         <StatTile tone="primary" value={formatNumber(processedStats.totalUsers)} label="Total Users" />
         <StatTile tone="success" value={formatNumber(processedStats.subscriptionHealth?.active || 0)} label="Active Users" />
         <StatTile tone="warning" value={formatNumber(processedStats.subscriptionHealth?.expiringSoon || 0)} label="Expiring Soon" />
         <StatTile tone="danger" value={formatNumber(processedStats.subscriptionHealth?.expired || 0)} label="Expired Users" />
-      </div>
-      <div className="fill-row">
-        <StatTile tone="info" value={formatNumber(processedStats.totalOnline)} label="Online Now" />
-        <div className="col-span-2">
+        <div className="tile-fixed tile-third">
+          <StatTile tone="info" value={formatNumber(processedStats.totalOnline)} label="Online Now" />
+        </div>
+        <div className="tile-third">
           <StatTile tone="warning" title="Accounts used on more than one device" value={formatNumber(s.totalUsers)} label="Multi-Device users" />
         </div>
       </div>

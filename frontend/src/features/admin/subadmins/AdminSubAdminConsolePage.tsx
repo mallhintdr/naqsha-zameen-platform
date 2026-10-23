@@ -24,7 +24,6 @@ const toneVars = (s: any) => {
 };
 const STATUS_COLOR: Record<string, string> = { active: '#10b981', awaiting_activation: '#0dcaf0', final_warning: '#f59e0b', suspended_unpaid: '#dc3545', disabled: '#6c757d' };
 const LIST_PAGE_SIZE = 20;
-const TILE_COL = 'min-w-[calc(33.333%-0.5rem)] flex-1 lg:min-w-[calc(25%-0.5rem)]';
 const FILTER_INPUT = '!h-9 !text-[0.9rem] !rounded-md !py-1';
 
 export default function AdminSubAdminConsolePage() {
@@ -102,10 +101,10 @@ export default function AdminSubAdminConsolePage() {
     if (!rows) return <div className="py-10 text-center"><Spinner /></div>;
     const sum = (k: string) => rows.reduce((n, s) => n + (Number(s[k]) || 0), 0);
     const t = (label: string, value: any, tone: Tone, onClick?: () => void) => (
-      <div className={TILE_COL}><StatTile tone={tone} value={value} label={label} onClick={onClick} /></div>
+      <div><StatTile tone={tone} value={value} label={label} onClick={onClick} /></div>
     );
     return (
-      <div className="mb-3 flex flex-wrap gap-2">
+      <div className="tile-row mb-3">
         {t('Sub-admins', rows.length, 'primary', () => setTab('list'))}
         {t('Customers managed', sum('customers'), 'success', () => navigate('/users?owner=subadmins'))}
         {t('Pending requests', overview?.pendingRequests ?? requests.length, 'info', () => setTab('requests'))}

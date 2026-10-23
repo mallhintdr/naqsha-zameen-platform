@@ -61,7 +61,7 @@ export default function VisitorsTab() {
         </button>
       </div>
 
-      <div className="fill-row fill-row-6 mb-3">
+      <div className="tile-row-visitors mb-3">
         {WINDOWS.map((x) => (
           <div key={x.key} className="card-plain h-full px-1 py-2 text-center">
             <div className="text-[0.68rem] font-bold uppercase text-ink-2" style={{ letterSpacing: '0.4px' }}>{x.label}</div>

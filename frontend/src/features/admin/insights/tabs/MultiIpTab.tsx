@@ -23,7 +23,7 @@ function TopTooltip({ active, payload }: any) {
   );
 }
 
-function MultiIpTab({ processedStats, multiIPAnalysis, multiIpActiveLegend, setMultiIpActiveLegend, handleUserClick }: any) {
+function MultiIpTab({ processedStats, multiIPAnalysis, multiIpActiveLegend, setMultiIpActiveLegend, handleUserClick, openDevices }: any) {
   const small = useIsSmallScreen();
   const top10 = useMemo(() => {
     if (!processedStats?.sessions) return [];
@@ -89,10 +89,10 @@ function MultiIpTab({ processedStats, multiIPAnalysis, multiIpActiveLegend, setM
             <tbody>
               {multiIPAnalysis.users.map((u: any, i: number) => (
                 <tr key={u.userId || i} className={RISK_ROW[u.riskLevel]}>
-                  <td className="freeze whitespace-nowrap" style={{ background: RISK_SOLID[u.riskLevel] }}>
+                  <td className="freeze cursor-pointer whitespace-nowrap" style={{ background: RISK_SOLID[u.riskLevel] }} title="Show devices (resolution, device ID, times)" onClick={() => openDevices(u)}>
                     <strong>{u.userName}</strong>
                     <br />
-                    <small className="text-ink-2">{u.userId}</small>
+                    <small className="text-ink-2 underline">{u.userId}</small>
                   </td>
                   <td><Badge bg={RISK_BADGE[u.riskLevel]}>{String(u.riskLevel).toUpperCase()}</Badge></td>
                   <td className="text-center"><Badge bg="dark" pill>{u.ipCount}</Badge></td>

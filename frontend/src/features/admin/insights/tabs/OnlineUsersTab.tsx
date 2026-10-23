@@ -6,7 +6,7 @@ import { formatDateTime, DarkHeader, NumberPager } from '../statsUtils';
 const PAGE = 20;
 const DETAILS_BTN = { backgroundColor: '#0f2027', color: '#ffffff', borderColor: '#0f2027', fontWeight: 600, padding: '0.1rem 0.5rem', fontSize: '0.7rem', borderRadius: 4 };
 
-function OnlineUsersTab({ onlineUsers, onlinePage, setOnlinePage, handleUserClick }: any) {
+function OnlineUsersTab({ onlineUsers, onlinePage, setOnlinePage, handleUserClick, openDevices }: any) {
   const pages = Math.ceil(onlineUsers.length / PAGE);
   const rows = onlineUsers.slice((onlinePage - 1) * PAGE, onlinePage * PAGE);
   return (
@@ -21,7 +21,7 @@ function OnlineUsersTab({ onlineUsers, onlinePage, setOnlinePage, handleUserClic
             {rows.length > 0 ? (
               rows.map((u: any, i: number) => (
                 <tr key={u.userId || i}>
-                  <td className="freeze cursor-pointer !px-2 !py-1" onClick={() => handleUserClick(u)}>
+                  <td className="freeze cursor-pointer !px-2 !py-1" title="Show devices (resolution, device ID, times)" onClick={() => openDevices(u)}>
                     <strong>{u.userName || 'N/A'}</strong>
                     <br />
                     <span className="text-[0.8rem] underline">{u.userId}</span>
