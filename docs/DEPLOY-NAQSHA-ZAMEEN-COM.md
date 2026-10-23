@@ -13,7 +13,7 @@ During testing customers keep using `.pk`, exactly as now. Both copies share the
 Facts used below (checked 23 October 2026):
 - VPS IP: `46.202.153.115` (Ubuntu, nginx 1.18, pm2 app `geo-dashboard` on port 5000).
 - `naqsha-zameen.com`, `www` and `dashboard` currently point to Hostinger's parking server (IPv6 records `2a02:4780:...`). These must be removed.
-- This repository has no GitHub remote yet.
+- Code repository: `github.com/mallhintdr/naqsha-zameen-platform` (private). The older private `geo-dashboard` repository is what the current `.pk` production pulls from; leave it unchanged until cutover.
 
 Time needed: about 2 hours the first time, plus DNS waiting time.
 
@@ -114,7 +114,7 @@ Open a terminal on the VPS: hPanel → **VPS** → **Browser terminal**, or `ssh
 3. Clone into a **new** folder. The old folder stays untouched and production keeps running from it.
    ```bash
    sudo mkdir -p /var/www && cd /var/www
-   git clone git@github.com:<your-account>/naqsha-zameen.git naqsha-zameen
+   git clone git@github.com:mallhintdr/naqsha-zameen-platform.git naqsha-zameen
    cd /var/www/naqsha-zameen
    ```
 
