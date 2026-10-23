@@ -1,5 +1,7 @@
 # Moving website + app to naqsha-zameen.com on Hostinger
 
+> **Use `docs/DEPLOY-NAQSHA-ZAMEEN-COM.md` for the actual deployment.** It is the complete, ordered runbook for naqsha-zameen.com on the Hostinger VPS. This file is kept as background.
+
 Goal: the website and the app run from the Hostinger VPS under the new domain `naqsha-zameen.com`, with DNS also at Hostinger. The old `.pk` addresses keep working by redirecting to the new ones, so no link in old emails, WhatsApp messages or Google results breaks.
 
 This replaces step 0 of `docs/NEXT-STEPS.md` and the o3host parts of `docs/DEPLOYMENT.md`. The other steps in NEXT-STEPS still apply afterwards.

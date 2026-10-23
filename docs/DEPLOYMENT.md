@@ -1,5 +1,7 @@
 # Deployment and cutover runbook
 
+> **Use `docs/DEPLOY-NAQSHA-ZAMEEN-COM.md` for the actual deployment.** It is the complete, ordered runbook for naqsha-zameen.com on the Hostinger VPS. This file is kept as background.
+
 Target: one origin, `https://dashboard.naqsha-zameen.pk`, served by the Hostinger VPS.
 nginx (already in front of pm2) proxies to the Express app on port 5000, which serves both the
 Vite build (`./build`) and the API. The domain's DNS zone stays at o3host.

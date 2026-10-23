@@ -27,4 +27,4 @@ npm run build             # writes ./build, served by backend/server.js
 
 ## Deploy
 
-See `docs/DEPLOYMENT.md`. Routine updates on the VPS: `./deploy.sh`.
+Step-by-step runbook: `docs/DEPLOY-NAQSHA-ZAMEEN-COM.md`. Routine updates on the VPS: `./deploy.sh` (test copy: `APP_NAME=geo-dashboard-test ./deploy.sh`).
