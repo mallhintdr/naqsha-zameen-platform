@@ -15,8 +15,6 @@ export const SITE = {
   dashboardHost: new URL(DASHBOARD_URL).host,
   registerUrl: `${DASHBOARD_URL}/register`,
   loginUrl: `${DASHBOARD_URL}/login`,
-  phoneDisplay: '0304-8840264',
-  phoneTel: '+923048840264',
   whatsapp: '923048840264',
   email: 'mallhintdr@gmail.com',
   facebook: 'https://www.facebook.com/profile.php?id=100071237130538',

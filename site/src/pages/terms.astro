@@ -1,6 +1,6 @@
 ---
 import Legal from '../layouts/Legal.astro';
-import { SITE } from '../site';
+import { SITE, waLink } from '../site';
 ---
 <Legal title="Terms of Use" updated="22 October 2026" description={`Terms for using ${SITE.url}, the Naqsha Zameen dashboard and ${SITE.company} survey services.`}>
   <p>By using {SITE.url}, the Naqsha Zameen dashboard or our survey services, you agree to these terms.</p>
@@ -57,6 +57,6 @@ import { SITE } from '../site';
   <h2>Changes and Contact</h2>
   <p>
     We may update these terms; the date above shows the latest version. Questions:
-    <a href={`tel:${SITE.phoneTel}`}>{SITE.phoneDisplay}</a> or <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+    <a href={waLink()} target="_blank" rel="noopener">WhatsApp</a> or <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
   </p>
 </Legal>

@@ -46,13 +46,12 @@ const orgLd = {
   url: SITE.url,
   logo: new URL('/logo.png', SITE.url).href,
   image: ogImage,
-  telephone: SITE.phoneTel,
   email: SITE.email,
   areaServed: { '@type': 'AdministrativeArea', name: 'Punjab', containedInPlace: { '@type': 'Country', name: 'Pakistan' } },
   address: { '@type': 'PostalAddress', addressRegion: 'Punjab', addressCountry: 'PK' },
   description: SITE.description,
   sameAs: [SITE.facebook],
-  contactPoint: [{ '@type': 'ContactPoint', telephone: SITE.phoneTel, contactType: 'customer service', availableLanguage: ['en', 'ur'] }],
+  contactPoint: [{ '@type': 'ContactPoint', email: SITE.email, contactType: 'customer service', availableLanguage: ['en', 'ur'] }],
   knowsLanguage: ['en', 'ur'],
   hasOfferCatalog: {
     '@type': 'OfferCatalog',
@@ -191,7 +190,6 @@ const jsonLd = [orgLd, siteLd, breadcrumbLd, ...schema].filter(Boolean);
         <div>
           <h2 class="text-sm font-semibold uppercase tracking-widest text-white">Get in touch</h2>
           <ul class="mt-4 space-y-3 text-sm">
-            <li><a class="flex items-center gap-2 text-slate-300 hover:text-cyan-300" href={`tel:${SITE.phoneTel}`}><Icon name="phone" class="size-5 text-sky-400" />{SITE.phoneDisplay}</a></li>
             <li><a class="flex items-center gap-2 text-slate-300 hover:text-emerald-300" href={waLink()} target="_blank" rel="noopener"><Icon name="whatsapp" class="size-5 text-green-400" />WhatsApp us</a></li>
             <li><a class="flex items-center gap-2 text-slate-300 hover:text-cyan-300" href={`mailto:${SITE.email}`}><Icon name="mail" class="size-5 text-red-400" />{SITE.email}</a></li>
             <li><a class="flex items-center gap-2 text-slate-300 hover:text-sky-300" href={SITE.facebook} target="_blank" rel="noopener"><Icon name="facebook" class="size-5 text-[#4f9bff]" />Facebook</a></li>

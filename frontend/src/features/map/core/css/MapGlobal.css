@@ -6,12 +6,14 @@
   width: 100%;
 }
 
-/* legacy index.css: darker text in Leaflet popups/tooltips (overridden by murabba/killa classes) */
+/* legacy index.css: darker text in Leaflet popups/tooltips. Murabba and killa labels keep
+   their own colours (green / gold): in legacy this rule loaded before their CSS; here it
+   loads after, so they are excluded explicitly. */
 .leaflet-popup-content-wrapper,
 .leaflet-popup-content,
 .leaflet-popup-content *,
-.leaflet-tooltip-content,
-.leaflet-tooltip {
+.leaflet-tooltip:not(.murabba-tooltip):not(.killa-tooltip):not(.killa-label):not(.tooltip-selected),
+.leaflet-tooltip:not(.murabba-tooltip):not(.killa-tooltip):not(.killa-label):not(.tooltip-selected) .leaflet-tooltip-content {
   color: #111827 !important;
 }
 
