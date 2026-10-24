@@ -81,8 +81,9 @@ export function Modal({
             sheet
               ? 'inset-x-0 bottom-0 max-h-[calc(100dvh-52px)] rounded-t-2xl animate-sheet-up pb-[env(safe-area-inset-bottom)] sm:pb-0'
               : 'rounded-xl animate-pop-in',
-            // Centred in the area below the 42px navbar, sized to content, 12px margin on phones.
-            'inset-x-0 mx-auto w-[calc(100vw-24px)] top-[calc(42px+50%)] -translate-y-[calc(50%+21px)] max-h-[calc(100dvh-58px)] sm:w-full',
+            // Centred in the area below the 42px navbar without transforms (the open animation
+            // uses transform): pinned top and bottom, auto margins, height fits the content.
+            'inset-x-0 top-[50px] bottom-2 m-auto h-fit w-[calc(100vw-24px)] max-h-[calc(100dvh-58px)] sm:w-full',
             compact && 'sm:rounded-[10px]',
             WIDTH[size],
             className,

@@ -1,0 +1,21 @@
+// Opens the Edit User modal and a confirm dialog on a phone viewport; reports the modal box position.
+import { chromium } from '@playwright/test';
+import { mockFor } from './smoke-mocks.mjs';
+const OUT = process.argv[2] || 'e2e/shots';
+const b = await chromium.launch();
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+const page = await ctx.newPage();
+await page.route('**/*', mockFor('admin'));
+await page.goto('http://localhost:4173/users', { waitUntil: 'networkidle' });
+await page.locator('div[role=button]:visible').first().click();
+await page.waitForSelector('[role=dialog]');
+await page.waitForTimeout(600);
+const box = await page.locator('[role=dialog]').first().boundingBox();
+console.log('edit-user box', JSON.stringify(box));
+await page.screenshot({ path: `${OUT}/modal-edit.png` });
+await page.getByText('Delete User').click().catch(() => {});
+await page.waitForTimeout(600);
+const boxes = await page.locator('[role=dialog], [role=alertdialog]').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom), Math.round(r.width)]; }));
+console.log('dialogs', JSON.stringify(boxes));
+await page.screenshot({ path: `${OUT}/modal-confirm.png` });
+await b.close();
