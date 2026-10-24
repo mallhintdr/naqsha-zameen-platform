@@ -15,17 +15,18 @@ import { cn } from './cn';
 
 export type ModalSize = 'compact' | 'warning' | 'sm' | 'md' | 'lg' | 'salg' | 'wide' | 'xl';
 
+// Widths apply on every screen: on phones a window is centred and only as wide as it needs.
 const WIDTH: Record<ModalSize, string> = {
-  compact: 'sm:max-w-[315px]',
-  warning: 'sm:max-w-[300px]',
-  sm: 'sm:max-w-[360px]',
-  md: 'sm:max-w-[500px]',
+  compact: 'max-w-[315px]',
+  warning: 'max-w-[300px]',
+  sm: 'max-w-[340px] sm:max-w-[360px]',
+  md: 'max-w-[400px] sm:max-w-[500px]',
   lg: 'sm:max-w-[900px]',
   salg: 'sm:max-w-[min(960px,96vw)]',
   wide: 'sm:max-w-[min(1200px,96vw)]',
   xl: 'sm:max-w-[95%]',
 };
-const SHEET: ModalSize[] = ['compact', 'warning', 'sm', 'md'];
+const SHEET: ModalSize[] = []; // bottom sheets disabled: windows stay compact and centred on phones
 
 export interface ModalProps {
   show: boolean;
@@ -79,8 +80,9 @@ export function Modal({
             'shadow-[0_15px_35px_rgba(0,0,0,0.4),0_0_20px_rgba(0,255,255,0.1)] border border-white/10',
             sheet
               ? 'inset-x-0 bottom-0 max-h-[calc(100dvh-52px)] rounded-t-2xl animate-sheet-up pb-[env(safe-area-inset-bottom)] sm:pb-0'
-              : 'inset-x-2 top-[50px] max-h-[calc(100dvh-58px)] rounded-xl animate-pop-in',
-            'sm:inset-x-0 sm:mx-auto sm:top-[calc(42px+50%)] sm:-translate-y-[calc(50%+21px)] sm:bottom-auto sm:w-full sm:max-h-[calc(100dvh-58px)] sm:rounded-xl sm:animate-pop-in',
+              : 'rounded-xl animate-pop-in',
+            // Centred in the area below the 42px navbar, sized to content, 12px margin on phones.
+            'inset-x-0 mx-auto w-[calc(100vw-24px)] top-[calc(42px+50%)] -translate-y-[calc(50%+21px)] max-h-[calc(100dvh-58px)] sm:w-full',
             compact && 'sm:rounded-[10px]',
             WIDTH[size],
             className,
