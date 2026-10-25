@@ -57,14 +57,8 @@ export const NAV: NavItem[] = [
       { href: '/services/land-consultancy/', label: 'Revenue Record Consultancy' },
     ],
   },
-  {
-    href: '/maps/',
-    label: 'Maps',
-    children: [
-      { href: '/maps/', label: 'Mouza Maps (all tehsils)' },
-      { href: '/dashboard/', label: 'The Dashboard' },
-    ],
-  },
+  { href: '/maps/', label: 'Mouza Maps' },
+  { href: '/dashboard/', label: 'Dashboard' },
   { href: '/about/', label: 'About' },
   { href: '/contact/', label: 'Contact' },
 ];

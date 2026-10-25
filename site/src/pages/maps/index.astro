@@ -49,35 +49,9 @@ const ld = {
     <div class="px-4 sm:px-6"><MouzaPicker /></div>
   </section>
 
-  {tehsils.length === 0 ? (
+  {tehsils.length === 0 && (
     <section class="mx-auto mt-20 max-w-3xl px-4 text-center sm:px-6">
-      <p class="card text-slate-300">The tehsil list is being updated. Please <a class="text-cyan-300 underline" href={`${SITE.dashboardUrl}/?browse=all`}>open the map</a> to browse all mouzas.</p>
-    </section>
-  ) : (
-    <section class="mx-auto mt-20 max-w-7xl px-4 sm:px-6 lg:px-8">
-      <details class="group">
-      <summary class="cursor-pointer list-none text-center font-display text-2xl font-extrabold text-white sm:text-3xl">Browse all tehsils A–Z <span class="text-cyan-300 group-open:hidden">▾</span></summary>
-      <nav class="mt-6 flex flex-wrap justify-center gap-1.5" aria-label="Jump to letter">
-        {letters.map((l) => <a href={`#letter-${l === '#' ? 'other' : l}`} class="inline-flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-sm font-semibold text-slate-200 hover:border-cyan-300/40 hover:text-white">{l}</a>)}
-      </nav>
-      <div class="mt-10 space-y-10">
-        {letters.map((l) => (
-          <div id={`letter-${l === '#' ? 'other' : l}`} class="scroll-mt-24">
-            <h3 class="font-display text-2xl font-bold text-cyan-300">{l === '#' ? 'Other' : l}</h3>
-            <ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {groups.get(l)!.map((t) => (
-                <li>
-                  <a href={`/maps/${t.slug}/`} class="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition hover:border-cyan-300/40 hover:bg-white/[0.07]">
-                    <span class="font-semibold text-white">{t.name}</span>
-                    <span class="shrink-0 rounded-full bg-cyan-300/10 px-2.5 py-0.5 text-xs font-semibold text-cyan-200">{fmt(t.mouzas.length)} mouzas</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-      </details>
+      <p class="card text-slate-300">The tehsil list is being updated. Please try again shortly.</p>
     </section>
   )}
 
