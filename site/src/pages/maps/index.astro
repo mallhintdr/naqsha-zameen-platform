@@ -1,0 +1,101 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import IconBox from '../../components/IconBox.astro';
+import CTA from '../../components/CTA.astro';
+import MapServices from '../../components/MapServices.astro';
+import { SITE } from '../../site';
+import { getCatalog } from '../../mouza-catalog';
+
+const tehsils = await getCatalog();
+const totalMouzas = tehsils.reduce((n, t) => n + t.mouzas.length, 0);
+const groups = new Map<string, typeof tehsils>();
+for (const t of tehsils) {
+  const k = /^[a-z]/i.test(t.name) ? t.name[0].toUpperCase() : '#';
+  groups.set(k, [...(groups.get(k) ?? []), t]);
+}
+const letters = [...groups.keys()].sort((a, b) => (a === '#' ? 1 : b === '#' ? -1 : a.localeCompare(b)));
+const fmt = (n: number) => n.toLocaleString('en-US');
+
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Mouza Maps of Punjab by Tehsil',
+  url: `${SITE.url}/maps/`,
+  about: { '@type': 'AdministrativeArea', name: 'Punjab', containedInPlace: { '@type': 'Country', name: 'Pakistan' } },
+  isPartOf: { '@id': `${SITE.url}/#website` },
+};
+---
+<Base
+  title="Mouza Maps by Tehsil"
+  seoTitle="Mouza Maps of Punjab by Tehsil (Naqsha) | Naqsha Zameen"
+  description={`Find the mouza (chak) map of your village: ${tehsils.length ? `${fmt(totalMouzas)} mouzas in ${tehsils.length} tehsils` : 'mouzas across'} of Punjab. Murabba and killa boundaries online, free preview.`}
+  schema={[ld]}
+  crumbNames={['Mouza Maps']}
+>
+  <section class="relative isolate overflow-hidden pt-32 sm:pt-40">
+    <div class="grid-bg absolute inset-0 -z-10"></div>
+    <div class="absolute -top-40 left-1/2 -z-10 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-400 opacity-25 blur-3xl"></div>
+    <div class="mx-auto max-w-4xl px-4 text-center sm:px-6">
+      <IconBox name="map" size="xl" class="mx-auto" />
+      <h1 class="font-display mt-6 text-4xl font-extrabold text-white sm:text-6xl">Mouza Maps of Punjab</h1>
+      <p class="urdu mt-3 text-2xl text-cyan-100/90" dir="rtl" lang="ur">پنجاب کے موضع جات کے نقشے — مربع اور کِلا کی حدود</p>
+      <p class="mx-auto mt-5 max-w-2xl text-lg text-slate-300">
+        Choose your tehsil, then your mouza (chak or village) to see its map on {SITE.brand}: mouza boundary, murabba (square) numbers and killa
+        (acre) grid, right on your phone.{tehsils.length > 0 && ` ${fmt(totalMouzas)} mouzas in ${tehsils.length} tehsils are listed.`}
+      </p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href={`${SITE.dashboardUrl}/?browse=all`} class="btn-primary"><Icon name="map" class="size-5" /> Open the map</a>
+        <a href="/dashboard/" class="btn-ghost">About the dashboard</a>
+      </div>
+    </div>
+  </section>
+
+  {tehsils.length === 0 ? (
+    <section class="mx-auto mt-20 max-w-3xl px-4 text-center sm:px-6">
+      <p class="card text-slate-300">The tehsil list is being updated. Please <a class="text-cyan-300 underline" href={`${SITE.dashboardUrl}/?browse=all`}>open the map</a> to browse all mouzas.</p>
+    </section>
+  ) : (
+    <section class="mx-auto mt-20 max-w-7xl px-4 sm:px-6 lg:px-8">
+      <h2 class="font-display text-center text-3xl font-extrabold text-white sm:text-4xl">Tehsils A–Z</h2>
+      <nav class="mt-6 flex flex-wrap justify-center gap-1.5" aria-label="Jump to letter">
+        {letters.map((l) => <a href={`#letter-${l === '#' ? 'other' : l}`} class="inline-flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-sm font-semibold text-slate-200 hover:border-cyan-300/40 hover:text-white">{l}</a>)}
+      </nav>
+      <div class="mt-10 space-y-10">
+        {letters.map((l) => (
+          <div id={`letter-${l === '#' ? 'other' : l}`} class="scroll-mt-24">
+            <h3 class="font-display text-2xl font-bold text-cyan-300">{l === '#' ? 'Other' : l}</h3>
+            <ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {groups.get(l)!.map((t) => (
+                <li>
+                  <a href={`/maps/${t.slug}/`} class="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition hover:border-cyan-300/40 hover:bg-white/[0.07]">
+                    <span class="font-semibold text-white">{t.name}</span>
+                    <span class="shrink-0 rounded-full bg-cyan-300/10 px-2.5 py-0.5 text-xs font-semibold text-cyan-200">{fmt(t.mouzas.length)} mouzas</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="mx-auto mt-24 grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-3 lg:px-8">
+    <div class="card reveal">
+      <h2 class="text-xl font-semibold text-white">Mouza (Chak) Map</h2>
+      <p class="mt-2 text-slate-400">The outer boundary of your revenue estate (mouza / chak / village), with neighbouring mouzas, roads and canals on the map.</p>
+    </div>
+    <div class="card reveal">
+      <h2 class="text-xl font-semibold text-white">Murabba &amp; Killa</h2>
+      <p class="mt-2 text-slate-400">Numbered murabbas (squares) and the killa (acre) grid inside them, the way the patwari’s shajra divides the land.</p>
+    </div>
+    <div class="card reveal">
+      <h2 class="text-xl font-semibold text-white">On Your Phone</h2>
+      <p class="mt-2 text-slate-400">Preview any mouza free on a street map. Subscribe for satellite imagery, live GPS location, killa area and saved layers.</p>
+    </div>
+  </section>
+
+  <MapServices place="Punjab" />
+  <CTA title="Find Your Land on the Map" text="Start a free 24-hour trial of the dashboard, or message us on WhatsApp for RTK measurement, drone imagery or revenue record advice." />
+</Base>

@@ -49,3 +49,31 @@ exports.mouzas = async (req, res) => {
         res.status(500).json({ message: 'Could not load the mouza list' });
     }
 };
+
+// GET /api/public/catalog : every tehsil with its mouza NAMES in one answer (website build,
+// /maps/ SEO pages). No map data. Cached 1 h in memory; built with limited concurrency.
+let catalogCache = { at: 0, data: null, pending: null };
+exports.publicCatalog = async (req, res) => {
+    try {
+        if (!catalogCache.data || Date.now() - catalogCache.at > 3600e3) {
+            catalogCache.pending ??= (async () => {
+                const tehsils = await listTehsils();
+                const out = [];
+                const queue = [...tehsils];
+                await Promise.all(Array.from({ length: 8 }, async () => {
+                    for (let t = queue.shift(); t !== undefined; t = queue.shift()) {
+                        try { out.push({ tehsil: t, mouzas: await listMouzas(t) }); } catch { out.push({ tehsil: t, mouzas: [] }); }
+                    }
+                }));
+                out.sort((a, b) => a.tehsil.localeCompare(b.tehsil));
+                catalogCache = { at: Date.now(), data: { generatedAt: new Date().toISOString(), tehsils: out }, pending: null };
+            })().finally(() => { catalogCache.pending = null; });
+            await catalogCache.pending;
+        }
+        res.set('Cache-Control', 'public, max-age=3600');
+        res.json(catalogCache.data);
+    } catch (err) {
+        logger.error('public catalog failed', { error: err.message });
+        res.status(500).json({ message: 'Could not build the catalog' });
+    }
+};

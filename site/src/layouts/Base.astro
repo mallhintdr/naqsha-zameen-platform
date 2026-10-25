@@ -16,8 +16,10 @@ interface Props {
   noindex?: boolean;
   /** Extra JSON-LD objects for this page (Service, BreadcrumbList, ...). */
   schema?: Record<string, unknown>[];
+  /** Optional display names for the URL segments (breadcrumbs), e.g. real tehsil/mouza names. */
+  crumbNames?: string[];
 }
-const { title, seoTitle, description = SITE.description, noindex = false, schema = [] } = Astro.props;
+const { title, seoTitle, description = SITE.description, noindex = false, schema = [], crumbNames = [] } = Astro.props;
 const fullTitle = seoTitle ?? (title ? `${title} | ${SITE.brand}` : SITE.seoTitle);
 const canonical = new URL(Astro.url.pathname, SITE.url).href;
 const path = Astro.url.pathname;
@@ -28,7 +30,7 @@ const ogImage = new URL('/og.png', SITE.url).href;
 const crumbs = path
   .split('/')
   .filter(Boolean)
-  .map((seg, i, arr) => ({ name: seg.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), url: `${SITE.url}/${arr.slice(0, i + 1).join('/')}/` }));
+  .map((seg, i, arr) => ({ name: crumbNames[i] || decodeURIComponent(seg).replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), url: `${SITE.url}/${arr.slice(0, i + 1).join('/')}/` }));
 const breadcrumbLd =
   crumbs.length > 0
     ? {
@@ -128,7 +130,7 @@ const jsonLd = [orgLd, siteLd, breadcrumbLd, ...schema].filter(Boolean);
             <span class="hidden text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300/80 sm:block">{SITE.company}</span>
           </span>
         </a>
-        <nav class="ml-auto hidden items-center gap-1 lg:flex" aria-label="Main">
+        <nav class="ml-auto hidden items-center gap-0.5 xl:flex" aria-label="Main">
           {NAV.map((n) => (
             <a
               href={n.href}
@@ -141,15 +143,15 @@ const jsonLd = [orgLd, siteLd, breadcrumbLd, ...schema].filter(Boolean);
             </a>
           ))}
         </nav>
-        <div class="ml-auto flex items-center gap-2 lg:ml-4">
+        <div class="ml-auto flex items-center gap-2 xl:ml-4">
           <a href={SITE.loginUrl} class="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 hover:text-white sm:inline-flex">Login</a>
           <a href={SITE.registerUrl} class="btn-primary whitespace-nowrap !px-4 !py-2 text-sm">Free trial</a>
-          <button id="menu-btn" class="inline-flex size-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 lg:hidden" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+          <button id="menu-btn" class="inline-flex size-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 xl:hidden" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
             <Icon name="menu" class="size-5" />
           </button>
         </div>
       </div>
-      <div id="mobile-menu" class="hidden border-t border-white/10 bg-ink/95 px-4 pb-6 pt-2 backdrop-blur-xl lg:hidden">
+      <div id="mobile-menu" class="hidden border-t border-white/10 bg-ink/95 px-4 pb-6 pt-2 backdrop-blur-xl xl:hidden">
         {NAV.map((n) => <a href={n.href} class="block rounded-lg px-3 py-3 text-base font-medium text-slate-200 hover:bg-white/10">{n.label}</a>)}
         <a href={SITE.loginUrl} class="mt-2 block rounded-lg px-3 py-3 text-base font-semibold text-cyan-300">Login to dashboard →</a>
       </div>
@@ -174,6 +176,7 @@ const jsonLd = [orgLd, siteLd, breadcrumbLd, ...schema].filter(Boolean);
           <ul class="mt-4 space-y-2 text-sm">
             {SERVICES.map((s) => <li><a class="text-slate-400 hover:text-cyan-300" href={`/services/${s.slug}/`}>{s.title}</a></li>)}
             <li><a class="text-slate-400 hover:text-cyan-300" href="/dashboard/">Naqsha Zameen Dashboard</a></li>
+            <li><a class="text-slate-400 hover:text-cyan-300" href="/maps/">Mouza Maps by Tehsil</a></li>
           </ul>
           <h2 class="mt-8 text-sm font-semibold uppercase tracking-widest text-white">Revenue Matters</h2>
           <ul class="mt-4 space-y-2 text-sm">

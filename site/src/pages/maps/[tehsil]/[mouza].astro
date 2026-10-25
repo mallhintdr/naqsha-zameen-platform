@@ -1,0 +1,143 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Icon from '../../../components/Icon.astro';
+import IconBox from '../../../components/IconBox.astro';
+import CTA from '../../../components/CTA.astro';
+import FAQ from '../../../components/FAQ.astro';
+import MapServices from '../../../components/MapServices.astro';
+import { SITE, waLink } from '../../../site';
+import { getCatalog, previewUrl, type Mouza } from '../../../mouza-catalog';
+
+interface Props { tehsil: string; tehsilSlug: string; m: Mouza; neighbours: Mouza[] }
+
+export async function getStaticPaths() {
+  const tehsils = await getCatalog();
+  return tehsils.flatMap((t) =>
+    t.mouzas.map((m, i) => {
+      // 8 alphabetically adjacent mouzas in the same tehsil (4 each side where possible).
+      const start = Math.max(0, Math.min(i - 4, t.mouzas.length - 9));
+      const neighbours = t.mouzas.slice(start, start + 9).filter((x) => x !== m).slice(0, 8);
+      return { params: { tehsil: t.slug, mouza: m.slug }, props: { tehsil: t.name, tehsilSlug: t.slug, m, neighbours } };
+    }),
+  );
+}
+const { tehsil, tehsilSlug, m, neighbours } = Astro.props as Props;
+const url = `${SITE.url}/maps/${tehsilSlug}/${m.slug}/`;
+const waText = `Assalam-o-Alaikum, I want full access to the map of Mouza ${m.name}, Tehsil ${tehsil} on Naqsha Zameen.`;
+
+const titles = [`${m.name} Mouza Map, ${tehsil} | ${SITE.brand}`, `${m.name} Mouza Map (Naqsha), ${tehsil}`, `${m.name}, ${tehsil}: Mouza Map`];
+const seoTitle = titles.find((x) => x.length <= 60) ?? titles[2];
+const description = `Mouza ${m.name}, Tehsil ${tehsil} (Punjab) map online: mouza boundary, murabba and killa grid. Free preview, plus RTK measurement and revenue record help.`;
+
+const placeLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Place',
+  '@id': `${url}#place`,
+  name: m.name,
+  alternateName: `Mouza ${m.name}`,
+  url,
+  hasMap: previewUrl(tehsil, m.name),
+  containedInPlace: {
+    '@type': 'AdministrativeArea',
+    name: `Tehsil ${tehsil}`,
+    url: `${SITE.url}/maps/${tehsilSlug}/`,
+    containedInPlace: { '@type': 'AdministrativeArea', name: 'Punjab', containedInPlace: { '@type': 'Country', name: 'Pakistan' } },
+  },
+};
+const serviceLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: `Land maps, RTK measurement & revenue consultancy in ${m.name}`,
+  serviceType: 'Land mapping and survey',
+  url,
+  provider: { '@id': `${SITE.url}/#organization` },
+  areaServed: { '@id': `${url}#place` },
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: 'Services',
+    itemListElement: [
+      ['Digital mouza, murabba & killa map', 'digital-mapping'],
+      ['RTK land measurement', 'rtk-survey'],
+      ['Drone imagery', 'drone-imagery'],
+      ['Revenue record consultancy', 'land-consultancy'],
+    ].map(([name, slug]) => ({ '@type': 'Offer', itemOffered: { '@type': 'Service', name, url: `${SITE.url}/services/${slug}/` } })),
+  },
+};
+
+const seeList = [
+  { icon: 'map', text: `Mouza ${m.name} boundary with murabba and killa lines`, free: true },
+  { icon: 'compass', text: 'Preview on a street base map', free: true },
+  { icon: 'satellite', text: 'Satellite imagery under the killa grid', free: false },
+  { icon: 'pin', text: 'Live GPS location: see which killa you are standing in', free: false },
+  { icon: 'ruler', text: 'Killa area and measurements in acres, kanal and marla', free: false },
+  { icon: 'layers', text: 'Saved layers: draw and keep your own fields and boundaries', free: false },
+];
+const faqs = [
+  { q: `Can I see the map of ${m.name} online?`, a: `Yes. Tap “Preview on the map” to open Mouza ${m.name}, Tehsil ${tehsil} on the ${SITE.brand} dashboard. The preview shows the mouza, murabba and killa boundaries on a street map, in any phone browser.` },
+  { q: `How do I find my murabba and killa in ${m.name}?`, a: `Open the map, zoom into Mouza ${m.name} and look for your murabba number and its killas. With a subscription you also get satellite imagery, live GPS location (which killa you are in), and killa area and measurements.` },
+  { q: `Can you measure my land in ${m.name} on site?`, a: `Yes. Our team does centimetre-accurate RTK measurement and drone imagery in Tehsil ${tehsil}, and our revenue consultants advise on mutation (intiqal), inheritance, partition and qabza matters. Message us on WhatsApp to book.` },
+];
+---
+<Base title={`${m.name}, ${tehsil} Mouza Map`} seoTitle={seoTitle} description={description} schema={[placeLd, serviceLd]} crumbNames={['Mouza Maps', tehsil, m.name]}>
+  <section class="relative isolate overflow-hidden pt-32 sm:pt-40">
+    <div class="grid-bg absolute inset-0 -z-10"></div>
+    <div class="absolute -top-40 left-1/2 -z-10 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-400 opacity-25 blur-3xl"></div>
+    <div class="mx-auto max-w-4xl px-4 text-center sm:px-6">
+      <nav class="flex flex-wrap items-center justify-center gap-1.5 text-sm text-slate-400" aria-label="Breadcrumb">
+        <a href="/maps/" class="hover:text-cyan-300">Mouza Maps</a><span aria-hidden="true">›</span>
+        <a href={`/maps/${tehsilSlug}/`} class="hover:text-cyan-300">Tehsil {tehsil}</a><span aria-hidden="true">›</span>
+        <span class="text-slate-300">{m.name}</span>
+      </nav>
+      <h1 class="font-display mt-6 text-3xl font-extrabold text-white sm:text-5xl">{m.name}, Tehsil {tehsil}: Mouza Map (Naqsha)</h1>
+      <p class="urdu mt-4 text-2xl text-cyan-100/90" dir="rtl" lang="ur">موضع {m.name}، تحصیل {tehsil} کا نقشہ — مربع اور کِلا</p>
+      <p class="mx-auto mt-5 max-w-2xl text-lg text-slate-300">
+        See Mouza {m.name} of Tehsil {tehsil}, Punjab on the {SITE.brand} map: the mouza boundary, numbered murabbas (squares) and the killa (acre)
+        grid. The preview opens in any phone browser, no app needed.
+      </p>
+      <div class="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+        <a href={previewUrl(tehsil, m.name)} class="btn-primary !px-8 !py-4 text-lg"><Icon name="map" class="size-6" /> Preview on the map</a>
+        <a href={waLink(waText)} target="_blank" rel="noopener" class="btn-ghost !py-4"><Icon name="whatsapp" class="size-5 text-green-400" /> Get full access on WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto mt-20 max-w-4xl px-4 sm:px-6">
+    <div class="card reveal">
+      <h2 class="font-display text-2xl font-bold text-white">What You’ll See</h2>
+      <ul class="mt-6 grid gap-4 sm:grid-cols-2">
+        {seeList.map((s) => (
+          <li class="flex items-start gap-3">
+            <IconBox name={s.icon} size="sm" />
+            <span class="text-slate-300">
+              {s.text}
+              <span class:list={['ml-1 inline-block rounded-full px-2 py-0.5 align-middle text-[11px] font-semibold uppercase tracking-wide', s.free ? 'bg-emerald-400/15 text-emerald-300' : 'bg-amber-400/15 text-amber-300']}>{s.free ? 'Preview' : 'Subscribers'}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href={SITE.registerUrl} class="btn-primary !px-5 !py-2.5 text-sm">Start free 24-hour trial</a>
+        <a href="/dashboard/" class="btn-ghost !px-5 !py-2.5 text-sm">Dashboard features <Icon name="arrow" class="size-4" /></a>
+      </div>
+    </div>
+  </section>
+
+  <MapServices place={m.name} tehsil={tehsil} />
+
+  {neighbours.length > 0 && (
+    <section class="mx-auto mt-24 max-w-5xl px-4 sm:px-6">
+      <h2 class="reveal font-display text-center text-2xl font-extrabold text-white sm:text-3xl">Nearby Mouzas in Tehsil {tehsil}</h2>
+      <ul class="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {neighbours.map((n) => (
+          <li><a href={`/maps/${tehsilSlug}/${n.slug}/`} class="block rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-slate-200 transition hover:border-cyan-300/40 hover:text-white">{n.name}</a></li>
+        ))}
+      </ul>
+    </section>
+  )}
+  <p class="mt-6 text-center">
+    <a href={`/maps/${tehsilSlug}/`} class="inline-flex items-center gap-1 font-semibold text-cyan-300 hover:text-cyan-200">All mouzas of Tehsil {tehsil} <Icon name="arrow" class="size-4" /></a>
+  </p>
+
+  <FAQ items={faqs} />
+  <CTA title={`Your Land in ${m.name}, Clearly`} text="Start a free 24-hour trial of the dashboard, or message us on WhatsApp for RTK measurement, drone imagery or revenue record advice." waText={waText} />
+</Base>

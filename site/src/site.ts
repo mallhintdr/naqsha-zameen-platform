@@ -49,6 +49,7 @@ export const NAV = [
   { href: '/services/drone-imagery/', label: 'Drone Imagery' },
   { href: '/services/land-consultancy/', label: 'Consultancy' },
   { href: '/dashboard/', label: 'Dashboard' },
+  { href: '/maps/', label: 'Mouza Maps' },
   { href: '/about/', label: 'About' },
   { href: '/contact/', label: 'Contact' },
 ];

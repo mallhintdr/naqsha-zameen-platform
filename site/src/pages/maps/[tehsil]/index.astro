@@ -1,0 +1,87 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Icon from '../../../components/Icon.astro';
+import IconBox from '../../../components/IconBox.astro';
+import CTA from '../../../components/CTA.astro';
+import MapServices from '../../../components/MapServices.astro';
+import { SITE } from '../../../site';
+import { getCatalog, type Tehsil } from '../../../mouza-catalog';
+
+export async function getStaticPaths() {
+  const tehsils = await getCatalog();
+  return tehsils.map((t) => ({ params: { tehsil: t.slug }, props: { t } }));
+}
+const { t } = Astro.props as { t: Tehsil };
+const n = t.mouzas.length.toLocaleString('en-US');
+const seoTitle = `${t.name} Mouza Maps (Naqsha) | ${SITE.brand}`;
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: `${t.name} Mouza Maps`,
+  url: `${SITE.url}/maps/${t.slug}/`,
+  about: { '@type': 'AdministrativeArea', name: `Tehsil ${t.name}`, containedInPlace: { '@type': 'AdministrativeArea', name: 'Punjab', containedInPlace: { '@type': 'Country', name: 'Pakistan' } } },
+  isPartOf: { '@id': `${SITE.url}/#website` },
+};
+---
+<Base
+  title={`${t.name} Mouza Maps`}
+  seoTitle={seoTitle.length <= 60 ? seoTitle : `${t.name} Mouza Maps (Naqsha)`}
+  description={`Mouza (chak) maps of Tehsil ${t.name}, Punjab: ${n} mouzas with murabba and killa boundaries. Pick your mouza and preview its naqsha online.`}
+  schema={[ld]}
+  crumbNames={['Mouza Maps', t.name]}
+>
+  <section class="relative isolate overflow-hidden pt-32 sm:pt-40">
+    <div class="grid-bg absolute inset-0 -z-10"></div>
+    <div class="absolute -top-40 left-1/2 -z-10 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-400 opacity-25 blur-3xl"></div>
+    <div class="mx-auto max-w-4xl px-4 text-center sm:px-6">
+      <a href="/maps/" class="eyebrow">← All tehsils</a>
+      <h1 class="font-display mt-6 text-4xl font-extrabold text-white sm:text-6xl">{t.name} Mouza Maps</h1>
+      <p class="urdu mt-3 text-2xl text-cyan-100/90" dir="rtl" lang="ur">تحصیل {t.name} کے موضع جات کے نقشے</p>
+      <p class="mx-auto mt-5 max-w-2xl text-lg text-slate-300">
+        {n} mouzas (chaks and villages) of Tehsil {t.name}, Punjab. Open any mouza to see its boundary, murabba numbers and killa grid on the
+        {SITE.brand} map.
+      </p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href={`${SITE.dashboardUrl}/?browse=all&t=${encodeURIComponent(t.name)}`} class="btn-primary"><Icon name="map" class="size-5" /> Open {t.name} on the map</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto mt-16 max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-xl">
+      <label for="mouza-filter" class="sr-only">Search mouza</label>
+      <div class="relative">
+        <Icon name="search" class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
+        <input id="mouza-filter" type="search" autocomplete="off" placeholder={`Search ${n} mouzas, e.g. chak number`} class="w-full rounded-2xl border border-white/15 bg-white/5 py-3.5 pl-12 pr-4 text-white placeholder:text-slate-500 focus:border-cyan-300/60 focus:outline-none" />
+      </div>
+      <p id="mouza-count" class="mt-2 text-center text-sm text-slate-500" aria-live="polite"></p>
+    </div>
+    <ul id="mouza-list" class="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      {t.mouzas.map((m) => (
+        <li><a href={`/maps/${t.slug}/${m.slug}/`} class="block rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-slate-200 transition hover:border-cyan-300/40 hover:bg-white/[0.07] hover:text-white">{m.name}</a></li>
+      ))}
+    </ul>
+    <p id="mouza-none" class="mt-6 hidden text-center text-slate-400">No mouza matches. Try fewer letters or just the chak number.</p>
+  </section>
+
+  <MapServices place={t.name} />
+  <CTA title={`Need Your Land in ${t.name} Measured?`} text="Start a free 24-hour trial of the dashboard, or message us on WhatsApp for RTK measurement, drone imagery or revenue record advice." waText={`Assalam-o-Alaikum, I need information about land in Tehsil ${t.name}.`} />
+
+  <script is:inline>
+    (() => {
+      const input = document.getElementById('mouza-filter');
+      const items = [...document.querySelectorAll('#mouza-list li')];
+      const count = document.getElementById('mouza-count');
+      const none = document.getElementById('mouza-none');
+      const norm = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+      const keys = items.map((li) => norm(li.textContent || ''));
+      input.addEventListener('input', () => {
+        const q = norm(input.value);
+        let shown = 0;
+        items.forEach((li, i) => { const ok = !q || keys[i].includes(q); li.hidden = !ok; if (ok) shown++; });
+        count.textContent = q ? `${shown} of ${items.length} mouzas` : '';
+        none.classList.toggle('hidden', shown > 0);
+      });
+    })();
+  </script>
+</Base>

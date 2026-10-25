@@ -12,6 +12,7 @@ export default defineConfig({
     }),
   ],
   vite: { plugins: [tailwindcss()] },
-  build: { inlineStylesheets: 'auto' },
+  // concurrency: render several pages at once (thousands of /maps/ pages).
+  build: { inlineStylesheets: 'auto', concurrency: 8 },
   compressHTML: true,
 });
