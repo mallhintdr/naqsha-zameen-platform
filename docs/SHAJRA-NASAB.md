@@ -201,10 +201,30 @@ A public tool on the website, at **https://naqsha-zameen.com/tools/shajra-nasab/
 - **Server:** 37 tests.
 - **Website build:** about 1½ minutes for 21,560 pages. The earlier 5–6-minute builds were caused by test servers left running at the same time.
 
+## Remaining features (done, 27 Oct 2026)
+
+1. **Hindu manual override:**
+   - In Hindu mode, **Edit shares manually** turns the share column into input boxes (for example "1/4").
+   - The manual shares apply only when they add up to exactly 1, and are then marked **manual**. Otherwise a warning shows the current total and the computed shares stay in place.
+   - **Clear manual shares** resets them.
+   - Overrides are saved with the case (`manualShares`), so they also travel in share links, PDFs and JSON.
+2. **Urdu computation notes:** an **English / اردو** switch above the share table.
+   - Every rule explanation is translated in `site/src/tools/shajra/labels-ur.ts`; a missing key falls back to English.
+   - Relation names and the disclaimer were already bilingual.
+3. **Accessibility:**
+   - **Automated check:** axe-core (WCAG rules) on the tool shows **no violations**.
+   - **Issues fixed:**
+     - Contrast of the Print button and the citation text.
+     - The chart was marked as an image while containing buttons; it is now a labelled group.
+     - Each person node's accessible name now matches its visible text.
+   - **Keyboard:** every person in the chart can be reached with Tab and selected with Enter or Space. The share table is the text alternative to the chart.
+   - **Test script:** `frontend/e2e/shajra-a11y.mjs` runs axe and checks keyboard selection, the Urdu notes and the manual override, including the warning for an invalid total.
+   - **Lighthouse:** not run, because it needs the deployed site. Run it on https://naqsha-zameen.com/tools/shajra-nasab/ after deploy.
+
 ## Still open / for legal review
 
 1. **Legal sign-off:** every citation is `verified: false`. The reviewer should confirm the golden expectations in `packages/inheritance-engine/test/*.test.ts`, especially Shia classes II and III, Parsi s.54 and the Hindu order.
-2. **Hindu manual override:** the "verify" banner is in place; the editable share table is not built yet.
-3. **Accessibility and Lighthouse:** not run yet. The chart is keyboard-operable and the share table is the screen-reader alternative.
+2. **Hindu manual override:** done (see above).
+3. **Accessibility:** axe check clean (see above). Lighthouse is to be run on the live site.
 4. **Live server check:** test the server PDF and share links on the VPS after deploy.
-5. **Urdu rule texts:** the computation notes are in English only; the citation data has Urdu names.
+5. **Urdu rule texts:** done. Have a native reader proof-read `labels-ur.ts`.

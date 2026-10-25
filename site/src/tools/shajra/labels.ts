@@ -195,10 +195,13 @@ export const RULE: Record<string, string> = {
   'hindu.excluded-by-nearer': 'Excluded by a nearer heir.',
   'estate.not-included': 'Pension, family pension and benevolent fund are not part of the estate.',
   'not-an-heir': 'Not an heir in this case.',
+  'manual.override': 'These shares were entered manually.',
   'not-related': 'Not related to the deceased.',
 };
 
-export const ruleText = (id: string) => RULE[id] ?? id;
+import { RULE_UR } from './labels-ur.ts';
+export type Lang = 'en' | 'ur';
+export const ruleText = (id: string, lang: Lang = 'en') => (lang === 'ur' ? RULE_UR[id] ?? RULE[id] : RULE[id]) ?? id;
 
 export const DISCLAIMER = 'Computational aid, not legal advice. Verify with a lawyer / revenue officer.';
 export const DISCLAIMER_UR = 'یہ صرف حسابی معاونت ہے، قانونی مشورہ نہیں۔ وکیل / ریونیو افسر سے تصدیق کریں۔';

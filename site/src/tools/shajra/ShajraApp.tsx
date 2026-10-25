@@ -1,12 +1,14 @@
 // Shajra Nasab: build the family of a deceased person and get the inheritance shares.
 // Runs fully in the browser; the case is autosaved in this browser only (localStorage).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { combine, compute, percent, toString, type ChainLink, type Case, type ComputeResult, type LawSystem, type Person, type ShareResult } from 'inheritance-engine';
+import { add, combine, compute, eq, ONE, parse, percent, sum, ZERO, toString, type ChainLink, type Case, type ComputeResult, type LawSystem, type Person, type ShareResult } from 'inheritance-engine';
 import Tree, { Legend } from './Tree.tsx';
 
 type Root = Case & { subcases?: Case[] };
+/** Manual override of the share table (Hindu guided mode): person id -> fraction text. */
+type WithOverride = Case & { manualShares?: Record<string, string> };
 import { addRelative, fromJSON, load, newCase, removePerson, save, setParentOf, toJSON, updatePerson, type AddKind } from './model.ts';
-import { DISCLAIMER, DISCLAIMER_UR, relLabel, ruleText } from './labels.ts';
+import { DISCLAIMER, DISCLAIMER_UR, relLabel, ruleText as ruleTextL, type Lang } from './labels.ts';
 import Estate, { areaText, feetText, systemFor } from './Estate.tsx';
 import qrcode from 'qrcode-generator';
 import { SITE } from '../../site';
@@ -52,6 +54,9 @@ export default function ShajraApp() {
     else setRootC({ ...(n as Root), subcases: subs });
   };
   const [selected, setSelected] = useState<string | null>('D');
+  const [lang, setLang] = useState<Lang>('en');
+  const ruleText = (id: string) => ruleTextL(id, lang);
+  const [editShares, setEditShares] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -149,6 +154,20 @@ export default function ShajraApp() {
   };
   const importJson = async (f: File) => { try { setRootC(fromJSON(await f.text())); setActiveId(null); setSelected('D'); } catch { alert('This file is not a Shajra Nasab case.'); } };
 
+  // Manual override (Hindu guided mode): valid only when the entered shares add up to exactly 1.
+  const manual = (c as WithOverride).manualShares;
+  const canOverride = c.lawSystem.startsWith('hindu');
+  const overrideState = useMemo(() => {
+    if (!canOverride || !manual || !Object.keys(manual).length) return null;
+    try {
+      const f = Object.fromEntries(Object.entries(manual).filter(([, v]) => v.trim()).map(([k, v]) => [k, parse(v)]));
+      const total = sum(Object.values(f));
+      return { f, total, valid: eq(total, ONE) };
+    } catch { return { f: {}, total: ZERO, valid: false }; }
+  }, [manual, canOverride]);
+  const setManual = (id: string, v: string) => setC({ ...structuredClone(c), manualShares: { ...(manual ?? {}), [id]: v } } as WithOverride);
+  const shownFraction = (s: ShareResult) => (overrideState?.valid && s.personId in overrideState.f ? overrideState.f[s.personId] : overrideState?.valid ? ZERO : s.fraction);
+
   const heirs = (result?.shares ?? []).filter((s) => s.status !== 'excluded' || s.reasons.some((r) => r.ruleId.startsWith('mflo')));
   const excluded = (result?.shares ?? []).filter((s) => s.status === 'excluded' && s.relationKey !== 'unrelated' && !s.reasons.some((r) => r.ruleId.startsWith('mflo')));
   const name = (id: string) => c.persons.find((p) => p.id === id)?.name || (id === '__unborn__' ? 'Unborn child' : id);
@@ -162,7 +181,7 @@ export default function ShajraApp() {
         <button className={btn} onClick={() => fileRef.current?.click()}>Import JSON</button>
         <button className={btn} onClick={svgExport}>Export SVG</button>
         <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
-        <button className={`${btn} !border-sky-600 !bg-sky-600 !text-white`} onClick={() => window.print()}>Print / Save PDF</button>
+        <button className={`${btn} !border-sky-700 !bg-sky-700 !text-white`} onClick={() => window.print()}>Print / Save PDF</button>
         <button className={btn} onClick={downloadPdf} disabled={!!busy}>{busy === 'pdf' ? 'Creating PDF…' : 'Download PDF'}</button>
         <button className={btn} onClick={saveLink} disabled={!!busy}>{busy === 'link' ? 'Saving…' : 'Save & get link'}</button>
         <span className="ml-auto text-[11px] text-slate-500">Case {c.id} · saved in this browser only</span>
@@ -175,7 +194,7 @@ export default function ShajraApp() {
             const d = x.persons.find((p) => p.id === x.deceasedId);
             const on = (x.id === rootC.id && !activeId) || x.id === activeId;
             return (
-              <button key={x.id} className={`${btn} ${on ? '!border-sky-600 !bg-sky-600 !text-white' : ''}`} onClick={() => { setActiveId(x.id === rootC.id ? null : x.id); setSelected(x.deceasedId); }}>
+              <button key={x.id} className={`${btn} ${on ? '!border-sky-700 !bg-sky-700 !text-white' : ''}`} onClick={() => { setActiveId(x.id === rootC.id ? null : x.id); setSelected(x.deceasedId); }}>
                 {x.id === rootC.id ? 'Main' : 'Onward'}: {d?.name || 'deceased'} ({x.dateOfDeath})
               </button>
             );
@@ -272,7 +291,22 @@ export default function ShajraApp() {
 
       {/* Step 3: results */}
       <section className="border-t border-slate-200 p-4" id="shajra-results">
-        <h2 className="text-lg font-bold">Shares (حصص)</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-lg font-bold">Shares (حصص)</h2>
+          <div className="no-print ml-auto flex items-center gap-1" role="group" aria-label="Language of the notes">
+            <button className={`${btn} ${lang === 'en' ? '!bg-slate-800 !text-white' : ''}`} aria-pressed={lang === 'en'} onClick={() => setLang('en')}>English</button>
+            <button className={`${btn} urdu ${lang === 'ur' ? '!bg-slate-800 !text-white' : ''}`} aria-pressed={lang === 'ur'} onClick={() => setLang('ur')} lang="ur">اردو</button>
+          </div>
+          {canOverride && (
+            <button className={`${btn} no-print`} aria-pressed={editShares} onClick={() => setEditShares((v) => !v)}>{editShares ? 'Done editing' : 'Edit shares manually'}</button>
+          )}
+        </div>
+        {canOverride && overrideState && (
+          <p className={`mt-2 rounded-lg p-2 text-sm ${overrideState.valid ? 'bg-sky-50 text-sky-900' : 'bg-red-50 text-red-800'}`} role="status">
+            {overrideState.valid ? `${ruleText('manual.override')} ` : `Manual shares add up to ${toString(overrideState.total)}, not 1: the computed shares are shown until they do. `}
+            <button className="underline" onClick={() => setC({ ...structuredClone(c), manualShares: {} } as WithOverride)}>Clear manual shares</button>
+          </p>
+        )}
         {error && <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{error}</p>}
         {result && (
           <>
@@ -295,9 +329,13 @@ export default function ShajraApp() {
                         <td className="p-2 font-semibold">{name(s.personId)}{p && !p.alive && p.dateOfDeath && p.dateOfDeath > c.dateOfDeath && s.fraction.n > 0n && <button className="no-print ml-1 rounded border border-sky-300 px-1 text-[10px] font-semibold text-sky-700" onClick={() => distributeOnward(s.personId)} title="This heir died after the deceased: distribute their share to their own heirs">Distribute onward →</button>}{s.status === 'reserved' && <span className="ml-1 rounded bg-amber-100 px-1 text-[10px] text-amber-800">reserved</span>}{s.status === 'substituted-s4' && <span className="ml-1 rounded bg-blue-100 px-1 text-[10px] text-blue-800">s.4</span>}</td>
                         <td className="p-2">{en} <span className="urdu text-slate-500" lang="ur">{ur}</span></td>
                         <td className="p-2 text-slate-500">{p?.cnic ?? ''}</td>
-                        <td className="p-2 text-right font-mono">{toString(s.fraction)}</td>
-                        <td className="p-2 text-right font-mono">{String(s.sihaam)}</td>
-                        <td className="p-2 text-right font-mono">{s.percent}</td>
+                        <td className="p-2 text-right font-mono">
+                          {editShares && canOverride && s.personId !== '__unborn__'
+                            ? <input aria-label={`Manual share for ${name(s.personId)}`} className="w-20 rounded border border-slate-300 px-1 text-right" placeholder={toString(s.fraction)} value={manual?.[s.personId] ?? ''} onChange={(e) => setManual(s.personId, e.target.value)} />
+                            : <>{toString(shownFraction(s))}{overrideState?.valid && <span className="ml-1 rounded bg-sky-100 px-1 text-[10px] text-sky-800">manual</span>}</>}
+                        </td>
+                        <td className="p-2 text-right font-mono">{overrideState?.valid ? "—" : String(s.sihaam)}</td>
+                        <td className="p-2 text-right font-mono">{overrideState?.valid ? percent(shownFraction(s)) : s.percent}</td>
                         {c.estate.immovable.map((p, i) => {
                           const whole = s.areaSqftRounded?.[i];
                           const feet = systemFor(p.area.unit).units.includes('sqft') && whole != null;
@@ -326,9 +364,9 @@ export default function ShajraApp() {
               <h3 className="text-sm font-bold">Computation notes</h3>
               <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-sm text-slate-700">
                 {heirs.filter((s) => s.reasons.length).map((s) => (
-                  <li key={`n-${s.personId}`}><b>{name(s.personId)}:</b> {s.reasons.map((r) => ruleText(r.ruleId)).join(' ')} <span className="text-[11px] text-slate-400">[{s.reasons.map((r) => r.citationKey).join(', ')}]</span></li>
+                  <li key={`n-${s.personId}`}><b>{name(s.personId)}:</b> {s.reasons.map((r) => ruleText(r.ruleId)).join(' ')} <span className="text-[11px] text-slate-500">[{s.reasons.map((r) => r.citationKey).join(', ')}]</span></li>
                 ))}
-                {result.notes.map((n, i) => <li key={`c-${i}`}>{ruleText(n.ruleId)}{n.params?.from && n.ruleId === 'sunni.aul' ? ` (${n.params.from} → ${n.params.to})` : ''} <span className="text-[11px] text-slate-400">[{n.citationKey}]</span></li>)}
+                {result.notes.map((n, i) => <li key={`c-${i}`}>{ruleText(n.ruleId)}{n.params?.from && n.ruleId === 'sunni.aul' ? ` (${n.params.from} → ${n.params.to})` : ''} <span className="text-[11px] text-slate-500">[{n.citationKey}]</span></li>)}
               </ol>
               <p className="mt-2 text-[11px] text-slate-500">Law: {result.lawSystem} · policy {result.policyVersion} · MFLO s.4 {c.policy.applyMFLOs4 ? 'on' : 'off'} · radd to sole spouse {c.policy.raddToSpouseWhenNoOtherHeir ? 'on' : 'off'} · case {c.id}. Legal references are under review.</p>
             </div>
@@ -365,6 +403,7 @@ function Editor({ c, p, share, onPatch, onAdd, onParent, onRemove }: {
   onParent: (role: 'fatherId' | 'motherId', id: string | undefined) => void; onRemove: () => void;
 }) {
   const isD = p.id === c.deceasedId;
+  const ruleText = (id: string) => ruleTextL(id);
   const link = c.parents.find((l) => l.childId === p.id);
   const others = c.persons.filter((x) => x.id !== p.id);
   const flags = p.flags;

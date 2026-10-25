@@ -1,7 +1,7 @@
 {
   "name": "naqsha-zameen-frontend",
   "private": true,
-  "version": "5.3.6",
+  "version": "5.3.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -58,6 +58,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "axe-core": "^4.14.0",
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",

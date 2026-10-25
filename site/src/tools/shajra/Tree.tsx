@@ -23,7 +23,7 @@ export default function Tree({ c, results, selected, onSelect }: { c: Case; resu
   // Marriage lines between partners on the same row.
   const unions = c.unions.filter((u) => nodes.get(u.partners[0])?.gen === nodes.get(u.partners[1])?.gen);
   return (
-    <svg width={width + P * 2} height={height + P * 2} viewBox={`0 0 ${width + P * 2} ${height + P * 2}`} role="img" aria-label="Family tree (shajra nasab)" className="shajra-tree block">
+    <svg width={width + P * 2} height={height + P * 2} viewBox={`0 0 ${width + P * 2} ${height + P * 2}`} role="group" aria-label="Family tree (shajra nasab)" className="shajra-tree block">
       <defs>
         <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
           <line x1="0" y1="0" x2="0" y2="6" stroke="#cbd5e1" strokeWidth="2" />
@@ -68,7 +68,7 @@ export default function Tree({ c, results, selected, onSelect }: { c: Case; resu
           : <circle cx={x} cy={y + sym / 2} r={sym / 2} />;
         const [en, ur] = relLabel(r?.relationKey ?? (isD ? 'deceased' : ''));
         return (
-          <g key={p.id} className="cursor-pointer" onClick={() => onSelect(p.id)} tabIndex={0} role="button" aria-label={`${p.name || 'Unnamed'}, ${en}`}
+          <g key={p.id} className="cursor-pointer" onClick={() => onSelect(p.id)} tabIndex={0} role="button"
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(p.id); } }}>
             <rect x={n.x + P + 2} y={n.y + P - 6} width={NODE_W - 4} height={NODE_H + 8} rx="10"
               fill={selected === p.id ? '#e0f2fe' : 'transparent'} stroke={selected === p.id ? '#0284c7' : 'transparent'} />
@@ -82,7 +82,7 @@ export default function Tree({ c, results, selected, onSelect }: { c: Case; resu
             {p.flags.pregnant && <path d={`M${x + sym / 2 + 4},${y + sym} l7,-12 l7,12 z`} fill="none" stroke="#d97706" strokeDasharray="2 2" />}
             {dead && <line x1={x - sym / 2 - 2} y1={y + sym + 2} x2={x + sym / 2 + 2} y2={y - 2} stroke="#0f172a" strokeWidth="2" />}
             <text x={x} y={y + sym + 15} textAnchor="middle" fontSize="11.5" fontWeight="700" fill="#0f172a">{(p.name || 'Unnamed').slice(0, 20)}</text>
-            <text x={x} y={y + sym + 28} textAnchor="middle" fontSize="10" fill="#475569">{en}{ur ? ` · ${ur}` : ''}</text>
+            <text x={x} y={y + sym + 28} textAnchor="middle" fontSize="10" fill="#334155">{en}{ur ? ` · ${ur}` : ''}</text>
             {r && r.fraction.n > 0n && (
               <g>
                 <rect x={x - 30} y={y + sym + 34} width="60" height="17" rx="8.5" fill={st?.stroke ?? '#16a34a'} />
