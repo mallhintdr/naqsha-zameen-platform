@@ -316,6 +316,15 @@ The old .pk frontend runs against the same backend until cutover.
 | G6 | `GET /api/geo/shifted-mouzas/:tehsil` returns 500 for logged-out callers (it reads `req.user.userId`). | Low | `isAuthenticated` |
 | G7 | The zoom gate depends on a client-supplied `z`, so it is not a control. | Info | Removed by design (3.2) |
 
+**Phase 0 status (25 Oct 2026): G1, G2, G3, G4 and G6 fixed; G5 verified (layers are owner-scoped in every query).**
+- **One rule:** `services/accessPolicy.js` (`accessLevel` / `subscriptionState`) and `middleware/mapAccess.js` are the single rule. `hasAccess` now delegates to the mouza-level `isEntitled`.
+- **Expired / pending accounts are tiles only:**
+  - Allowed at any zoom: PMTiles signing, `/pmtiles` and shajra raster.
+  - Refused: mouza GeoJSON (`/JSON Murabba/…`, `/api/geojson`) returns `403 EXPIRED_TILES_ONLY`, and the dashboard skips GeoJSON for them (`setTilesOnly`).
+  - Still open: tehsil-wide index files and `/Metadata`.
+- **Zoom cap kept for now:** the dashboard still caps their zoom at 14 until Phase 1 (satellite / GPS / shift / change disabled) ships, so the two changes go live together.
+- **Tests:** `backend/test/accessPolicy.test.js`.
+
 ### 5.3 New threats from preview, and controls
 
 | Threat | Likelihood | Control |

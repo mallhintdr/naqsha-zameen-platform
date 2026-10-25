@@ -85,3 +85,10 @@ It matches leaked vertices to the original ones within ~9 cm and correlates the 
 - The live site still runs `old-repo/` against its own backend copy. None of this applies there until cutover.
 - Metadata centroids (`-Killa.json`, `-Metadata.json`) are not watermarked (non-geo JSON goes through the envelope only). The app caches consolidated metadata in `localStorage` (decoded).
 - `/pmtiles` static fallback still uses the tehsil-level check (owned by the PMTiles work).
+
+## Update 25 Oct 2026: one access rule, expired = tiles only
+
+- **One rule:** every map-data route uses `services/accessPolicy.accessLevel` (full / expired / none).
+- **Gaps closed:** the tehsil-only check on the static `/pmtiles` fallback, and the temp-grant gap in `hasAccess`.
+- **Expired / pending accounts:** PMTiles and shajra raster tiles are served at any zoom; mouza GeoJSON returns `403 EXPIRED_TILES_ONLY`. They have no clean GeoJSON download; tiles need short-lived signed, range-limited requests.
+- **Limit:** vector tiles still carry geometry (quantised per tile), so this raises the effort of copying rather than making it impossible. Raster tiles would be the strong form (see docs/PUBLIC-BROWSE-PLAN.md).
