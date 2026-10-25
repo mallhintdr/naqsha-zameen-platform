@@ -103,3 +103,13 @@ is kept as `pmtiles-worker-simple.js` for reference only.
   `PMTILES_SIGN_RATE_LIMITED`.
 - If a uid is abusive: suspend the account (stops new signatures within 15 min); rotating
   `PMTILES_SIGNING_KEY` (backend `.env` for both backends + `wrangler secret put`) kills all URLs at once.
+
+## Deployed 25 Oct 2026
+
+- **Live version:** `2df3be41` (signed, edge-cached, range-only). It replaced `1675f4f1`, the old worker with no checks, which served tiles with no token at all.
+- **Signing key:** `PMTILES_SIGNING_KEY` on the worker matches the backend; a valid `.pk` link was tested before deploy.
+- **Verified after deploy:**
+  - Refused: no token (401), fake token (403), token reused for another mouza or user, no Origin or a foreign Origin, open-ended or oversized ranges.
+  - Still public: `/list-tehsils`.
+  - Edge cache: repeat ranges return `X-Cache: HIT`.
+- **Rollback:** `cd cloudflare-worker && npx wrangler versions deploy 1675f4f1-7092-407a-ad0a-392a40f7d25e@100% --yes`
