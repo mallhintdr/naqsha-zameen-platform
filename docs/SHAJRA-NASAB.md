@@ -28,10 +28,10 @@ A public tool on the website, at **https://naqsha-zameen.com/tools/shajra-nasab/
 | 1 | Engine: fractions, relations, pipeline, Hanafi rules, aul/radd, MFLO s.4, explain log, tests | ✅ Done (31 tests) |
 | 2 | Website route, menu entry, tree builder, live shares, share table, print view, autosave | ✅ Done (see below) |
 | 3 | API (save and share link), server PDF, units and land area per heir | ✅ Done (see below) |
-| 4 | Shia (Ithna Ashari) module | — |
-| 5 | Christian and Parsi | — |
-| 6 | Munasakha (chained estates), Urdu polish, SVG export | — |
-| 7 | Hindu (Mitakshara), behind an on/off setting until legal review | — |
+| 4 | Shia (Ithna Ashari) module | ✅ Done |
+| 5 | Christian and Parsi | ✅ Done |
+| 6 | Munasakha (chained estates), Urdu polish, SVG export | ✅ Done |
+| 7 | Hindu (Mitakshara), behind an on/off setting until legal review | ✅ Done (beta: `?beta=hindu`) |
 
 ## Phase 1: engine (done, 26 Oct 2026)
 
@@ -131,10 +131,80 @@ A public tool on the website, at **https://naqsha-zameen.com/tools/shajra-nasab/
 - **Website build time:** about 5½ minutes for 21,560 pages, even with React limited to `/tools/`. The time comes from the number of mouza pages, not from React.
 - **Grandchildren:** they currently get the same area unit as their property; the mixed-unit display is chosen from the property's first unit.
 
-## Next: Phase 4
+## Land units update (27 Oct 2026)
 
-The Shia (Ithna Ashari) module:
-- the three classes of heirs, no aul, radd to blood heirs;
-- the childless-widow land rule as a setting;
-- the "only intentional killing bars" rule;
-- golden tests.
+- **Default units:** **Kanal – Marla – Feet**, using the government standard **1 marla = 272 sq ft** (1 kanal = 20 marla = 5,440 sq ft). The engine units are `gkanal` and `gmarla`; the revenue standard (1 marla = 272.25 sq ft, with sarsai) is still available.
+- **Whole feet per heir** (`allocateWholeSqft`): when a share doesn't divide into whole square feet, everyone first gets the whole feet below their exact share. The few feet left over go one each to the heirs with the largest leftover fractions; equal leftovers are settled by list order. The heirs' feet, plus any reserve or State share, then add up **exactly** to the property.
+  - Example: 1 kanal (5,440 sq ft) among a widow (1/8), son (7/12) and daughter (7/24) gives 680 + 3,173 + 1,587 = 5,440.
+  - A note is added to the computation notes whenever feet were rounded.
+- **Share table:** for feet-based properties it shows these whole-feet results.
+
+## Phase 4: Shia (done)
+
+`src/rules/shia.ts` is a separate module, not a variation of the Hanafi rules.
+- **Three classes:** I = parents and descendants; II = grandparents and siblings; III = uncles and aunts. A nearer class excludes all remoter ones; the spouse inherits with every class.
+- **Representation:** descendants take a predeceased ancestor's place per stirpes (2 : 1), with no male-line preference.
+- **No aul:** a shortfall falls on the daughters or sisters.
+- **Radd:** the surplus goes to the blood heirs. The mother is left out of radd when she's reduced by brothers; there's no radd to a spouse. A sole husband takes everything; a sole widow follows the setting.
+- **Mother's reduction to 1/6:** the father is alive together with 2 brothers, or 1 brother and 2 sisters, or 4 sisters.
+- **No Umariyyatan:** the mother takes 1/3 of the whole estate.
+- **Class II:** the father's side (full siblings, else half-siblings through the father, plus the paternal grandparents) shares 2 : 1. The mother's side (half-siblings through the mother, plus the maternal grandparents) shares equally: 1/6 for one person, 1/3 for more.
+- **Class III:** paternal 2/3 and maternal 1/3. Classes II and III are flagged "verify".
+- **Notes always added:** the childless-widow land setting (classical or equal) and Habwa.
+- **Bars:** only intentional killing bars; a child born outside marriage inherits from neither parent.
+- **Tests:** 8 golden cases.
+
+## Phase 5: Christian and Parsi (done)
+
+`src/rules/succession-act.ts`
+- **Christian / other (Part V):**
+  - Spouse: 1/3 with lineal descendants, 1/2 with other kindred, all with neither.
+  - Descendants share equally regardless of gender, per stirpes.
+  - Then: father (s.42); mother and siblings equally (s.43); mother alone (s.44); siblings (s.45); nearest kindred by degree (s.46–48, flagged "verify").
+  - Full and half blood are equal. A child born outside marriage is not kindred. No religion bar.
+- **Parsi (Chapter III, 1939 text, which Pakistan kept; India's 1991 amendment doesn't apply):**
+  - s.51 (male): widow = son; daughter = half a son; father = half a son; mother = half a daughter.
+  - s.52 (female): widower and each child equal.
+  - With no children: spouse 1/2, the rest to parents, then siblings.
+  - Always flagged "verify text".
+- **Tests:** 6 golden cases.
+
+## Phase 6: Munasakha, export and Urdu (done)
+
+- **Engine** `combine(root, links)`: works out every final person's share of the **original** estate through chained sub-cases (to any depth). The shares, reserve and State share still sum to exactly 1.
+- **Tool:**
+  - An heir who died **after** the deceased gets a **Distribute onward →** button in the share table.
+  - That button creates an "Onward" estate: the same family tree, with that heir as the deceased on their own date of death. Its law and family can be changed, and the heir's own new relatives added.
+  - Tabs switch between estates, and an onward estate can be removed (with any below it).
+  - A **Final shares of the original estate** table lists every person with the chain they inherit through.
+  - Onward estates are saved, shared and exported together with the main case.
+- **Export SVG:** downloads the pedigree chart as an SVG file. JSON import and export already existed.
+- **Urdu:** Urdu headings in the share table, relation names in revenue-record terms, and the disclaimer in Urdu.
+- **Tested in a browser:** father's widow 1/8 and two sons 7/16 each; the second son dies later, leaving his widow, mother and brother. Final shares: father's widow **13/48**, surviving son **119/192**, second son's widow **7/64**. No errors. Switching the law to Shia recalculates live.
+
+## Phase 7: Hindu (done, beta)
+
+`src/rules/hindu.ts`, shown in the tool only with **`?beta=hindu`**, plus a "Property type" choice.
+- **Separate property:**
+  - Sons, grandsons and great-grandsons share per stirpes.
+  - The widow takes a son's share (1937 Act, limited estate). A predeceased son's widow shares in his branch.
+  - With no male issue: the widow takes the whole as a limited estate.
+  - Then, in order: daughters (Benares order noted, Bombay equal), daughters' sons, mother, father, full brothers, half-brothers, brothers' sons, father's mother, father's father.
+  - Remoter heirs: entered manually.
+- **Coparcenary:** the widow takes the deceased's interest under the 1937 Act. With no widow, the interest passes by survivorship to the coparceners, which is not computed.
+- **Every result** is flagged "verify" and carries the note "custom may apply".
+- **Tests:** 4 golden cases.
+
+## Totals
+
+- **Engine:** 56 tests, and the no-floats check is clean.
+- **Server:** 37 tests.
+- **Website build:** about 1½ minutes for 21,560 pages. The earlier 5–6-minute builds were caused by test servers left running at the same time.
+
+## Still open / for legal review
+
+1. **Legal sign-off:** every citation is `verified: false`. The reviewer should confirm the golden expectations in `packages/inheritance-engine/test/*.test.ts`, especially Shia classes II and III, Parsi s.54 and the Hindu order.
+2. **Hindu manual override:** the "verify" banner is in place; the editable share table is not built yet.
+3. **Accessibility and Lighthouse:** not run yet. The chart is keyboard-operable and the share table is the screen-reader alternative.
+4. **Live server check:** test the server PDF and share links on the VPS after deploy.
+5. **Urdu rule texts:** the computation notes are in English only; the citation data has Urdu names.

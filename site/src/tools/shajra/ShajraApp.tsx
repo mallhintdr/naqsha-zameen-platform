@@ -1,8 +1,10 @@
 // Shajra Nasab: build the family of a deceased person and get the inheritance shares.
 // Runs fully in the browser; the case is autosaved in this browser only (localStorage).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { compute, toString, type Case, type ComputeResult, type LawSystem, type Person, type ShareResult } from 'inheritance-engine';
+import { combine, compute, percent, toString, type ChainLink, type Case, type ComputeResult, type LawSystem, type Person, type ShareResult } from 'inheritance-engine';
 import Tree, { Legend } from './Tree.tsx';
+
+type Root = Case & { subcases?: Case[] };
 import { addRelative, fromJSON, load, newCase, removePerson, save, setParentOf, toJSON, updatePerson, type AddKind } from './model.ts';
 import { DISCLAIMER, DISCLAIMER_UR, relLabel, ruleText } from './labels.ts';
 import Estate, { areaText, feetText, systemFor } from './Estate.tsx';
@@ -16,15 +18,20 @@ function Qr({ text }: { text: string }) {
   return <div className="h-20 w-20" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
+// Hindu rules stay hidden until legal review: open the tool with ?beta=hindu to try them.
+const HINDU_BETA = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('beta') === 'hindu';
+
 const LAWS: { value: LawSystem; label: string; ready: boolean }[] = [
   { value: 'sunni-hanafi', label: 'Muslim: Sunni (Hanafi)', ready: true },
   { value: 'sunni-shafii', label: "Muslim: Sunni (Shafi'i)", ready: true },
   { value: 'sunni-maliki', label: 'Muslim: Sunni (Maliki)', ready: true },
   { value: 'sunni-hanbali', label: 'Muslim: Sunni (Hanbali)', ready: true },
-  { value: 'shia-ithna', label: 'Muslim: Shia (Ithna Ashari): coming soon', ready: false },
-  { value: 'christian', label: 'Christian (Succession Act 1925): coming soon', ready: false },
-  { value: 'parsi', label: 'Parsi: coming soon', ready: false },
-  { value: 'hindu-mitakshara-benares', label: 'Hindu / Sikh (Mitakshara): coming soon', ready: false },
+  { value: 'shia-ithna', label: 'Muslim: Shia (Ithna Ashari)', ready: true },
+  { value: 'christian', label: 'Christian (Succession Act 1925, Part V)', ready: true },
+  { value: 'parsi', label: 'Parsi (Succession Act 1925, Ch. III): verify', ready: true },
+  { value: 'other', label: 'Other / unknown (Succession Act 1925, Part V)', ready: true },
+  { value: 'hindu-mitakshara-benares', label: 'Hindu / Sikh: Mitakshara, Benares (beta)', ready: HINDU_BETA },
+  { value: 'hindu-mitakshara-bombay', label: 'Hindu / Sikh: Mitakshara, Bombay (beta)', ready: HINDU_BETA },
 ];
 
 const ADD: { kind: AddKind; label: string }[] = [
@@ -36,7 +43,14 @@ const input = 'w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 
 const btn = 'rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50';
 
 export default function ShajraApp() {
-  const [c, setC] = useState<Case>(() => newCase());
+  const [rootC, setRootC] = useState<Root>(() => newCase());
+  const [activeId, setActiveId] = useState<string | null>(null); // null = main case
+  const subs = rootC.subcases ?? [];
+  const c: Case = (activeId && subs.find((x) => x.id === activeId)) || rootC;
+  const setC = (n: Case) => {
+    if (activeId && subs.some((x) => x.id === activeId)) setRootC({ ...rootC, subcases: subs.map((x) => (x.id === activeId ? n : x)) });
+    else setRootC({ ...(n as Root), subcases: subs });
+  };
   const [selected, setSelected] = useState<string | null>('D');
   const [loaded, setLoaded] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -51,14 +65,14 @@ export default function ShajraApp() {
     if (id) {
       fetch(`${API}/cases/${encodeURIComponent(id)}`)
         .then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status === 404 ? 'This shared link has expired.' : 'Could not open the shared case.'))))
-        .then((t) => { setC(fromJSON(t)); setShareUrl(`${SITE.url}/tools/shajra-nasab/?case=${id}`); })
-        .catch((e) => { setMsg(e.message); const s = load(); if (s) setC(s); })
+        .then((t) => { setRootC(fromJSON(t)); setShareUrl(`${SITE.url}/tools/shajra-nasab/?case=${id}`); })
+        .catch((e) => { setMsg(e.message); const s = load(); if (s) setRootC(s); })
         .finally(() => setLoaded(true));
-    } else { const s = load(); if (s) setC(s); setLoaded(true); }
+    } else { const s = load(); if (s) setRootC(s); setLoaded(true); }
   }, []);
-  useEffect(() => { if (loaded && !pdfMode) save(c); }, [c, loaded, pdfMode]);
+  useEffect(() => { if (loaded && !pdfMode) save(rootC); }, [rootC, loaded, pdfMode]);
 
-  const post = async (path: string) => fetch(`${API}/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ case: toJSON(c) }) });
+  const post = async (path: string) => fetch(`${API}/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ case: toJSON(rootC) }) });
   const saveLink = async () => {
     setBusy('link'); setMsg(null);
     try {
@@ -88,6 +102,36 @@ export default function ShajraApp() {
   const { result, error } = useMemo((): { result: ComputeResult | null; error: string | null } => {
     try { return { result: compute(c), error: null }; } catch (e) { return { result: null, error: (e as Error).message }; }
   }, [c]);
+  const combined = useMemo(() => {
+    if (!subs.length) return null;
+    try {
+      const linksFor = (caseId: string): ChainLink[] => subs.filter((x) => x.parentCaseId === caseId && x.parentHeirId).map((x) => ({ heirId: x.parentHeirId!, result: compute(x), links: linksFor(x.id) }));
+      return combine(compute(rootC), linksFor(rootC.id));
+    } catch (e) { return { error: (e as Error).message }; }
+  }, [rootC]);
+  const allPersons = useMemo(() => new Map([rootC, ...subs].flatMap((x) => x.persons).map((p) => [p.id, p] as [string, Person])), [rootC]);
+  const distributeOnward = (heirId: string) => {
+    const heir = c.persons.find((p) => p.id === heirId)!;
+    const existing = subs.find((x) => x.parentCaseId === c.id && x.parentHeirId === heirId);
+    if (existing) { setActiveId(existing.id); setSelected(heirId); return; }
+    const sc: Case = { ...structuredClone(c), id: `${c.id}-${subs.length + 1}`, deceasedId: heirId, dateOfDeath: heir.dateOfDeath!, parentCaseId: c.id, parentHeirId: heirId,
+      estate: { immovable: [], debts: { n: 0n, d: 1n }, funeral: { n: 0n, d: 1n }, dower: { n: 0n, d: 1n }, wills: [] } };
+    delete (sc as Root).subcases;
+    setRootC({ ...rootC, subcases: [...subs, sc] });
+    setActiveId(sc.id);
+    setSelected(heirId);
+  };
+  const svgExport = () => {
+    const el = document.querySelector('svg.shajra-tree');
+    if (!el) return;
+    const src = `<?xml version="1.0" encoding="UTF-8"?>\n${el.outerHTML.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')}`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([src], { type: 'image/svg+xml' }));
+    a.download = `shajra-${c.id}.svg`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   const byId = useMemo(() => new Map((result?.shares ?? []).map((s) => [s.personId, s] as [string, ShareResult])), [result]);
   const deceased = c.persons.find((p) => p.id === c.deceasedId)!;
   const sel = c.persons.find((p) => p.id === selected) ?? null;
@@ -96,14 +140,14 @@ export default function ShajraApp() {
   const patch = (id: string, p: Partial<Person>) => setC(updatePerson(c, id, p));
 
   const exportJson = () => {
-    const blob = new Blob([toJSON(c)], { type: 'application/json' });
+    const blob = new Blob([toJSON(rootC)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `shajra-${c.id}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
-  const importJson = async (f: File) => { try { setC(fromJSON(await f.text())); setSelected('D'); } catch { alert('This file is not a Shajra Nasab case.'); } };
+  const importJson = async (f: File) => { try { setRootC(fromJSON(await f.text())); setActiveId(null); setSelected('D'); } catch { alert('This file is not a Shajra Nasab case.'); } };
 
   const heirs = (result?.shares ?? []).filter((s) => s.status !== 'excluded' || s.reasons.some((r) => r.ruleId.startsWith('mflo')));
   const excluded = (result?.shares ?? []).filter((s) => s.status === 'excluded' && s.relationKey !== 'unrelated' && !s.reasons.some((r) => r.ruleId.startsWith('mflo')));
@@ -113,9 +157,10 @@ export default function ShajraApp() {
     <div className="shajra rounded-2xl bg-white text-slate-900 shadow-2xl" data-shajra-ready={loaded && (result || error) ? '1' : '0'}>
       {/* Toolbar */}
       <div className="no-print flex flex-wrap items-center gap-2 border-b border-slate-200 p-3">
-        <button className={btn} onClick={() => { if (confirm('Start a new case? The current one will be cleared.')) { setC(newCase()); setSelected('D'); } }}>New case</button>
+        <button className={btn} onClick={() => { if (confirm('Start a new case? The current one will be cleared.')) { setRootC(newCase()); setActiveId(null); setSelected('D'); } }}>New case</button>
         <button className={btn} onClick={exportJson}>Export JSON</button>
         <button className={btn} onClick={() => fileRef.current?.click()}>Import JSON</button>
+        <button className={btn} onClick={svgExport}>Export SVG</button>
         <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
         <button className={`${btn} !border-sky-600 !bg-sky-600 !text-white`} onClick={() => window.print()}>Print / Save PDF</button>
         <button className={btn} onClick={downloadPdf} disabled={!!busy}>{busy === 'pdf' ? 'Creating PDF…' : 'Download PDF'}</button>
@@ -123,6 +168,21 @@ export default function ShajraApp() {
         <span className="ml-auto text-[11px] text-slate-500">Case {c.id} · saved in this browser only</span>
       </div>
 
+      {subs.length > 0 && (
+        <div className="no-print flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+          <span className="font-semibold text-slate-600">Estates (munasakha):</span>
+          {[rootC, ...subs].map((x) => {
+            const d = x.persons.find((p) => p.id === x.deceasedId);
+            const on = (x.id === rootC.id && !activeId) || x.id === activeId;
+            return (
+              <button key={x.id} className={`${btn} ${on ? '!border-sky-600 !bg-sky-600 !text-white' : ''}`} onClick={() => { setActiveId(x.id === rootC.id ? null : x.id); setSelected(x.deceasedId); }}>
+                {x.id === rootC.id ? 'Main' : 'Onward'}: {d?.name || 'deceased'} ({x.dateOfDeath})
+              </button>
+            );
+          })}
+          {activeId && <button className={`${btn} !border-red-300 !text-red-700`} onClick={() => { if (confirm('Remove this onward estate (and any below it)?')) { const drop = new Set([activeId]); let grew = true; while (grew) { grew = false; for (const x of subs) if (x.parentCaseId && drop.has(x.parentCaseId) && !drop.has(x.id)) { drop.add(x.id); grew = true; } } setRootC({ ...rootC, subcases: subs.filter((x) => !drop.has(x.id)) }); setActiveId(null); } }}>Remove this estate</button>}
+        </div>
+      )}
       {(msg || shareUrl) && (
         <div className="no-print flex flex-wrap items-center gap-2 border-b border-slate-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
           {msg && <span>{msg}</span>}
@@ -157,6 +217,21 @@ export default function ShajraApp() {
             <input type="date" className={input} value={c.dateOfDeath} onChange={(e) => patch('D', { dateOfDeath: e.target.value })} />
           </label>
         </div>
+        {c.lawSystem.startsWith('hindu') && (
+          <label className="text-xs font-semibold text-slate-600 sm:col-span-2">Property type (Hindu)
+            <select className={input} value={c.policy.hinduProperty ?? 'separate'} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, hinduProperty: e.target.value as 'separate' | 'coparcenary' } })}>
+              <option value="separate">Separate / self-acquired property</option><option value="coparcenary">Coparcenary (joint family) interest</option>
+            </select>
+            <span className="mt-1 block rounded bg-amber-50 p-1 text-amber-800">Custom may apply. Beta: verify every result; you may override the table manually.</span>
+          </label>
+        )}
+        {c.lawSystem === 'shia-ithna' && (
+          <label className="text-xs font-semibold text-slate-600 sm:col-span-2">Childless widow and land
+            <select className={input} value={c.policy.shiaChildlessWidowLandRule} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, shiaChildlessWidowLandRule: e.target.value as 'classical' | 'equal' } })}>
+              <option value="classical">Classical: no share in the land itself (share in buildings / trees value)</option><option value="equal">Equal: share in land too</option>
+            </select>
+          </label>
+        )}
         <label className="flex items-center gap-2 text-xs text-slate-600 sm:col-span-2">
           <input type="checkbox" checked={c.policy.applyMFLOs4} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, applyMFLOs4: e.target.checked } })} />
           Apply MFLO 1961 s.4 (children of a predeceased son / daughter)
@@ -206,7 +281,7 @@ export default function ShajraApp() {
               <table className="w-full min-w-[640px] border-collapse text-sm">
                 <thead>
                   <tr className="bg-slate-800 text-left text-white">
-                    <th className="p-2">Name</th><th className="p-2">Relation</th><th className="p-2">CNIC</th>
+                    <th className="p-2">Name <span className="urdu font-normal" lang="ur">نام</span></th><th className="p-2">Relation <span className="urdu font-normal" lang="ur">رشتہ</span></th><th className="p-2">CNIC</th>
                     <th className="p-2 text-right">Share</th><th className="p-2 text-right">Sihaam / {String(result.base)}</th><th className="p-2 text-right">%</th>
                     {c.estate.immovable.map((p, i) => <th key={i} className="p-2 text-right">{p.title}{p.mauza ? ` (${p.mauza})` : ''}</th>)}
                   </tr>
@@ -217,7 +292,7 @@ export default function ShajraApp() {
                     const p = c.persons.find((x) => x.id === s.personId);
                     return (
                       <tr key={s.personId} className="border-b border-slate-200">
-                        <td className="p-2 font-semibold">{name(s.personId)}{s.status === 'reserved' && <span className="ml-1 rounded bg-amber-100 px-1 text-[10px] text-amber-800">reserved</span>}{s.status === 'substituted-s4' && <span className="ml-1 rounded bg-blue-100 px-1 text-[10px] text-blue-800">s.4</span>}</td>
+                        <td className="p-2 font-semibold">{name(s.personId)}{p && !p.alive && p.dateOfDeath && p.dateOfDeath > c.dateOfDeath && s.fraction.n > 0n && <button className="no-print ml-1 rounded border border-sky-300 px-1 text-[10px] font-semibold text-sky-700" onClick={() => distributeOnward(s.personId)} title="This heir died after the deceased: distribute their share to their own heirs">Distribute onward →</button>}{s.status === 'reserved' && <span className="ml-1 rounded bg-amber-100 px-1 text-[10px] text-amber-800">reserved</span>}{s.status === 'substituted-s4' && <span className="ml-1 rounded bg-blue-100 px-1 text-[10px] text-blue-800">s.4</span>}</td>
                         <td className="p-2">{en} <span className="urdu text-slate-500" lang="ur">{ur}</span></td>
                         <td className="p-2 text-slate-500">{p?.cnic ?? ''}</td>
                         <td className="p-2 text-right font-mono">{toString(s.fraction)}</td>
@@ -258,6 +333,26 @@ export default function ShajraApp() {
               <p className="mt-2 text-[11px] text-slate-500">Law: {result.lawSystem} · policy {result.policyVersion} · MFLO s.4 {c.policy.applyMFLOs4 ? 'on' : 'off'} · radd to sole spouse {c.policy.raddToSpouseWhenNoOtherHeir ? 'on' : 'off'} · case {c.id}. Legal references are under review.</p>
             </div>
           </>
+        )}
+        {combined && (
+          <div className="mt-6">
+            <h3 className="text-base font-bold">Final shares of the original estate (munasakha) <span className="urdu font-normal text-slate-500" lang="ur">مناسخہ</span></h3>
+            {'error' in combined ? <p className="text-sm text-red-700">{combined.error}</p> : (
+              <table className="mt-2 w-full min-w-[480px] border-collapse text-sm">
+                <thead><tr className="bg-slate-700 text-left text-white"><th className="p-2">Name</th><th className="p-2">Through</th><th className="p-2 text-right">Share</th><th className="p-2 text-right">%</th></tr></thead>
+                <tbody>
+                  {combined.shares.map((x) => (
+                    <tr key={x.personId} className="border-b border-slate-200">
+                      <td className="p-2 font-semibold">{allPersons.get(x.personId)?.name || x.personId}</td>
+                      <td className="p-2 text-xs text-slate-500">{x.via.length ? x.via.map((v) => allPersons.get(v)?.name || v).join(' → ') : 'direct'}</td>
+                      <td className="p-2 text-right font-mono">{toString(x.fraction)}</td>
+                      <td className="p-2 text-right font-mono">{percent(x.fraction)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         )}
         <p className="mt-4 rounded-lg border border-red-200 bg-red-50 p-2 text-sm font-semibold text-red-800">{DISCLAIMER} <span className="urdu font-normal" lang="ur" dir="rtl">{DISCLAIMER_UR}</span></p>
       </section>
