@@ -8,26 +8,47 @@ import MapServices from '../../../components/MapServices.astro';
 import { SITE, waLink } from '../../../site';
 import { getCatalog, previewUrl, type Mouza } from '../../../mouza-catalog';
 
-interface Props { tehsil: string; tehsilSlug: string; m: Mouza; neighbours: Mouza[] }
+interface Props { tehsil: string; tehsilSlug: string; m: Mouza; neighbours: Mouza[]; tehsilCount: number }
 
 export async function getStaticPaths() {
   const tehsils = await getCatalog();
   return tehsils.flatMap((t) =>
     t.mouzas.map((m, i) => {
-      // 8 alphabetically adjacent mouzas in the same tehsil (4 each side where possible).
-      const start = Math.max(0, Math.min(i - 4, t.mouzas.length - 9));
-      const neighbours = t.mouzas.slice(start, start + 9).filter((x) => x !== m).slice(0, 8);
-      return { params: { tehsil: t.slug, mouza: m.slug }, props: { tehsil: t.name, tehsilSlug: t.slug, m, neighbours } };
+      // Nearby mouzas: by distance when centres are known, else alphabetical neighbours.
+      let neighbours: Mouza[];
+      const here = m.facts;
+      if (here?.lat != null && here?.lng != null) {
+        neighbours = t.mouzas
+          .filter((x) => x !== m && x.facts?.lat != null)
+          .map((x) => ({ x, d: (x.facts!.lat! - here.lat!) ** 2 + ((x.facts!.lng! - here.lng!) * Math.cos((here.lat! * Math.PI) / 180)) ** 2 }))
+          .sort((a, b) => a.d - b.d)
+          .slice(0, 8)
+          .map((r) => r.x);
+      } else {
+        const start = Math.max(0, Math.min(i - 4, t.mouzas.length - 9));
+        neighbours = t.mouzas.slice(start, start + 9).filter((x) => x !== m).slice(0, 8);
+      }
+      return { params: { tehsil: t.slug, mouza: m.slug }, props: { tehsil: t.name, tehsilSlug: t.slug, m, neighbours, tehsilCount: t.mouzas.length } };
     }),
   );
 }
-const { tehsil, tehsilSlug, m, neighbours } = Astro.props as Props;
+const { tehsil, tehsilSlug, m, neighbours, tehsilCount } = Astro.props as Props;
+const f = m.facts || {};
+const hasGeo = f.lat != null && f.lng != null;
 const url = `${SITE.url}/maps/${tehsilSlug}/${m.slug}/`;
 const waText = `Assalam-o-Alaikum, I want full access to the map of Mouza ${m.name}, Tehsil ${tehsil} on Naqsha Zameen.`;
 
-const titles = [`${m.name} Mouza Map, ${tehsil} | ${SITE.brand}`, `${m.name} Mouza Map (Naqsha), ${tehsil}`, `${m.name}, ${tehsil}: Mouza Map`];
-const seoTitle = titles.find((x) => x.length <= 60) ?? titles[2];
-const description = `Mouza ${m.name}, Tehsil ${tehsil} (Punjab) map online: mouza boundary, murabba and killa grid. Free preview, plus RTK measurement and revenue record help.`;
+const titles = [`${m.name} Mouza Map, Tehsil ${tehsil} | ${SITE.brand}`, `${m.name} Mouza Map & Naqsha, ${tehsil}`, `${m.name} Mouza Map, ${tehsil}`, `${m.name}, ${tehsil}: Map`];
+const seoTitle = titles.find((x) => x.length <= 60) ?? titles[3];
+// Stable per-page variant so 21k descriptions are not one template.
+const hash = [...`${tehsil}/${m.name}`].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+const murabbaBit = f.murabbas ? `${f.murabbas} murabbas, ` : '';
+const descVariants = [
+  `Mouza ${m.name}, Tehsil ${tehsil}, Punjab: see the map online with ${murabbaBit}murabba and killa boundaries. Free preview; RTK measurement and revenue record help.`,
+  `${m.name} (Tehsil ${tehsil}) mouza map and naqsha: ${murabbaBit}murabba numbers and the killa grid on your phone. Free preview, no app needed.`,
+  `Find your land in Mouza ${m.name}, ${tehsil}: ${murabbaBit}murabba squares and killa lines on an online map. Free preview, plus on-site RTK survey.`,
+];
+const description = descVariants[hash % descVariants.length];
 
 const placeLd = {
   '@context': 'https://schema.org',
@@ -37,6 +58,7 @@ const placeLd = {
   alternateName: `Mouza ${m.name}`,
   url,
   hasMap: previewUrl(tehsil, m.name),
+  ...(hasGeo ? { geo: { '@type': 'GeoCoordinates', latitude: f.lat, longitude: f.lng } } : {}),
   containedInPlace: {
     '@type': 'AdministrativeArea',
     name: `Tehsil ${tehsil}`,
@@ -103,6 +125,25 @@ const faqs = [
 
   <section class="mx-auto mt-20 max-w-4xl px-4 sm:px-6">
     <div class="card reveal">
+      <h2 class="font-display text-2xl font-bold text-white">About Mouza {m.name}</h2>
+      <p class="mt-4 text-slate-300">
+        {m.name} is one of {tehsilCount.toLocaleString('en-US')} mouzas (revenue estates) of Tehsil {tehsil} on the {SITE.brand} map
+        {f.murabbas ? <>, with <strong class="text-white">{f.murabbas} murabbas</strong> in its record</> : ''}.
+        {hasGeo ? <> It lies near latitude {f.lat}° N, longitude {f.lng}° E.</> : ''}
+        {neighbours.length > 0 && <> Neighbouring mouzas include {neighbours.slice(0, 3).map((n) => n.name).join(', ')}.</>}
+      </p>
+      <dl class="mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+        <div class="rounded-xl bg-white/5 p-3"><dt class="text-slate-400">Mouza</dt><dd class="font-semibold text-white">{m.name}</dd></div>
+        <div class="rounded-xl bg-white/5 p-3"><dt class="text-slate-400">Tehsil</dt><dd class="font-semibold text-white">{tehsil}</dd></div>
+        <div class="rounded-xl bg-white/5 p-3"><dt class="text-slate-400">Province</dt><dd class="font-semibold text-white">Punjab</dd></div>
+        <div class="rounded-xl bg-white/5 p-3"><dt class="text-slate-400">{f.murabbas ? 'Murabbas' : 'Map'}</dt><dd class="font-semibold text-white">{f.murabbas ?? 'Murabba & killa'}</dd></div>
+      </dl>
+      <p class="mt-4 text-xs text-slate-500">Also searched as: {m.name} naqsha, {m.name} shajra, {m.name} map {tehsil}, موضع {m.name} نقشہ.</p>
+    </div>
+  </section>
+
+  <section class="mx-auto mt-8 max-w-4xl px-4 sm:px-6">
+    <div class="card reveal">
       <h2 class="font-display text-2xl font-bold text-white">What You’ll See</h2>
       <ul class="mt-6 grid gap-4 sm:grid-cols-2">
         {seeList.map((s) => (
@@ -126,7 +167,7 @@ const faqs = [
 
   {neighbours.length > 0 && (
     <section class="mx-auto mt-24 max-w-5xl px-4 sm:px-6">
-      <h2 class="reveal font-display text-center text-2xl font-extrabold text-white sm:text-3xl">Nearby Mouzas in Tehsil {tehsil}</h2>
+      <h2 class="reveal font-display text-center text-2xl font-extrabold text-white sm:text-3xl">{hasGeo ? 'Nearest' : 'Nearby'} Mouzas in Tehsil {tehsil}</h2>
       <ul class="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {neighbours.map((n) => (
           <li><a href={`/maps/${tehsilSlug}/${n.slug}/`} class="block rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-slate-200 transition hover:border-cyan-300/40 hover:text-white">{n.name}</a></li>

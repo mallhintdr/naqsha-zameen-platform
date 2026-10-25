@@ -53,6 +53,34 @@ exports.mouzas = async (req, res) => {
 // GET /api/public/catalog : every tehsil with its mouza NAMES in one answer (website build,
 // /maps/ SEO pages). No map data. Cached 1 h in memory; built with limited concurrency.
 let catalogCache = { at: 0, data: null, pending: null };
+
+/**
+ * Public facts for a mouza page (website SEO), read from its metadata file when present:
+ * murabba count and an approximate centre (2 decimals, about 1 km). Never boundaries.
+ */
+const fsp = require('fs/promises');
+const pathMod = require('path');
+const DATA_DIR = pathMod.join(__dirname, '../data/Metadata');
+async function mouzaFacts(tehsil, mouza) {
+    try {
+        const raw = JSON.parse(await fsp.readFile(pathMod.join(DATA_DIR, tehsil, `${mouza}.json`), 'utf8'));
+        const facts = {};
+        const mur = raw.murabbas ?? raw.murabbaSummary ?? raw.murabba;
+        const count = Array.isArray(mur) ? mur.length : mur && typeof mur === 'object' ? Object.keys(mur).length : Number(raw.murabbaCount);
+        if (Number.isFinite(count) && count > 0) facts.murabbas = count;
+        const b = raw.bounds || raw.bbox;
+        let lat, lng;
+        if (Array.isArray(b) && b.length === 4) { lng = (b[0] + b[2]) / 2; lat = (b[1] + b[3]) / 2; }
+        else if (Array.isArray(b) && b.length === 2 && Array.isArray(b[0])) { lat = (b[0][0] + b[1][0]) / 2; lng = (b[0][1] + b[1][1]) / 2; }
+        else if (raw.center || raw.centroid) { const c = raw.center || raw.centroid; lat = c.lat ?? c[1]; lng = c.lng ?? c.lon ?? c[0]; }
+        // Punjab only: guards against swapped or projected coordinates.
+        if (Number.isFinite(lat) && Number.isFinite(lng) && lat > 27 && lat < 35 && lng > 69 && lng < 76) {
+            facts.lat = Math.round(lat * 100) / 100;
+            facts.lng = Math.round(lng * 100) / 100;
+        }
+        return Object.keys(facts).length ? facts : null;
+    } catch { return null; }
+}
 exports.publicCatalog = async (req, res) => {
     try {
         if (!catalogCache.data || Date.now() - catalogCache.at > 3600e3) {
@@ -62,7 +90,15 @@ exports.publicCatalog = async (req, res) => {
                 const queue = [...tehsils];
                 await Promise.all(Array.from({ length: 8 }, async () => {
                     for (let t = queue.shift(); t !== undefined; t = queue.shift()) {
-                        try { out.push({ tehsil: t, mouzas: await listMouzas(t) }); } catch { out.push({ tehsil: t, mouzas: [] }); }
+                        try {
+                            const names = await listMouzas(t);
+                            const facts = {};
+                            for (const m of names) {
+                                const f = await mouzaFacts(t, m);
+                                if (f) facts[m] = f;
+                            }
+                            out.push({ tehsil: t, mouzas: names, facts });
+                        } catch { out.push({ tehsil: t, mouzas: [] }); }
                     }
                 }));
                 out.sort((a, b) => a.tehsil.localeCompare(b.tehsil));

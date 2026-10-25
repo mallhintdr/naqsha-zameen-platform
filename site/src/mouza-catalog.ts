@@ -17,7 +17,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { SITE } from './site';
 
-export interface Mouza { name: string; slug: string }
+/** Optional public facts from the dashboard catalog: murabba count, approx. centre (2 dp). */
+export interface MouzaFacts { murabbas?: number; lat?: number; lng?: number }
+export interface Mouza { name: string; slug: string; facts?: MouzaFacts }
 export interface Tehsil { name: string; slug: string; mouzas: Mouza[] }
 
 const CACHE_FILE = path.resolve('node_modules/.cache/naqsha-mouza-catalog.json');
@@ -28,7 +30,7 @@ let waitBudgetMs = Number(process.env.CATALOG_MAX_WAIT || 60) * 1000;
 const CONCURRENCY = 6;
 const TIMEOUT_MS = 15_000;
 
-type CacheFile = { tehsils?: string[]; mouzas: Record<string, { at: number; names: string[] }> };
+type CacheFile = { tehsils?: string[]; mouzas: Record<string, { at: number; names: string[]; facts?: Record<string, MouzaFacts> }> };
 
 /** URL slug: lowercase, spaces/underscores/slashes -> '-', keeps letters (incl. Urdu) and digits. */
 export function slugify(s: string): string {
@@ -127,7 +129,7 @@ async function load(): Promise<Tehsil[]> {
       const j: any = await getJson(`${base}/api/public/catalog`);
       if (Array.isArray(j?.tehsils) && j.tehsils.length) {
         cache.tehsils = j.tehsils.map((x: any) => String(x.tehsil));
-        for (const x of j.tehsils) cache.mouzas[String(x.tehsil)] = { at: Date.now(), names: clean(x.mouzas) };
+        for (const x of j.tehsils) cache.mouzas[String(x.tehsil)] = { at: Date.now(), names: clean(x.mouzas), facts: x.facts && typeof x.facts === 'object' ? x.facts : undefined };
         writeCache(cache);
         console.log('[maps] catalog fetched in one request.');
       }
@@ -170,7 +172,10 @@ async function load(): Promise<Tehsil[]> {
       .map((name) => ({ name, mouzas: (result.get(name) ?? []).filter((m) => !isJunk(m)).sort(byName) }))
       .filter((t) => t.mouzas.length > 0),
     'tehsil',
-  ).map((t) => ({ ...t, mouzas: uniqueSlugs(t.mouzas.map((name) => ({ name })), 'mouza') }));
+  ).map((t) => {
+    const facts = cache.mouzas[t.name]?.facts || {};
+    return { ...t, mouzas: uniqueSlugs(t.mouzas.map((name) => ({ name, ...(facts[name] ? { facts: facts[name] } : {}) })), 'mouza') };
+  });
 
   const total = out.reduce((n, t) => n + t.mouzas.length, 0);
   console.log(`[maps] catalog: ${out.length} tehsils, ${total} mouzas (${fetched} fetched, ${cached} from cache, ${missing} unavailable) in ${((Date.now() - started) / 1000).toFixed(1)}s`);

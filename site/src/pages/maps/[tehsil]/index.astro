@@ -23,12 +23,19 @@ const ld = {
   about: { '@type': 'AdministrativeArea', name: `Tehsil ${t.name}`, containedInPlace: { '@type': 'AdministrativeArea', name: 'Punjab', containedInPlace: { '@type': 'Country', name: 'Pakistan' } } },
   isPartOf: { '@id': `${SITE.url}/#website` },
 };
+const itemListLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: `Mouzas of Tehsil ${t.name}`,
+  numberOfItems: t.mouzas.length,
+  itemListElement: t.mouzas.slice(0, 1000).map((m, i) => ({ '@type': 'ListItem', position: i + 1, name: m.name, url: `${SITE.url}/maps/${t.slug}/${m.slug}/` })),
+};
 ---
 <Base
   title={`${t.name} Mouza Maps`}
   seoTitle={seoTitle.length <= 60 ? seoTitle : `${t.name} Mouza Maps (Naqsha)`}
   description={`Mouza (chak) maps of Tehsil ${t.name}, Punjab: ${n} mouzas with murabba and killa boundaries. Pick your mouza and preview its naqsha online.`}
-  schema={[ld]}
+  schema={[ld, itemListLd]}
   crumbNames={['Mouza Maps', t.name]}
 >
   <section class="relative isolate overflow-hidden pt-32 sm:pt-40">

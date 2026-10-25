@@ -8,7 +8,17 @@ export default defineConfig({
   integrations: [
     sitemap({
       filter: (page) => !page.includes('/404'),
-      serialize: (item) => ({ ...item, lastmod: new Date().toISOString() }),
+      entryLimit: 10000, // several sitemap files under sitemap-index.xml
+      serialize: (item) => {
+        const path = new URL(item.url).pathname;
+        const depth = path.split('/').filter(Boolean).length;
+        let priority = 0.7, changefreq = 'monthly';
+        if (path === '/') { priority = 1.0; changefreq = 'weekly'; }
+        else if (path.startsWith('/services/')) priority = 0.9;
+        else if (path === '/maps/') { priority = 0.9; changefreq = 'weekly'; }
+        else if (path.startsWith('/maps/')) priority = depth === 2 ? 0.8 : 0.6;
+        return { ...item, lastmod: new Date().toISOString(), priority, changefreq };
+      },
     }),
   ],
   vite: { plugins: [tailwindcss()] },
