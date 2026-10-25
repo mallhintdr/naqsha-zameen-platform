@@ -5,6 +5,7 @@
  */
 import { add, cmp, commonBase, div, eq, frac, isZero, max, min, mul, ONE, percent, sub, sum, ZERO, type Fraction } from './fraction.ts';
 import { buildGraph, deriveRelations, type Relation } from './relations.ts';
+import { allocateWholeSqft, toSqft, type AreaUnit } from './units.ts';
 import { sunniShares, type RuleOutput } from './rules/sunni.ts';
 import type { Case, ComputeResult, ExplainEntry, Person, ShareResult } from './types.ts';
 
@@ -206,6 +207,14 @@ export function compute(c: Case): ComputeResult {
   // Area per heir for every immovable property (exact, in the property's own unit).
   if (c.estate.immovable.length) {
     for (const s of shares) s.area = c.estate.immovable.map((p) => ({ unit: p.area.unit, value: mul(s.fraction, p.area.value) }));
+    c.estate.immovable.forEach((p, k) => {
+      // Reserve and escheat take part too, so the heirs' feet plus theirs equal the property.
+      const whole = allocateWholeSqft(toSqft(p.area.value, p.area.unit as AreaUnit), [...shares.map((s) => s.fraction), reserved, escheat]);
+      shares.forEach((s, i) => { (s.areaSqftRounded ??= [])[k] = whole ? whole[i] : null; });
+      if (whole && shares.some((s, i) => mul(s.fraction, toSqft(p.area.value, p.area.unit as AreaUnit)).d !== 1n)) {
+        notes.push(note('area.rounded-feet', 'area-rounding', { property: p.title }));
+      }
+    });
   }
   if (pregnant) shares.push(make('__unborn__', 'unborn-child', ZERO, 'reserved', [note('reserve.pregnancy', 'reserve-pregnancy')]));
 

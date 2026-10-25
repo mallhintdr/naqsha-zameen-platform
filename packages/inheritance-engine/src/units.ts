@@ -6,7 +6,8 @@
  */
 import { add, frac, mul, div, sub, ZERO, type Fraction } from './fraction.ts';
 
-export type AreaUnit = 'murabba' | 'acre' | 'kanal' | 'marla' | 'sarsai' | 'ghunta' | 'sqft' | 'sqyd';
+/** gkanal / gmarla: government standard (1 marla = 272 sq ft, 1 kanal = 20 marla = 5440 sq ft). */
+export type AreaUnit = 'murabba' | 'acre' | 'kanal' | 'marla' | 'sarsai' | 'gkanal' | 'gmarla' | 'ghunta' | 'sqft' | 'sqyd';
 
 export const UNIT_SQFT: Record<AreaUnit, Fraction> = {
   murabba: frac(25n * 43560n),
@@ -14,6 +15,8 @@ export const UNIT_SQFT: Record<AreaUnit, Fraction> = {
   kanal: frac(5445n),
   marla: frac(1089n, 4n),
   sarsai: frac(121n, 4n),
+  gkanal: frac(5440n),
+  gmarla: frac(272n),
   ghunta: frac(1089n),
   sqft: frac(1n),
   sqyd: frac(9n),
@@ -21,11 +24,13 @@ export const UNIT_SQFT: Record<AreaUnit, Fraction> = {
 
 export const UNIT_LABEL: Record<AreaUnit, [string, string]> = {
   murabba: ['Murabba', 'مربع'], acre: ['Acre', 'ایکڑ'], kanal: ['Kanal', 'کنال'], marla: ['Marla', 'مرلہ'],
-  sarsai: ['Sarsai', 'سرسائی'], ghunta: ['Ghunta', 'گھنٹہ'], sqft: ['Sq ft', 'مربع فٹ'], sqyd: ['Sq yd', 'مربع گز'],
+  sarsai: ['Sarsai', 'سرسائی'], gkanal: ['Kanal', 'کنال'], gmarla: ['Marla', 'مرلہ'], ghunta: ['Ghunta', 'گھنٹہ'], sqft: ['Sq ft', 'مربع فٹ'], sqyd: ['Sq yd', 'مربع گز'],
 };
 
 /** Unit sets used to show an area in mixed units (largest first). */
 export const MIXED: Record<string, AreaUnit[]> = {
+  /** Default: Kanal – Marla – Feet, government standard 1 marla = 272 sq ft. */
+  kmf: ['gkanal', 'gmarla', 'sqft'],
   punjab: ['kanal', 'marla', 'sarsai'],
   'punjab-acre': ['acre', 'kanal', 'marla', 'sarsai'],
   kp: ['kanal', 'marla', 'sarsai'],
@@ -81,4 +86,28 @@ export function toRupeeAnnaPie(share: Fraction): { rupee: bigint; anna: bigint; 
   const pies = mul(share, frac(192n));
   const whole = pies.n / pies.d;
   return { rupee: whole / 192n, anna: (whole % 192n) / 12n, pie: whole % 12n, remainder: frac(pies.n - whole * pies.d, pies.d) };
+}
+
+/**
+ * Whole square feet per heir that add up exactly to the property (largest-remainder method):
+ * everyone gets the floor of their exact share; the few feet left over go one each to the
+ * heirs with the largest fractional parts (ties: order of the list). Deterministic.
+ * Returns null when the property itself is not a whole number of square feet.
+ */
+export function allocateWholeSqft(totalSqft: Fraction, shares: Fraction[]): bigint[] | null {
+  if (totalSqft.d !== 1n) return null;
+  const T = totalSqft.n;
+  const exact = shares.map((f) => mul(f, totalSqft));
+  const floors = exact.map((x) => x.n / x.d);
+  let left = T - floors.reduce((a, b) => a + b, 0n);
+  const order = exact
+    .map((x, i) => ({ i, rem: frac(x.n - floors[i] * x.d, x.d) }))
+    .filter((r) => r.rem.n > 0n)
+    .sort((a, b) => {
+      const c = b.rem.n * a.rem.d - a.rem.n * b.rem.d;
+      return c === 0n ? a.i - b.i : c > 0n ? 1 : -1;
+    });
+  const out = [...floors];
+  for (const r of order) { if (left <= 0n) break; out[r.i] += 1n; left -= 1n; }
+  return out;
 }

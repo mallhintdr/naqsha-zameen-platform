@@ -13,7 +13,8 @@ const showRs = (f: Fraction | undefined) => (f && f.n ? (f.n / f.d).toString() :
 const int = (s: string): bigint => BigInt(s.replace(/[^\d]/g, '') || '0');
 
 export const UNIT_SYSTEMS: { value: string; label: string; units: AreaUnit[] }[] = [
-  { value: 'kms', label: 'Kanal – Marla – Sarsai', units: ['kanal', 'marla', 'sarsai'] },
+  { value: 'kmf', label: 'Kanal – Marla – Feet (1 marla = 272 sq ft)', units: ['gkanal', 'gmarla', 'sqft'] },
+  { value: 'kms', label: 'Kanal – Marla – Sarsai (1 marla = 272.25 sq ft)', units: ['kanal', 'marla', 'sarsai'] },
   { value: 'akms', label: 'Acre – Kanal – Marla', units: ['acre', 'kanal', 'marla', 'sarsai'] },
   { value: 'mur', label: 'Murabba – Acre – Kanal', units: ['murabba', 'acre', 'kanal', 'marla'] },
   { value: 'sindh', label: 'Acre – Ghunta (Sindh)', units: ['acre', 'ghunta'] },
@@ -21,6 +22,13 @@ export const UNIT_SYSTEMS: { value: string; label: string; units: AreaUnit[] }[]
   { value: 'sqyd', label: 'Square yards', units: ['sqyd'] },
 ];
 export const systemFor = (unit: string) => UNIT_SYSTEMS.find((s) => s.units[0] === unit) ?? UNIT_SYSTEMS[0];
+
+/** Whole square feet shown in the property's units (Kanal – Marla – Feet for the government standard). */
+export function feetText(sqft: bigint, unit: string) {
+  const sys = systemFor(unit);
+  const units = sys.units.includes('sqft') ? sys.units : (['gkanal', 'gmarla', 'sqft'] as AreaUnit[]);
+  return formatMixed(toMixed(frac(sqft), 'sqft', units));
+}
 
 export function areaText(value: Fraction, unit: string) {
   const sys = systemFor(unit);
@@ -81,7 +89,7 @@ export default function Estate({ c, setC }: { c: Case; setC: (c: Case) => void }
       <div className="mt-4">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-bold">Land and property</h3>
-          <button className={btn} onClick={() => upd({ immovable: [...props, { title: `Property ${props.length + 1}`, area: { unit: 'kanal', value: ZERO } }] })}>+ Property</button>
+          <button className={btn} onClick={() => upd({ immovable: [...props, { title: `Property ${props.length + 1}`, area: { unit: 'gkanal', value: ZERO } }] })}>+ Property</button>
         </div>
         {props.map((p, i) => {
           const { sys, m } = partsOf(i);
@@ -103,7 +111,7 @@ export default function Estate({ c, setC }: { c: Case; setC: (c: Case) => void }
               </div>
               <div className="mt-2 flex flex-wrap items-end gap-2">
                 {m.parts.map((x) => (
-                  <label key={x.unit} className="w-24 text-xs capitalize text-slate-600">{x.unit}
+                  <label key={x.unit} className="w-24 text-xs text-slate-600">{({ gkanal: 'Kanal', gmarla: 'Marla', sqft: 'Feet (sq ft)', sqyd: 'Sq yd' } as Record<string, string>)[x.unit] ?? x.unit[0].toUpperCase() + x.unit.slice(1)}
                     <input className={input} inputMode="numeric" value={x.whole ? String(x.whole) : ''} onChange={(ev) => setPart(i, x.unit, ev.target.value)} />
                   </label>
                 ))}

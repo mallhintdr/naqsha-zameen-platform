@@ -5,7 +5,7 @@ import { compute, toString, type Case, type ComputeResult, type LawSystem, type 
 import Tree, { Legend } from './Tree.tsx';
 import { addRelative, fromJSON, load, newCase, removePerson, save, setParentOf, toJSON, updatePerson, type AddKind } from './model.ts';
 import { DISCLAIMER, DISCLAIMER_UR, relLabel, ruleText } from './labels.ts';
-import Estate, { areaText } from './Estate.tsx';
+import Estate, { areaText, feetText, systemFor } from './Estate.tsx';
 import qrcode from 'qrcode-generator';
 import { SITE } from '../../site';
 
@@ -223,7 +223,11 @@ export default function ShajraApp() {
                         <td className="p-2 text-right font-mono">{toString(s.fraction)}</td>
                         <td className="p-2 text-right font-mono">{String(s.sihaam)}</td>
                         <td className="p-2 text-right font-mono">{s.percent}</td>
-                        {c.estate.immovable.map((p, i) => <td key={i} className="p-2 text-right text-xs">{s.area?.[i] && s.area[i].value.n ? areaText(s.area[i].value, p.area.unit) : '—'}</td>)}
+                        {c.estate.immovable.map((p, i) => {
+                          const whole = s.areaSqftRounded?.[i];
+                          const feet = systemFor(p.area.unit).units.includes('sqft') && whole != null;
+                          return <td key={i} className="p-2 text-right text-xs">{feet ? (whole ? feetText(whole, p.area.unit) : '—') : s.area?.[i] && s.area[i].value.n ? areaText(s.area[i].value, p.area.unit) : '—'}</td>;
+                        })}
                       </tr>
                     );
                   })}

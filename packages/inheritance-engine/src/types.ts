@@ -80,6 +80,8 @@ export interface ShareResult {
   base: bigint;
   percent: string;
   area?: Area[];
+  /** Per property: whole square feet after rounding so the heirs' feet add up to the property exactly. */
+  areaSqftRounded?: (bigint | null)[];
   status: ShareStatus;
   reasons: ExplainEntry[];
 }

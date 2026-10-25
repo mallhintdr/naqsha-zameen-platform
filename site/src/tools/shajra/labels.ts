@@ -117,6 +117,7 @@ export const RULE: Record<string, string> = {
   'will.legacy': 'Bequest under the will.',
   'estate.net': 'Net estate after funeral costs, debts and dower.',
   'estate.insolvent': 'Debts exceed the estate.',
+  'area.rounded-feet': 'Shares did not divide into whole feet: some heirs were rounded down and the left-over feet given one each to the largest remainders, so the total equals the property exactly.',
   'estate.not-included': 'Pension, family pension and benevolent fund are not part of the estate.',
   'not-an-heir': 'Not an heir in this case.',
   'not-related': 'Not related to the deceased.',
