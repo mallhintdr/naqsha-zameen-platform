@@ -69,7 +69,10 @@ A public tool on the website, at **https://naqsha-zameen.com/tools/shajra-nasab/
    - **Computation notes:** numbered, with citation keys, the policy version, the settings used and the case ID.
 7. **Save and share:** autosaves in the browser. Export and import the case as JSON. **Print / Save PDF** uses the browser's print with an A4 portrait layout, hiding the website header, footer and buttons.
 
-**Chart symbols:** square = male, circle = female, diagonal slash = died, double border = the deceased, double line = marriage, double line with two slashes = divorce, dotted triangle = pregnant, solid line = father line, dashed line = mother line. The legend appears under the chart and on print.
+**Chart symbols (revenue-record style, updated 26 Oct 2026):**
+- **People:** male = short vertical branch line; daughter (or sister) = inverted V (Λ); wife or widow of a relation = heart turned 90° anticlockwise; a woman who is both a daughter of the family and a wife = the inverted V inside the heart.
+- **Marks:** diagonal slash = died; dashed box = the deceased; dotted triangle = pregnant.
+- **Lines:** double line = marriage; double line with two slashes = divorce; solid line = father line; dashed line = mother line. The legend appears under the chart and on print.
 
 **Tested (Playwright, desktop 1280 px and phone 390 px)**
 - Deceased plus widow, son, daughter and mother gives widow 1/8 (9/72), son 17/36 (34/72), daughter 17/72 (17/72), mother 1/6 (12/72), total 1 (72/72).

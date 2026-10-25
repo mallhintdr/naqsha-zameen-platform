@@ -63,9 +63,12 @@ export default function Tree({ c, results, selected, onSelect }: { c: Case; resu
         const x = cx(p.id), y = top(p.id);
         const dead = !p.alive;
         const isD = p.id === c.deceasedId;
-        const shape = p.gender === 'M'
-          ? <rect x={x - sym / 2} y={y} width={sym} height={sym} rx="2" />
-          : <circle cx={x} cy={y + sym / 2} r={sym / 2} />;
+        // Revenue-record symbols: male = short vertical branch; daughter = inverted V;
+        // wife / widow of a relation = heart turned 90° anticlockwise; a woman who is both a
+        // daughter of the family and a wife is drawn with both (the V inside the heart).
+        const isWife = p.gender === 'F' && c.unions.some((u) => u.partners.includes(p.id));
+        const isDaughter = p.gender === 'F' && !!(fatherOf(c, p.id) || motherOf(c, p.id));
+        const shape = <Glyph x={x} y={y} size={sym} kind={p.gender === 'M' ? 'male' : isWife && isDaughter ? 'both' : isWife ? 'wife' : 'daughter'} />;
         const [en, ur] = relLabel(r?.relationKey ?? (isD ? 'deceased' : ''));
         return (
           <g key={p.id} className="cursor-pointer" onClick={() => onSelect(p.id)} tabIndex={0} role="button"
@@ -75,9 +78,7 @@ export default function Tree({ c, results, selected, onSelect }: { c: Case; resu
             <g fill={isD ? '#fff' : r?.status === 'excluded' ? 'url(#hatch)' : st?.fill ?? '#fff'}
               stroke={isD ? '#0f172a' : st?.stroke ?? '#64748b'} strokeWidth={isD ? 3 : 2} strokeDasharray={st?.dash}>
               {shape}
-              {isD && (p.gender === 'M'
-                ? <rect x={x - sym / 2 - 4} y={y - 4} width={sym + 8} height={sym + 8} rx="3" fill="none" strokeWidth="1.5" />
-                : <circle cx={x} cy={y + sym / 2} r={sym / 2 + 4} fill="none" strokeWidth="1.5" />)}
+              {isD && <rect x={x - sym / 2 - 5} y={y - 5} width={sym + 10} height={sym + 10} rx="6" fill="none" strokeWidth="1.5" strokeDasharray="4 2" />}
             </g>
             {p.flags.pregnant && <path d={`M${x + sym / 2 + 4},${y + sym} l7,-12 l7,12 z`} fill="none" stroke="#d97706" strokeDasharray="2 2" />}
             {dead && <line x1={x - sym / 2 - 2} y1={y + sym + 2} x2={x + sym / 2 + 2} y2={y - 2} stroke="#0f172a" strokeWidth="2" />}
@@ -96,12 +97,40 @@ export default function Tree({ c, results, selected, onSelect }: { c: Case; resu
   );
 }
 
+type Kind = 'male' | 'daughter' | 'wife' | 'both';
+
+/** Heart (tip down) centred on 0,0, about 2*r wide. */
+const heart = (r: number) => `M0,${r} C${-r * 1.5},${-r * 0.1} ${-r * 0.9},${-r * 1.25} 0,${-r * 0.45} C${r * 0.9},${-r * 1.25} ${r * 1.5},${-r * 0.1} 0,${r} Z`;
+
+export function Glyph({ x, y, size, kind }: { x: number; y: number; size: number; kind: Kind }) {
+  const cy = y + size / 2;
+  const v = (h: number) => `M${x - h * 0.55},${cy + h / 2} L${x},${cy - h / 2} L${x + h * 0.55},${cy + h / 2}`;
+  if (kind === 'male') {
+    return (
+      <g>
+        <rect x={x - size / 2} y={y} width={size} height={size} fill="transparent" stroke="none" />
+        <line x1={x} y1={y} x2={x} y2={y + size} strokeWidth="3.5" strokeLinecap="round" />
+        <line x1={x - 5} y1={y + size} x2={x + 5} y2={y + size} strokeWidth="2" strokeLinecap="round" />
+      </g>
+    );
+  }
+  if (kind === 'daughter') return <path d={v(size * 0.9)} fill="none" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />;
+  return (
+    <g>
+      {/* Heart turned 90° anticlockwise */}
+      <path d={heart(size * 0.5)} transform={`translate(${x},${cy}) rotate(-90)`} strokeWidth="2" />
+      {kind === 'both' && <path d={v(size * 0.45)} fill="none" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />}
+    </g>
+  );
+}
+
 export function Legend() {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-600">
-      <span className="flex items-center gap-1"><svg width="12" height="12"><rect x="1" y="1" width="10" height="10" fill="#fff" stroke="#334155" /></svg> Male</span>
-      <span className="flex items-center gap-1"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#fff" stroke="#334155" /></svg> Female</span>
-      <span className="flex items-center gap-1"><svg width="12" height="12"><rect x="1" y="1" width="10" height="10" fill="#fff" stroke="#334155" /><line x1="0" y1="12" x2="12" y2="0" stroke="#000" /></svg> Died</span>
+      {([['male', 'Male (son / brother…)'], ['daughter', 'Daughter / sister (inverted V)'], ['wife', 'Wife / widow (heart)'], ['both', 'Daughter and wife']] as [Kind, string][]).map(([k, label]) => (
+        <span key={k} className="flex items-center gap-1"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><g fill="#fff" stroke="#334155"><Glyph x={9} y={2} size={14} kind={k} /></g></svg> {label}</span>
+      ))}
+      <span className="flex items-center gap-1"><svg width="14" height="14" aria-hidden="true"><line x1="0" y1="14" x2="14" y2="0" stroke="#000" strokeWidth="1.5" /></svg> Died</span>
       {Object.entries(STATUS).map(([k, s]) => (
         <span key={k} className="flex items-center gap-1"><svg width="12" height="12"><rect x="1" y="1" width="10" height="10" fill={s.fill} stroke={s.stroke} strokeDasharray={s.dash ? '2 1' : undefined} /></svg> {s.label}</span>
       ))}

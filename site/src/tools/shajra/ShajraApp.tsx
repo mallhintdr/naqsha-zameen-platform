@@ -274,7 +274,7 @@ export default function ShajraApp() {
             </div>
             {shareUrl && <Qr text={shareUrl} />}
           </div>
-          <p className="no-print mb-2 text-xs text-slate-500">Click a person to edit them or add relatives. Start with the deceased (double border).</p>
+          <p className="no-print mb-2 text-xs text-slate-500">Click a person to edit them or add relatives. Start with the deceased (dashed box).</p>
           <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-50" style={{ maxHeight: '70vh' }}>
             <Tree c={c} results={byId} selected={selected} onSelect={setSelected} />
           </div>
