@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 const logger = require('../utils/logger');
 const { getRedisClient, isRedisReady } = require('../services/redisClient');
 
@@ -178,7 +179,7 @@ const publicListLimiter = rateLimit({
 const browseLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 600,
-    keyGenerator: (req) => `u_${String(req.user?.userId || req.ip).toLowerCase()}`,
+    keyGenerator: (req) => (req.user?.userId ? `u_${String(req.user.userId).toLowerCase()}` : `ip_${ipKeyGenerator(req.ip)}`),
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: 'Too many requests, please try again later' },
@@ -237,6 +238,7 @@ const pmtilesSignLimiterMinute = makePmtilesSignLimiter('m', 60 * 1000, Number(p
 const pmtilesSignLimiterHour = makePmtilesSignLimiter('h', 60 * 60 * 1000, Number(process.env.PMTILES_SIGN_MAX_PER_HOUR) || 1500);
 
 module.exports = {
+    makeStore,
     csrfLimiter, publicListLimiter, browseLimiter,
     pmtilesSignLimiterMinute,
     pmtilesSignLimiterHour,

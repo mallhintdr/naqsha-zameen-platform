@@ -247,7 +247,8 @@ const CSRF_EXEMPT_PREFIXES = [
     '/admin/login-as', '/api/admin/login-as',
     '/forgot-password', '/api/forgot-password',
     '/reset-password', '/api/reset-password',
-    '/demo-access/', '/health', '/heartbeat', '/api/heartbeat'
+    '/demo-access/', '/health', '/heartbeat', '/api/heartbeat',
+    '/api/public/shajra/' // public Shajra Nasab tool (no session, no cookies)
 ];
 
 app.use((req, res, next) => {
@@ -285,6 +286,7 @@ app.get([...SPA_PAGE_PATHS], (req, res, next) => {
 });
 
 // Mount Application API & Auth Routes immediately
+app.use(require('./routes/shajraRoutes'));
 app.use(authRoutes);
 // Before userRoutes: its catch-all /api/users/:userId(*) would swallow /api/users/me/*
 app.use(require('./routes/subAdminRoutes'));

@@ -27,7 +27,7 @@ A public tool on the website, at **https://naqsha-zameen.com/tools/shajra-nasab/
 |---|---|---|
 | 1 | Engine: fractions, relations, pipeline, Hanafi rules, aul/radd, MFLO s.4, explain log, tests | ✅ Done (31 tests) |
 | 2 | Website route, menu entry, tree builder, live shares, share table, print view, autosave | ✅ Done (see below) |
-| 3 | API (save and share link), server PDF, units and land area per heir | ⏳ Next |
+| 3 | API (save and share link), server PDF, units and land area per heir | ✅ Done (see below) |
 | 4 | Shia (Ithna Ashari) module | — |
 | 5 | Christian and Parsi | — |
 | 6 | Munasakha (chained estates), Urdu polish, SVG export | — |
@@ -82,13 +82,59 @@ A public tool on the website, at **https://naqsha-zameen.com/tools/shajra-nasab/
 - **Estate:** debts, dower, wills and land area can't be entered in the screen yet. The engine supports wills; area allocation comes in Phase 3.
 - **Not done yet:** an accessibility review and a Lighthouse run.
 
-## Phase 3 plan (next)
+## Phase 3: API, PDF, estate and land area (done, 26 Oct 2026)
 
-- **API** (`backend/routes/shajraRoutes.js`, public and rate-limited):
-  - `POST /api/public/shajra/cases` saves a case and returns `{ id, shareUrl }` (expires after 30 days).
-  - `GET /api/public/shajra/cases/:id` returns a saved case.
-  - `POST /api/public/shajra/pdf` returns a PDF made by Puppeteer from the website print view.
-  - `GET /api/public/shajra/law/:policyVersion` returns the citation data.
-- **Estate screen:** debts, funeral costs, dower, will(s), and properties with area in kanal–marla–sarsai, acre–ghunta, sq ft, sq yd or murabba.
-- **Area per heir:** exact mixed units with exact remainders.
-- **Print:** QR code for the case link on the printed page.
+**Engine (`packages/inheritance-engine/src/units.ts`)**
+- **Exact land units:** murabba (25 acres), acre, kanal (1/8 acre), marla (1/20 kanal), sarsai (1/9 marla), ghunta (1/40 acre), sq ft, sq yd. Every conversion goes through square feet as an exact fraction.
+- **Display:** `toMixed` / `formatMixed` split an area into whole units with an exact remainder, for example 1/7 kanal = "2 Marla 7 Sarsai (+5/7 Sarsai)".
+- **Legacy money:** `toRupeeAnnaPie` (1 rupee = 16 anna, 1 anna = 12 pie).
+- **Area per heir:** `compute()` adds `area` to every share for each property; the areas always add up to the property's total.
+- **Tests:** 35 in all, 4 new for units.
+
+**Server (dashboard backend, public, no login, no cookies)**
+
+| Endpoint | What it does | Limit per connection |
+|---|---|---|
+| `POST /api/public/shajra/cases` `{ case }` | Checks the case by running the engine on the server, saves it, returns `{ id, shareUrl }` | 30 per hour |
+| `GET /api/public/shajra/cases/:id` | Returns the saved case (the share link) | 300 per 15 min |
+| `GET /api/public/shajra/law/:policyVersion` | Citation data (`law/citations.json`) | 300 per 15 min |
+| `POST /api/public/shajra/pdf` `{ case }` | Saves the case, opens the website print view in Puppeteer, returns an A4 PDF | 10 per 10 min |
+
+- **Storage:** `ShajraCase` model; cases are deleted automatically after **30 days**.
+- **Checks:** at most 300 KB and 400 persons per case. A case the engine can't compute is refused (422). Nothing personal is logged.
+- **The PDF and the screen are identical by construction:** Puppeteer prints the same React page with the same engine, using `?case=<id>&pdf=1`, and waits for the page to signal it has finished (`data-shajra-ready="1"`).
+- **Server engine:** loaded straight from `packages/inheritance-engine/src` (Node 22.18+ runs TypeScript directly), so there's no build step. On the VPS, `packages/` must sit beside `backend/` in the checkout, which it does.
+- **Security token:** `/api/public/shajra/` is exempt from the security-token check (public, no session).
+- **Optional setting:** `SHAJRA_PRINT_BASE` changes the page Puppeteer prints from. The default is `SITE_URL`.
+- **Server tests:** 37 in all, including the case checks.
+- **Unrelated fix:** the per-user rate limit for All Mouzas could be bypassed using IPv6 addresses; it now uses the library's IPv6-safe helper (`ipKeyGenerator`).
+
+**Website tool**
+- **Estate section** (folded away by default):
+  - Estate value, funeral costs, debts, unpaid dower.
+  - Wills: beneficiary plus a share such as "1/4"; the engine limits wills to 1/3.
+  - Properties: title, mouza, khewat/khatooni, and area in Kanal–Marla–Sarsai, Acre–Kanal–Marla, Murabba–Acre–Kanal, Acre–Ghunta, sq ft or sq yd.
+- **Share table:** one area column per property, plus a total row showing the full property area.
+- **New buttons:**
+  - **Save & get link:** a 30-day link, copied to the clipboard.
+  - **Download PDF:** made on the server. If it fails, the tool suggests **Print / Save PDF**.
+- **Shared link:** opening `?case=<id>` loads that case without overwriting the visitor's own saved case.
+- **Print / PDF header:** the deceased (with s/o), date of death, law, case ID, policy version, share link and a **QR code** for it.
+- **Tested (browser, server answers simulated):**
+  - 16 Kanal shared by widow, son and daughter: 2 Kanal / 9 Kanal 6 Marla 6 Sarsai / 4 Kanal 13 Marla 3 Sarsai, total 16 Kanal.
+  - The share link appeared.
+  - The shared-link print view loaded, signalled ready, and showed the QR code.
+  - A PDF was produced from it, with no errors.
+- **Not tested yet:** the server endpoints with a real database, and Puppeteer on the VPS. Both need testing after deploy.
+
+**Notes**
+- **Website build time:** about 5½ minutes for 21,560 pages, even with React limited to `/tools/`. The time comes from the number of mouza pages, not from React.
+- **Grandchildren:** they currently get the same area unit as their property; the mixed-unit display is chosen from the property's first unit.
+
+## Next: Phase 4
+
+The Shia (Ithna Ashari) module:
+- the three classes of heirs, no aul, radd to blood heirs;
+- the childless-widow land rule as a setting;
+- the "only intentional killing bars" rule;
+- golden tests.

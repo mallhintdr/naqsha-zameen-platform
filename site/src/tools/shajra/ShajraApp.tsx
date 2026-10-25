@@ -5,6 +5,16 @@ import { compute, toString, type Case, type ComputeResult, type LawSystem, type 
 import Tree, { Legend } from './Tree.tsx';
 import { addRelative, fromJSON, load, newCase, removePerson, save, setParentOf, toJSON, updatePerson, type AddKind } from './model.ts';
 import { DISCLAIMER, DISCLAIMER_UR, relLabel, ruleText } from './labels.ts';
+import Estate, { areaText } from './Estate.tsx';
+import qrcode from 'qrcode-generator';
+import { SITE } from '../../site';
+
+const API = `${SITE.dashboardUrl}/api/public/shajra`;
+
+function Qr({ text }: { text: string }) {
+  const svg = useMemo(() => { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 2, margin: 0, scalable: true }); }, [text]);
+  return <div className="h-20 w-20" dangerouslySetInnerHTML={{ __html: svg }} />;
+}
 
 const LAWS: { value: LawSystem; label: string; ready: boolean }[] = [
   { value: 'sunni-hanafi', label: 'Muslim: Sunni (Hanafi)', ready: true },
@@ -31,8 +41,49 @@ export default function ShajraApp() {
   const [loaded, setLoaded] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { const s = load(); if (s) setC(s); setLoaded(true); }, []);
-  useEffect(() => { if (loaded) save(c); }, [c, loaded]);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const pdfMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pdf') === '1';
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('case');
+    if (id) {
+      fetch(`${API}/cases/${encodeURIComponent(id)}`)
+        .then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status === 404 ? 'This shared link has expired.' : 'Could not open the shared case.'))))
+        .then((t) => { setC(fromJSON(t)); setShareUrl(`${SITE.url}/tools/shajra-nasab/?case=${id}`); })
+        .catch((e) => { setMsg(e.message); const s = load(); if (s) setC(s); })
+        .finally(() => setLoaded(true));
+    } else { const s = load(); if (s) setC(s); setLoaded(true); }
+  }, []);
+  useEffect(() => { if (loaded && !pdfMode) save(c); }, [c, loaded, pdfMode]);
+
+  const post = async (path: string) => fetch(`${API}/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ case: toJSON(c) }) });
+  const saveLink = async () => {
+    setBusy('link'); setMsg(null);
+    try {
+      const r = await post('cases');
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.message || 'Could not save.');
+      setShareUrl(j.shareUrl);
+      try { await navigator.clipboard.writeText(j.shareUrl); setMsg('Link copied. It works for 30 days.'); } catch { setMsg('Link ready. It works for 30 days.'); }
+    } catch (e) { setMsg((e as Error).message); } finally { setBusy(null); }
+  };
+  const downloadPdf = async () => {
+    setBusy('pdf'); setMsg(null);
+    try {
+      const r = await post('pdf');
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message || 'Could not create the PDF.');
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `shajra-${c.id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      const id = r.headers.get('X-Shajra-Case');
+      if (id) setShareUrl(`${SITE.url}/tools/shajra-nasab/?case=${id}`);
+    } catch (e) { setMsg(`${(e as Error).message} You can also use Print / Save PDF.`); } finally { setBusy(null); }
+  };
 
   const { result, error } = useMemo((): { result: ComputeResult | null; error: string | null } => {
     try { return { result: compute(c), error: null }; } catch (e) { return { result: null, error: (e as Error).message }; }
@@ -59,7 +110,7 @@ export default function ShajraApp() {
   const name = (id: string) => c.persons.find((p) => p.id === id)?.name || (id === '__unborn__' ? 'Unborn child' : id);
 
   return (
-    <div className="shajra rounded-2xl bg-white text-slate-900 shadow-2xl">
+    <div className="shajra rounded-2xl bg-white text-slate-900 shadow-2xl" data-shajra-ready={loaded && (result || error) ? '1' : '0'}>
       {/* Toolbar */}
       <div className="no-print flex flex-wrap items-center gap-2 border-b border-slate-200 p-3">
         <button className={btn} onClick={() => { if (confirm('Start a new case? The current one will be cleared.')) { setC(newCase()); setSelected('D'); } }}>New case</button>
@@ -67,9 +118,17 @@ export default function ShajraApp() {
         <button className={btn} onClick={() => fileRef.current?.click()}>Import JSON</button>
         <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
         <button className={`${btn} !border-sky-600 !bg-sky-600 !text-white`} onClick={() => window.print()}>Print / Save PDF</button>
+        <button className={btn} onClick={downloadPdf} disabled={!!busy}>{busy === 'pdf' ? 'Creating PDF…' : 'Download PDF'}</button>
+        <button className={btn} onClick={saveLink} disabled={!!busy}>{busy === 'link' ? 'Saving…' : 'Save & get link'}</button>
         <span className="ml-auto text-[11px] text-slate-500">Case {c.id} · saved in this browser only</span>
       </div>
 
+      {(msg || shareUrl) && (
+        <div className="no-print flex flex-wrap items-center gap-2 border-b border-slate-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+          {msg && <span>{msg}</span>}
+          {shareUrl && <a className="font-semibold underline" href={shareUrl}>{shareUrl}</a>}
+        </div>
+      )}
       {/* Step 1: deceased and law */}
       <section className="no-print grid gap-3 border-b border-slate-200 p-4 sm:grid-cols-2 lg:grid-cols-4">
         <label className="text-xs font-semibold text-slate-600">Law (religion of the deceased)
@@ -108,12 +167,18 @@ export default function ShajraApp() {
         </label>
       </section>
 
+      <Estate c={c} setC={setC} />
+
       {/* Step 2: family tree + editor */}
       <div id="shajra-print" className="grid gap-0 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 border-slate-200 p-3 lg:border-r">
-          <div className="print-only mb-2 hidden">
-            <h2 className="text-lg font-bold">Shajra Nasab: {deceased.name || 'Deceased'}{deceased.fatherName ? ` s/o ${deceased.fatherName}` : ''}</h2>
-            <p className="text-xs">Date of death {c.dateOfDeath} · Law: {LAWS.find((l) => l.value === c.lawSystem)?.label} · Case {c.id} · Policy {c.policy.policyVersion}</p>
+          <div className={`print-only mb-2 ${pdfMode ? '' : 'hidden'} flex items-start justify-between gap-3`}>
+            <div>
+              <h2 className="text-lg font-bold">Shajra Nasab: {deceased.name || 'Deceased'}{deceased.fatherName ? ` s/o ${deceased.fatherName}` : ''}</h2>
+              <p className="text-xs">Date of death {c.dateOfDeath} · Law: {LAWS.find((l) => l.value === c.lawSystem)?.label} · Case {c.id} · Policy {c.policy.policyVersion}</p>
+              {shareUrl && <p className="text-[10px] text-slate-500">{shareUrl}</p>}
+            </div>
+            {shareUrl && <Qr text={shareUrl} />}
           </div>
           <p className="no-print mb-2 text-xs text-slate-500">Click a person to edit them or add relatives. Start with the deceased (double border).</p>
           <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-50" style={{ maxHeight: '70vh' }}>
@@ -143,6 +208,7 @@ export default function ShajraApp() {
                   <tr className="bg-slate-800 text-left text-white">
                     <th className="p-2">Name</th><th className="p-2">Relation</th><th className="p-2">CNIC</th>
                     <th className="p-2 text-right">Share</th><th className="p-2 text-right">Sihaam / {String(result.base)}</th><th className="p-2 text-right">%</th>
+                    {c.estate.immovable.map((p, i) => <th key={i} className="p-2 text-right">{p.title}{p.mauza ? ` (${p.mauza})` : ''}</th>)}
                   </tr>
                 </thead>
                 <tbody>
@@ -157,12 +223,13 @@ export default function ShajraApp() {
                         <td className="p-2 text-right font-mono">{toString(s.fraction)}</td>
                         <td className="p-2 text-right font-mono">{String(s.sihaam)}</td>
                         <td className="p-2 text-right font-mono">{s.percent}</td>
+                        {c.estate.immovable.map((p, i) => <td key={i} className="p-2 text-right text-xs">{s.area?.[i] && s.area[i].value.n ? areaText(s.area[i].value, p.area.unit) : '—'}</td>)}
                       </tr>
                     );
                   })}
                   {result.reserved.n > 0n && <tr className="border-b border-slate-200 bg-amber-50"><td className="p-2" colSpan={3}>Reserved (pregnancy / missing heir)</td><td className="p-2 text-right font-mono">{toString(result.reserved)}</td><td /><td /></tr>}
                   {result.escheat.n > 0n && <tr className="border-b border-slate-200"><td className="p-2" colSpan={3}>Government (no heir)</td><td className="p-2 text-right font-mono">{toString(result.escheat)}</td><td /><td /></tr>}
-                  <tr className="bg-slate-100 font-bold"><td className="p-2" colSpan={3}>Total</td><td className="p-2 text-right font-mono">1</td><td className="p-2 text-right font-mono">{String(result.base)}</td><td className="p-2 text-right font-mono">100.0000</td></tr>
+                  <tr className="bg-slate-100 font-bold"><td className="p-2" colSpan={3}>Total</td><td className="p-2 text-right font-mono">1</td><td className="p-2 text-right font-mono">{String(result.base)}</td><td className="p-2 text-right font-mono">100.0000</td>{c.estate.immovable.map((p, i) => <td key={i} className="p-2 text-right text-xs">{areaText(p.area.value, p.area.unit)}</td>)}</tr>
                 </tbody>
               </table>
             </div>

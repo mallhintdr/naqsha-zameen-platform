@@ -10,7 +10,7 @@ const engine = fileURLToPath(new URL('../packages/inheritance-engine/src/index.t
 export default defineConfig({
   site: process.env.PUBLIC_SITE_URL || 'https://naqsha-zameen.com',
   integrations: [
-    react(),
+    react({ include: ['**/tools/**'] }),
     sitemap({
       filter: (page) => !page.includes('/404'),
       entryLimit: 10000, // several sitemap files under sitemap-index.xml

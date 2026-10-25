@@ -202,6 +202,11 @@ export function compute(c: Case): ComputeResult {
     shares.push(make(p.id, r.key, ZERO, 'excluded', [why]));
   }
   for (const l of legacies) if (!c.persons.some((p) => p.id === l.id)) shares.push(make(l.id, 'legatee', l.f, 'heir', [note('will.legacy', 'will-one-third')]));
+
+  // Area per heir for every immovable property (exact, in the property's own unit).
+  if (c.estate.immovable.length) {
+    for (const s of shares) s.area = c.estate.immovable.map((p) => ({ unit: p.area.unit, value: mul(s.fraction, p.area.value) }));
+  }
   if (pregnant) shares.push(make('__unborn__', 'unborn-child', ZERO, 'reserved', [note('reserve.pregnancy', 'reserve-pregnancy')]));
 
   // Invariants
