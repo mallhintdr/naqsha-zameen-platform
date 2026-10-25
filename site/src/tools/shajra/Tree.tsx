@@ -38,8 +38,8 @@ export function Glyph({ x, y, size, kind }: { x: number; y: number; size: number
   );
 }
 
-export default function Tree({ c, results, selected, onSelect, menu }: {
-  c: Case; results: Map<string, ShareResult>; selected: string | null; onSelect: (id: string) => void; menu?: ReactNode;
+export default function Tree({ c, results, selected, onSelect, menu, printMode }: {
+  c: Case; results: Map<string, ShareResult>; selected: string | null; onSelect: (id: string) => void; menu?: ReactNode; printMode?: boolean;
 }) {
   const { nodes, width, height } = useMemo(() => layout(c), [c]);
   const P = 28;
@@ -75,21 +75,24 @@ export default function Tree({ c, results, selected, onSelect, menu }: {
   const statusOf = (id: string) => {
     const p = c.persons.find((x) => x.id === id)!;
     if (id === c.deceasedId) return 'حال متوفی';
-    if (p.alive) return 'زندہ';
+    if (p.alive) return '(ز)';
     return p.dateOfDeath && p.dateOfDeath > c.dateOfDeath ? 'بعد میں فوت شدہ' : 'پہلے فوت شدہ';
   };
 
   const sel = selected ? nodes.get(selected) : null;
   return (
-    <div className="relative" style={{ width: width + P * 2, minHeight: height + P * 2 }}>
-      <svg width={width + P * 2} height={height + P * 2} viewBox={`0 0 ${width + P * 2} ${height + P * 2}`} role="group" aria-label="Family tree (shajra nasab)" className="shajra-tree block" style={{ background: '#fffdf6' }}>
+    <div className="relative" style={printMode ? { width: '100%' } : { width: width + P * 2, minHeight: height + P * 2 }}>
+      <svg width={printMode ? '100%' : width + P * 2} height={printMode ? undefined : height + P * 2} viewBox={`0 0 ${width + P * 2} ${height + P * 2}`} role="group" aria-label="Family tree (shajra nasab)" className={printMode ? 'shajra-tree-print block' : 'shajra-tree block'} style={{ background: '#fffdf6' }}>
         {/* Lines of descent: parent stroke -> bar over the children -> each child */}
         <g stroke={INK} strokeWidth="1.3" fill="none">
           {[...families.values()].map(({ father, mother, kids }, fi) => {
             const ky = Math.min(...kids.map((k) => top(k)));
             const bar = ky - 16 - (fi % 3) * 14; // each couple's bar on its own level
             const xs = kids.map(cx);
-            const drops = [father, mother].filter(Boolean) as string[];
+            // Draw the mother's branch only when the father has more than one wife in the tree
+            // (children are then grouped by mother) or when the father is not in the tree.
+            const wivesOfFather = father ? c.unions.filter((u) => u.partners.includes(father)).length : 0;
+            const drops = (father ? (mother && wivesOfFather > 1 ? [father, mother] : [father]) : [mother]).filter(Boolean) as string[];
             const parentBottom = (id: string) => top(id) + sym + (kindOf(id) === 'wife' || kindOf(id) === 'both' ? 44 : 60); // below the name, status and share
             // A wife's line starts from the outer side of her heart, so it never runs into a child's line.
             const dropX = (id: string) => (kindOf(id) === 'wife' || kindOf(id) === 'both' ? cx(id) + tipDir(id) * 24 : cx(id));
@@ -130,10 +133,11 @@ export default function Tree({ c, results, selected, onSelect, menu }: {
           const nm = (p.name || 'Unnamed').slice(0, 22);
           const shareTxt = isD ? 'متوفی' : r ? (r.fraction.n > 0n ? toString(r.fraction) : '—') : '';
           return (
-            <g key={p.id} className="cursor-pointer" onClick={() => onSelect(p.id)} tabIndex={0} role="button" aria-haspopup="menu"
+            <g key={p.id} className={printMode ? undefined : 'cursor-pointer'} onClick={printMode ? undefined : () => onSelect(p.id)} tabIndex={printMode ? undefined : 0} role={printMode ? undefined : 'button'} aria-haspopup={printMode ? undefined : 'menu'}
               aria-label={`${nm}, ${en}${r && !isD ? `, share ${shareTxt}` : ''}`}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(p.id); } }}>
               <title>{`${nm} · ${en}${ur ? ` · ${ur}` : ''}`}</title>
+              {isD && <rect x={n.x + P + 4} y={n.y + P - 16} width={NODE_W - 8} height={sym + 62} rx="4" fill="none" stroke={INK} strokeWidth="1.2" strokeDasharray="2 3" />}
               <rect x={n.x + P + 2} y={n.y + P - 20} width={NODE_W - 4} height={sym + 72} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#0ea5e9' : 'none'} strokeDasharray="3 3" />
               {(() => {
                 const k = kindOf(p.id);
@@ -145,7 +149,7 @@ export default function Tree({ c, results, selected, onSelect, menu }: {
                     {inHeart ? (
                       <g stroke={INK}>
                         {/* Big sideways heart with the name written inside, like the patwari's sketch */}
-                        <path d={leaf(52, 20, tipDir(p.id))} transform={`translate(${x},${y + sym / 2})`} fill="#fffdf6" strokeWidth="1.4" />
+                        <path d={leaf(52, 26, tipDir(p.id))} transform={`translate(${x},${y + sym / 2})`} fill="#fffdf6" strokeWidth="1.4" />
                         {k === 'both' && <path d={`M${x - 46},${y + sym / 2 + 8} L${x - 40},${y + sym / 2 - 6} L${x - 34},${y + sym / 2 + 8}`} fill="none" strokeWidth="1.6" />}
                       </g>
                     ) : k === 'daughter' ? (

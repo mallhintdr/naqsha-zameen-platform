@@ -30,6 +30,15 @@ export function feetText(sqft: bigint, unit: string) {
   return formatMixed(toMixed(frac(sqft), 'sqft', units));
 }
 
+export function feetTextUr(sqft: bigint, unit: string) {
+  const sys = systemFor(unit);
+  const units = sys.units.includes('sqft') ? sys.units : (['gkanal', 'gmarla', 'sqft'] as AreaUnit[]);
+  return formatMixed(toMixed(frac(sqft), 'sqft', units), 1);
+}
+export function areaTextUr(value: Fraction, unit: string) {
+  return formatMixed(toMixed(value, unit as AreaUnit, systemFor(unit).units), 1);
+}
+
 export function areaText(value: Fraction, unit: string) {
   const sys = systemFor(unit);
   return formatMixed(toMixed(value, unit as AreaUnit, sys.units));

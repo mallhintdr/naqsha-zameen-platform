@@ -46,16 +46,22 @@ const ld = {
   .shajra .urdu, .shajra [lang='ur'] { font-family: 'Noto Nastaliq Urdu', serif; line-height: 2; }
   .shajra td .urdu, .shajra button.urdu { line-height: 1.6; }
   .shajra svg .urdu { font-family: 'Noto Nastaliq Urdu', serif; }
+  /* The print sheet (title, chart, compact Urdu share table) is what gets printed / made into a PDF. */
+  .print-sheet { display: none; }
+  .shajra-title { text-decoration: underline; text-underline-offset: 6px; border: 0 !important; }
   @media print {
-    @page { size: A4 portrait; margin: 10mm; }
     body { background: #fff !important; }
-    #site-header, footer, .no-print, a[aria-label='Chat on WhatsApp'], #consent { display: none !important; }
-    main { padding: 0 !important; }
-    .shajra { box-shadow: none !important; border-radius: 0 !important; }
-    .print-only { display: block !important; }
-    .shajra-tree { max-width: 100%; height: auto; }
-    #shajra-print > div > div { max-height: none !important; overflow: visible !important; border: 0 !important; }
-    #shajra-results { break-before: auto; }
+    body * { visibility: hidden; }
+    .print-sheet, .print-sheet * { visibility: visible; }
+    .print-sheet { display: block !important; position: absolute; inset: 0 auto auto 0; width: 100%; color: #111; }
+    .print-sheet .shajra-tree-print { width: 100% !important; height: auto !important; max-height: 150mm; background: #fff !important; }
+    .print-share-wrap { display: flex; justify-content: flex-end; margin-top: 4mm; }
+    .print-share { border-collapse: collapse; font-size: 10px; line-height: 1.9; min-width: 70mm; }
+    .print-share th, .print-share td { border: 1px solid #333; padding: 1px 6px; text-align: center; }
+    .print-share th { background: #f1f1f1; font-weight: 700; }
+    .print-share tr.total td { font-weight: 700; }
+    .print-disclaimer { font-family: 'Noto Nastaliq Urdu', serif; font-size: 8px; text-align: center; margin-top: 3mm; color: #555; }
+    #site-header, footer, a[aria-label='Chat on WhatsApp'], #consent { display: none !important; }
     table, tr { break-inside: avoid; }
   }
 </style>

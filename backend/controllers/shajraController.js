@@ -76,8 +76,14 @@ exports.law = async (req, res) => {
 // Saves the case (so the PDF carries its share link / QR), opens the website print view
 // in Puppeteer and prints it: the same React view and engine as in the browser.
 let browserPromise;
-const browser = () => (browserPromise ??= require('puppeteer').launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+const browser = () => (browserPromise ??= require('puppeteer').launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--font-render-hinting=none'] })
+    .then((b) => { b.on('disconnected', () => { browserPromise = null; }); return b; })
     .catch((e) => { browserPromise = null; throw e; }));
+// Start Chromium in the background shortly after boot so the first PDF does not pay the launch time.
+if (process.env.SHAJRA_PDF_WARMUP !== 'false' && process.env.NODE_ENV !== 'test') setTimeout(() => browser().catch(() => {}), 15000).unref?.();
+
+// Only what the print view needs: page, its scripts / styles, the API and the Urdu font.
+const BLOCK = /\.(png|jpe?g|webp|avif|gif|svg|mp4|ico)(\?|$)|googletagmanager|google-analytics|googlesyndication|doubleclick|\/api\/visit\.gif/i;
 
 exports.pdf = async (req, res) => {
     let page;
@@ -87,11 +93,15 @@ exports.pdf = async (req, res) => {
         await ShajraCase.create({ _id: id, data: text, policyVersion });
         const b = await browser();
         page = await b.newPage();
+        await page.setRequestInterception(true);
+        page.on('request', (r) => (BLOCK.test(r.url()) || ['image', 'media'].includes(r.resourceType()) ? r.abort() : r.continue()));
         await page.emulateMediaType('print');
         const url = `${process.env.SHAJRA_PRINT_BASE || SITE_URL}/tools/shajra-nasab/?case=${id}&pdf=1`;
-        await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
         await page.waitForSelector('[data-shajra-ready="1"]', { timeout: 20000 });
-        const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '10mm', bottom: '12mm', left: '10mm', right: '10mm' } });
+        await page.evaluate(() => document.fonts.ready);
+        // Page size / orientation come from the page's own @page rule (landscape for wide trees).
+        const pdf = await page.pdf({ printBackground: true, preferCSSPageSize: true });
         res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="shajra-${id}.pdf"`, 'X-Shajra-Case': id });
         res.send(Buffer.from(pdf));
     } catch (e) {

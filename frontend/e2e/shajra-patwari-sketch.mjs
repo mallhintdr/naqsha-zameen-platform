@@ -4,7 +4,7 @@ import { chromium } from '@playwright/test';
 const P = (id, name, gender, alive = true, dateOfDeath) => ({ id, name, gender, alive, dateOfDeath, religion: 'muslim', flags: {} });
 const z = { n: { $big: '0' }, d: { $big: '1' } };
 const kase = {
-  id: 'SN-SKETCH', lawSystem: 'sunni-hanafi', deceasedId: 'D', dateOfDeath: '2025-09-01', province: 'punjab',
+  id: 'SN-SKETCH', place: { mauza: 'چک 105 ڈبلیو بی', tehsil: 'لودھراں' }, lawSystem: 'sunni-hanafi', deceasedId: 'D', dateOfDeath: '2025-09-01', province: 'punjab',
   persons: [P('D', 'محمد شریف', 'M', false, '2025-09-01'), P('fa', 'جیوانہ', 'M', false, '1990-01-01'), P('mo', 'حیراں', 'F', false, '1995-01-01'),
     P('w1', 'نذیراں بی بی', 'F'), P('w2', 'فاطمہ بی بی', 'F'),
     P('k1', 'کوثر بی بی', 'F'), P('k2', 'محمد عمران', 'M'), P('k3', 'محمد احسان', 'M'), P('k4', 'محمد اکرام', 'M', false, '2020-01-01'), P('g1', 'تحریم فاطمہ', 'F'),
@@ -18,11 +18,25 @@ const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
 await ctx.addInitScript((c) => localStorage.setItem('nz_shajra_case_v1', c), JSON.stringify(kase));
 const page = await ctx.newPage();
+const BASE = process.argv[3] || 'http://localhost:4335';
 const errors = []; page.on('pageerror', (e) => errors.push(e.message));
-await page.goto('http://localhost:4335/tools/shajra-nasab/', { waitUntil: 'load', timeout: 90000 });
+await page.goto(BASE + '/tools/shajra-nasab/', { waitUntil: 'load', timeout: 90000 });
 await page.waitForSelector('svg.shajra-tree', { timeout: 90000 });
 await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(800);
 await page.locator('svg.shajra-tree').screenshot({ path: process.argv[2] + '/sketch.png' });
 console.log('shares:', (await page.locator('#shajra-results tbody').innerText()).replace(/\s+/g, ' '));
+// menu: Add relative opens sideways
+await page.locator('svg.shajra-tree g[role=button]').nth(3).click();
+await page.locator('[role=menu] button', { hasText: 'Add relative' }).click();
+const menu = await page.locator('[role=menu]').first().boundingBox(), sub = await page.locator('[role=group][aria-label="Add relative"]').boundingBox();
+console.log('submenu sideways:', sub.x >= menu.x + menu.width - 2);
+await page.keyboard.press('Escape');
+// print sheet + PDF
+await page.emulateMedia({ media: 'print' });
+await page.waitForTimeout(400);
+await page.screenshot({ path: process.argv[2] + '/print-sheet.png', fullPage: true });
+const t0 = Date.now();
+await page.pdf({ path: process.argv[2] + '/sketch.pdf', printBackground: true, preferCSSPageSize: true });
+console.log('pdf ms', Date.now() - t0);
 console.log('errors', errors.length ? errors : 'none');
 await b.close();

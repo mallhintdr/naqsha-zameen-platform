@@ -26,6 +26,6 @@ test('shajra: a valid case passes validation (engine runs on the server)', async
 test('shajra: invalid / unsupported cases are refused', async () => {
     await assert.rejects(_validateCase('not json'), (e) => e.status === 400);
     await assert.rejects(_validateCase({ ...sample, persons: [] }), (e) => e.status === 400);
-    await assert.rejects(_validateCase({ ...sample, lawSystem: 'parsi' }), (e) => e.status === 422);
+    await assert.rejects(_validateCase({ ...sample, lawSystem: 'not-a-law' }), (e) => e.status === 422);
     await assert.rejects(_validateCase('x'.repeat(400 * 1024)), (e) => e.status === 413);
 });

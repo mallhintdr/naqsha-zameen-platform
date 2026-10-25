@@ -5,11 +5,69 @@ import { add, combine, compute, eq, ONE, parse, percent, sum, ZERO, toString, ty
 import Tree, { Legend } from './Tree.tsx';
 
 type Root = Case & { subcases?: Case[] };
+type Place = { mauza: string; tehsil: string };
+const place = (c: Case): Place => ({ mauza: '', tehsil: '', ...((c as Case & { place?: Place }).place ?? {}) });
+
+const FIQH_UR: Record<string, string> = {
+  'sunni-hanafi': 'فقہ حنفی', 'sunni-shafii': 'فقہ شافعی', 'sunni-maliki': 'فقہ مالکی', 'sunni-hanbali': 'فقہ حنبلی',
+  'shia-ithna': 'فقہ جعفریہ', christian: 'قانون وراثت 1925 (مسیحی)', parsi: 'قانون وراثت 1925 (پارسی)', other: 'قانون وراثت 1925',
+  'hindu-mitakshara-benares': 'متاکشرا (ہندو)', 'hindu-mitakshara-bombay': 'متاکشرا (ہندو)',
+};
+
+/** Urdu heading as on a patwari's shajra: deceased, "as stated by the heirs", fiqh, mouza, tehsil. */
+function ShajraTitle({ c }: { c: Case }) {
+  const d = c.persons.find((p) => p.id === c.deceasedId)!;
+  const pl = place(c);
+  const blank = '__________';
+  return (
+    <h2 className="shajra-title urdu mb-2 border-b-2 border-slate-800 pb-1 text-center font-bold text-slate-900" lang="ur" dir="rtl" style={{ fontSize: '1.5em', lineHeight: 2.1 }}>
+      شجرہ نسب متوفی {d.name || blank}{d.fatherName ? ` ولد ${d.fatherName}` : ''}، حسب گفتہ وارثان، {FIQH_UR[c.lawSystem] ?? ''}، موضع {pl.mauza || blank} تحصیل {pl.tehsil || blank}
+    </h2>
+  );
+}
+
+/** What is printed / turned into the PDF: title, the chart, and a small Urdu share table at the bottom right.
+ *  Wide trees switch the page to A4 landscape. */
+function PrintSheet({ c, result, results }: { c: Case; result: ComputeResult | null; results: Map<string, ShareResult> }) {
+  const { width, height } = layout(c);
+  const landscape = width > 700 || width > height * 1.25;
+  const rows = (result?.shares ?? []).filter((s) => s.fraction.n > 0n || s.status === 'reserved');
+  const nm = (id: string) => c.persons.find((p) => p.id === id)?.name || (id === '__unborn__' ? 'حمل' : id);
+  return (
+    <div className="print-sheet" lang="ur">
+      <style>{`@page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: 9mm; }`}</style>
+      <ShajraTitle c={c} />
+      <Tree c={c} results={results} selected={null} onSelect={() => {}} printMode />
+      {result && (
+        <div className="print-share-wrap">
+          <table className="print-share urdu" dir="rtl">
+            <thead><tr><th>نمبر</th><th>نام وارث</th><th>رشتہ</th><th>حصہ</th><th>سہام / {String(result.base)}</th>{c.estate.immovable.map((p, i) => <th key={i}>رقبہ {p.title}</th>)}</tr></thead>
+            <tbody>
+              {rows.map((s, i) => (
+                <tr key={s.personId}>
+                  <td>{i + 1}</td><td>{nm(s.personId)}</td><td>{relLabel(s.relationKey)[1] || relLabel(s.relationKey)[0]}</td>
+                  <td dir="ltr">{toString(s.fraction)}</td><td dir="ltr">{String(s.sihaam)}</td>
+                  {c.estate.immovable.map((p, k) => {
+                    const whole = s.areaSqftRounded?.[k];
+                    return <td key={k}>{whole != null ? feetTextUr(whole, p.area.unit) : s.area?.[k] ? areaTextUr(s.area[k].value, p.area.unit) : ''}</td>;
+                  })}
+                </tr>
+              ))}
+              <tr className="total"><td colSpan={3}>میزان</td><td dir="ltr">1</td><td dir="ltr">{String(result.base)}</td>{c.estate.immovable.map((p, i) => <td key={i}>{areaTextUr(p.area.value, p.area.unit)}</td>)}</tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="print-disclaimer">{DISCLAIMER_UR}</p>
+    </div>
+  );
+}
 /** Manual override of the share table (Hindu guided mode): person id -> fraction text. */
 type WithOverride = Case & { manualShares?: Record<string, string> };
 import { addRelative, fromJSON, load, newCase, removePerson, save, setParentOf, toJSON, updatePerson, type AddKind } from './model.ts';
 import { DISCLAIMER, DISCLAIMER_UR, relLabel, ruleText as ruleTextL, type Lang } from './labels.ts';
-import Estate, { areaText, feetText, systemFor } from './Estate.tsx';
+import Estate, { areaText, areaTextUr, feetText, feetTextUr, systemFor } from './Estate.tsx';
+import { layout } from './layout.ts';
 import qrcode from 'qrcode-generator';
 import { SITE } from '../../site';
 
@@ -59,7 +117,7 @@ function PersonMenu({ p, isDeceased, addOpen, setAddOpen, onEdit, onAdd, onDelet
   const item = 'flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100 focus:bg-sky-50 focus:outline-none';
   return (
     <div ref={ref} role="menu" aria-label={`Actions for ${p.name || 'this person'}`} onKeyDown={onKey}
-      className="w-[200px] rounded-xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-xl">
+      className="relative w-[200px] rounded-xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-xl">
       <div className="flex items-center justify-between px-2 pb-1 text-xs font-semibold text-slate-500">
         <span className="truncate">{p.name || 'Unnamed'}</span>
         <button aria-label="Close menu" className="rounded px-1 text-base leading-none hover:bg-slate-100" onClick={onClose}>×</button>
@@ -67,7 +125,7 @@ function PersonMenu({ p, isDeceased, addOpen, setAddOpen, onEdit, onAdd, onDelet
       <button role="menuitem" className={item} onClick={onEdit}>✏️ Edit details</button>
       <button role="menuitem" className={item} aria-expanded={addOpen} onClick={() => setAddOpen(!addOpen)}>➕ Add relative <span aria-hidden="true">{addOpen ? '▾' : '▸'}</span></button>
       {addOpen && (
-        <div role="group" aria-label="Add relative" className="ml-2 border-l border-slate-200 pl-1">
+        <div role="group" aria-label="Add relative" className="absolute left-full top-8 ml-1 w-[180px] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
           {ADD.map((a) => (
             <button key={a.kind} role="menuitem" className={item} onClick={() => onAdd(a.kind)}>
               {a.label} <span className="urdu text-slate-500" lang="ur">{a.ur}</span>
@@ -183,6 +241,7 @@ export default function ShajraApp() {
   const deceased = c.persons.find((p) => p.id === c.deceasedId)!;
   const sel = c.persons.find((p) => p.id === selected) ?? null;
 
+  const setPlace = (pt: Partial<Place>) => setC({ ...structuredClone(c), place: { ...place(c), ...pt } } as Case);
   const add = (kind: AddKind) => { if (!sel) return; const [n, id] = addRelative(c, sel.id, kind); setC(n); setSelected(id); };
   const patch = (id: string, p: Partial<Person>) => setC(updatePerson(c, id, p));
 
@@ -260,6 +319,12 @@ export default function ShajraApp() {
         <label className="text-xs font-semibold text-slate-600">Deceased name
           <input className={input} value={deceased.name} placeholder="e.g. Muhammad Aslam" onChange={(e) => patch('D', { name: e.target.value })} />
         </label>
+        <label className="text-xs font-semibold text-slate-600">Mouza (موضع)
+          <input className={input} value={place(c).mauza} onChange={(e) => setPlace({ mauza: e.target.value })} />
+        </label>
+        <label className="text-xs font-semibold text-slate-600">Tehsil (تحصیل)
+          <input className={input} value={place(c).tehsil} onChange={(e) => setPlace({ tehsil: e.target.value })} />
+        </label>
         <label className="text-xs font-semibold text-slate-600">Father's name (walad)
           <input className={input} value={deceased.fatherName ?? ''} onChange={(e) => patch('D', { fatherName: e.target.value })} />
         </label>
@@ -305,6 +370,9 @@ export default function ShajraApp() {
 
       <Estate c={c} setC={setC} />
 
+      {/* Print / PDF: title, chart and a compact Urdu share table only */}
+      <PrintSheet c={c} result={result} results={byId} />
+
       {/* Step 2: family tree + editor */}
       <div id="shajra-print" className="grid gap-0 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 border-slate-200 p-3 lg:border-r">
@@ -316,6 +384,7 @@ export default function ShajraApp() {
             </div>
             {shareUrl && <Qr text={shareUrl} />}
           </div>
+          <ShajraTitle c={c} />
           <p className="no-print mb-2 text-xs text-slate-500">Tap any person for Edit, Add relative or Delete. Start with the deceased (underlined, متوفی).</p>
           <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-50" style={{ maxHeight: '70vh' }}>
             <Tree c={c} results={byId} selected={selected} onSelect={(id) => { setSelected(id); setMenuFor(id); setAddOpen(false); }}
@@ -531,7 +600,7 @@ function Editor({ c, p, share, onPatch, onParent, onRemove, onClose }: {
               <b>{toString(share.fraction)}</b> ({share.percent}%) · {share.reasons.map((r) => ruleText(r.ruleId)).join(' ')}
             </div>
           )}
-          <button className={`${btn} !border-red-300 !text-red-700`} onClick={() => { if (confirm(`Remove ${p.name || 'this person'}?`)) onRemove(); }}>Remove person</button>
+          <button className={`${btn} !border-red-300 !text-red-700`} onClick={() => { if (confirm(`Delete ${p.name || 'this person'}?`)) onRemove(); }}>🗑️ Delete person</button>
         </>
       )}
     </div>

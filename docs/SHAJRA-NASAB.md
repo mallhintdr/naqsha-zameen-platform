@@ -81,6 +81,21 @@ A public tool on the website, at **https://naqsha-zameen.com/tools/shajra-nasab/
 - **Shares:** shown in brackets under the status.
 - **Test case:** `frontend/e2e/shajra-patwari-sketch.mjs` recreates the sketch's family. Expected shares: each widow 1/16, each son 7/32, each daughter 7/64, and the predeceased son's daughter 7/32 (MFLO s.4).
 
+**Round of changes (26 Oct 2026, evening):**
+- **Menus:** **Add relative ▸** opens sideways as its own submenu. **Delete** is in the tap menu and in the edit panel.
+- **Status:** a living person shows **(ز)**.
+- **Hearts:** 30% taller.
+- **Deceased:** always outlined with a dotted box.
+- **Branches:** children come from the father's line only. A separate mother branch is drawn only when the father has more than one wife in the tree, or when he isn't in the tree.
+- **Title (Urdu, 1.5× size, bold, underlined)**, above the chart on screen and in print: «شجرہ نسب متوفی … ولد …، حسب گفتہ وارثان، فقہ …، موضع … تحصیل …». New **Mouza** and **Tehsil** fields feed it.
+- **Print / PDF sheet:** only the title, the chart, and a small **Urdu-only** share table at the bottom right (نمبر، نام وارث، رشتہ، حصہ، سہام، رقبہ، میزان), plus a one-line Urdu disclaimer. Nothing else at the bottom.
+- **Orientation:** wide trees switch the page to **A4 landscape** automatically (CSS `@page`, which the server PDF follows with `preferCSSPageSize`).
+- **Faster server PDF:**
+  - Chromium is started shortly after the server boots and reused afterwards.
+  - Images, analytics and tracking requests are blocked while rendering.
+  - It waits only for the page to signal "ready" and for the fonts to load, not for the whole network to go quiet.
+  - A local render of the sketch case took about 0.8 s.
+
 **Chart symbols (revenue-record style, updated 26 Oct 2026):**
 - **People:** male = short vertical branch line; daughter (or sister) = inverted V (Λ); wife or widow of a relation = heart turned 90° anticlockwise; a woman who is both a daughter of the family and a wife = the inverted V inside the heart.
 - **Marks:** diagonal slash = died; dashed box = the deceased; dotted triangle = pregnant.
