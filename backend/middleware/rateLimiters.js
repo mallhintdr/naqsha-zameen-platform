@@ -173,6 +173,18 @@ const publicListLimiter = rateLimit({
     ...makeStore('rl:lists:')
 });
 
+// "All Mouzas" lists (names only): per user, not per connection, and generous, so browsing
+// never runs into the shared apiLimiter.
+const browseLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 600,
+    keyGenerator: (req) => `u_${String(req.user?.userId || req.ip).toLowerCase()}`,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many requests, please try again later' },
+    ...makeStore('rl:browse:')
+});
+
 // Per-sub-admin limit on write actions (create, renew, edit, resend...)
 const subAdminWriteLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -225,7 +237,7 @@ const pmtilesSignLimiterMinute = makePmtilesSignLimiter('m', 60 * 1000, Number(p
 const pmtilesSignLimiterHour = makePmtilesSignLimiter('h', 60 * 60 * 1000, Number(process.env.PMTILES_SIGN_MAX_PER_HOUR) || 1500);
 
 module.exports = {
-    csrfLimiter, publicListLimiter,
+    csrfLimiter, publicListLimiter, browseLimiter,
     pmtilesSignLimiterMinute,
     pmtilesSignLimiterHour,
     makeVectorLimiter,

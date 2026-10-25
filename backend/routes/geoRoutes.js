@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const geoController = require('../controllers/geoController');
 const { isAuthenticated, maybeAuthenticated, isSubscribed, isSubscribedOrLimitedZoom, isAdmin } = require('../middleware/authMiddleware');
-const { limiterGeo, apiLimiter, publicListLimiter, pmtilesSignLimiterMinute, pmtilesSignLimiterHour } = require('../middleware/rateLimiters');
+const { limiterGeo, apiLimiter, publicListLimiter, browseLimiter, pmtilesSignLimiterMinute, pmtilesSignLimiterHour } = require('../middleware/rateLimiters');
 const signedPMTilesUrl = require('../middleware/signedPMTilesUrl');
 const { vectorGuards } = require('../middleware/vectorDataGuard');
 const { requireMapAccess } = require('../middleware/mapAccess');
@@ -14,8 +14,8 @@ router.get('/api/mauza-list/:tehsil', maybeAuthenticated, publicListLimiter, pat
 // "All Mouzas" browsing: lists with own mouzas marked + today's preview usage (names only).
 const catalog = require('../controllers/catalogController');
 router.get('/api/public/catalog', publicListLimiter, asyncHandler(catalog.publicCatalog));
-router.get('/api/me/browse/tehsils', isAuthenticated, apiLimiter, asyncHandler(catalog.tehsils));
-router.get('/api/me/browse/mouzas/:tehsil', isAuthenticated, apiLimiter, pathParamValidation, asyncHandler(catalog.mouzas));
+router.get('/api/me/browse/tehsils', isAuthenticated, browseLimiter, asyncHandler(catalog.tehsils));
+router.get('/api/me/browse/mouzas/:tehsil', isAuthenticated, browseLimiter, pathParamValidation, asyncHandler(catalog.mouzas));
 router.get('/api/geojson/:tehsil/:mauza', isAuthenticated, requireMapAccess({ allowExpired: false }), limiterGeo, pathParamValidation, ...vectorGuards({ paramsFrom: 'params', tilesOnlyWhenExpired: true }), asyncHandler(geoController.serveGeoJson));
 router.post('/api/geojson/:tehsil/:mauza/shift', isAuthenticated, isAdmin, isSubscribedOrLimitedZoom, limiterGeo, asyncHandler(geoController.shiftGeoJson));
 router.post('/api/geojson/:tehsil/:mauza/reset', isAuthenticated, isAdmin, isSubscribedOrLimitedZoom, limiterGeo, asyncHandler(geoController.resetGeoJson));
