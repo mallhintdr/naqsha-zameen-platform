@@ -1,11 +1,16 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
+import react from '@astrojs/react';
+import { fileURLToPath } from 'node:url';
+
+const engine = fileURLToPath(new URL('../packages/inheritance-engine/src/index.ts', import.meta.url));
 
 // Static marketing site. Output: site/dist. Domain from PUBLIC_SITE_URL (see src/site.ts).
 export default defineConfig({
   site: process.env.PUBLIC_SITE_URL || 'https://naqsha-zameen.com',
   integrations: [
+    react(),
     sitemap({
       filter: (page) => !page.includes('/404'),
       entryLimit: 10000, // several sitemap files under sitemap-index.xml
@@ -21,7 +26,12 @@ export default defineConfig({
       },
     }),
   ],
-  vite: { plugins: [tailwindcss()] },
+  vite: {
+    plugins: [tailwindcss()],
+    // Shared inheritance engine (packages/inheritance-engine), used by /tools/shajra-nasab/.
+    resolve: { alias: { 'inheritance-engine': engine } },
+    server: { fs: { allow: ['..'] } },
+  },
   // concurrency: render several pages at once (thousands of /maps/ pages).
   build: { inlineStylesheets: 'auto', concurrency: 8 },
   compressHTML: true,

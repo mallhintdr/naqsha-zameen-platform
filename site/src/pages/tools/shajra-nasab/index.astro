@@ -1,0 +1,58 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ShajraApp from '../../../tools/shajra/ShajraApp.tsx';
+import { SITE } from '../../../site';
+
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'Shajra Nasab & Inheritance Share Calculator',
+  alternateName: 'شجرہ نسب و وراثت کیلکولیٹر',
+  url: `${SITE.url}/tools/shajra-nasab/`,
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'Any (web browser)',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'PKR' },
+  provider: { '@id': `${SITE.url}/#organization` },
+};
+---
+<Base
+  title="Shajra Nasab & Inheritance Calculator"
+  seoTitle="Shajra Nasab & Wirasat Share Calculator (Free) | Naqsha Zameen"
+  description="Free online shajra nasab (family tree) and inheritance share calculator for Pakistan: build the family, get exact Sunni Hanafi shares with MFLO s.4, aul and radd, and print."
+  schema={[ld]}
+  crumbNames={['Tools', 'Shajra Nasab']}
+>
+  <section class="no-print relative isolate overflow-hidden pt-28 sm:pt-32">
+    <div class="mx-auto max-w-4xl px-4 text-center sm:px-6">
+      <h1 class="font-display text-3xl font-extrabold text-white sm:text-5xl">Shajra Nasab &amp; Inheritance Calculator</h1>
+      <p class="urdu mt-3 text-2xl text-cyan-100/90" dir="rtl" lang="ur">شجرہ نسب اور وراثتی حصص کا حساب</p>
+      <p class="mx-auto mt-4 max-w-2xl text-slate-300">
+        Build the family of the deceased, and the tool works out each heir's share (as a fraction, sihaam and percentage) with the reason for every
+        share. Free, nothing to install; your case stays in your browser.
+      </p>
+    </div>
+  </section>
+  <section class="mx-auto mt-8 max-w-7xl px-2 sm:px-6 lg:px-8">
+    <ShajraApp client:only="react" />
+  </section>
+  <section class="no-print mx-auto mt-10 max-w-4xl px-4 text-sm text-slate-400 sm:px-6">
+    <p>Need help with an inheritance mutation (intiqal wirasat), partition or a disputed share? Our revenue record consultants can help:
+      <a class="text-cyan-300 underline" href="/services/land-consultancy/inheritance-wirasat/">Inheritance (Wirasat) matters</a>.</p>
+  </section>
+</Base>
+
+<style is:global>
+  .shajra .urdu { font-family: 'Noto Nastaliq Urdu', serif; }
+  @media print {
+    @page { size: A4 portrait; margin: 10mm; }
+    body { background: #fff !important; }
+    #site-header, footer, .no-print, a[aria-label='Chat on WhatsApp'], #consent { display: none !important; }
+    main { padding: 0 !important; }
+    .shajra { box-shadow: none !important; border-radius: 0 !important; }
+    .print-only { display: block !important; }
+    .shajra-tree { max-width: 100%; height: auto; }
+    #shajra-print > div > div { max-height: none !important; overflow: visible !important; border: 0 !important; }
+    #shajra-results { break-before: auto; }
+    table, tr { break-inside: avoid; }
+  }
+</style>

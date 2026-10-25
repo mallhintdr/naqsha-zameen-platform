@@ -1,0 +1,22 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import IconBox from '../../components/IconBox.astro';
+---
+<Base title="Tools" seoTitle="Free Land & Inheritance Tools | Naqsha Zameen" description="Free tools from Naqsha Zameen: shajra nasab (family tree) and inheritance share calculator for Pakistan." crumbNames={['Tools']}>
+  <section class="mx-auto max-w-4xl px-4 pt-32 text-center sm:px-6 sm:pt-40">
+    <h1 class="font-display text-4xl font-extrabold text-white sm:text-5xl">Free Tools</h1>
+    <p class="mt-4 text-slate-300">Practical tools for landowners and families.</p>
+  </section>
+  <section class="mx-auto mt-12 grid max-w-4xl gap-5 px-4 sm:px-6">
+    <a href="/tools/shajra-nasab/" class="card group flex items-start gap-4">
+      <IconBox name="users" />
+      <span>
+        <span class="block text-xl font-semibold text-white">Shajra Nasab &amp; Inheritance Calculator</span>
+        <span class="urdu block text-lg text-cyan-100/80" dir="rtl" lang="ur">شجرہ نسب اور وراثت کیلکولیٹر</span>
+        <span class="mt-1 block text-slate-400">Build the family tree and get each heir's exact share, with the legal reason and a printable chart.</span>
+        <span class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cyan-300">Open the tool <Icon name="arrow" class="size-4" /></span>
+      </span>
+    </a>
+  </section>
+</Base>

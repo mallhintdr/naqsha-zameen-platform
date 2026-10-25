@@ -59,6 +59,11 @@ export const NAV: NavItem[] = [
   },
   { href: '/maps/', label: 'Mouza Maps' },
   { href: '/dashboard/', label: 'Dashboard' },
+  {
+    href: '/tools/',
+    label: 'Tools',
+    children: [{ href: '/tools/shajra-nasab/', label: 'Shajra Nasab & Inheritance' }],
+  },
   { href: '/about/', label: 'About' },
   { href: '/contact/', label: 'Contact' },
 ];
