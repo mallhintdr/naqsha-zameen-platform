@@ -1,3 +1,4 @@
+import { killaInfoLocked } from '@/features/map/core/killaLock';
 // Helper function to load individual murabba PMTiles
 import L from 'leaflet';
 import { apiBase as getApiBase } from '@/shared/api/base';
@@ -191,6 +192,7 @@ const loadGeoJSONFallback = async (murabbaNo, tehsil, mouza, map, mustateelLayer
         // Click event to highlight Killa and display Karam side measurements
         layer.on('click', (e) => {
           if (map._isDrawing) return;
+          if (killaInfoLocked(e)) { L.DomEvent.stopPropagation(e); return; }
           if (e.originalEvent) e.originalEvent._killaHandled = true;
           L.DomEvent.stopPropagation(e);
           

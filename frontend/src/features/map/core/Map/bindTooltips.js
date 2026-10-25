@@ -1,3 +1,4 @@
+import { killaInfoLocked } from '@/features/map/core/killaLock';
 import L from 'leaflet';
 import { showKaramSegmentLengths, clearActiveKillaSelection } from '../measurementUtils';
 
@@ -499,6 +500,7 @@ export const bindKillaTooltip = (feature, layer, map) => {
   layer.off('click', layer._karamKillaClickHandler);
   layer._karamKillaClickHandler = (e) => {
     if (map._isDrawing) return;
+    if (killaInfoLocked(e)) { L.DomEvent.stopPropagation(e); return; }
     if (e.originalEvent) e.originalEvent._killaHandled = true;
     L.DomEvent.stopPropagation(e);
 

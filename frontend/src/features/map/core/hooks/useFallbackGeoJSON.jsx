@@ -1,3 +1,4 @@
+import { killaInfoLocked } from '@/features/map/core/killaLock';
 import { useCallback } from 'react';
 import { apiBase as getApiBase } from '@/shared/api/base';
 import L from 'leaflet';
@@ -270,6 +271,7 @@ export function useFallbackGeoJSON({
                   // Bind Killa click listener for Karam side measurements
                   layer.on('click', (e) => {
                     if (map._isDrawing) return;
+                    if (killaInfoLocked(e)) { L.DomEvent.stopPropagation(e); return; }
                     if (e.originalEvent) e.originalEvent._killaHandled = true;
                     L.DomEvent.stopPropagation(e);
 

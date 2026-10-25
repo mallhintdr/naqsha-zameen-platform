@@ -4,7 +4,7 @@
  * Limited users see the map (tiles, street basemaps) but not satellite imagery, live
  * location, saved layers, shift mouza or change mouza.
  */
-export type LockedFeature = 'satellite' | 'live-location' | 'saved-layers' | 'save-layer' | 'shift-mouza' | 'change-mouza';
+export type LockedFeature = 'satellite' | 'live-location' | 'saved-layers' | 'save-layer' | 'shift-mouza' | 'change-mouza' | 'killa-info';
 
 export const LOCKED_FEATURE_LABEL: Record<LockedFeature, string> = {
   satellite: 'Satellite imagery',
@@ -13,6 +13,7 @@ export const LOCKED_FEATURE_LABEL: Record<LockedFeature, string> = {
   'save-layer': 'Saving layers',
   'shift-mouza': 'Shift mouza',
   'change-mouza': 'Change mouza',
+  'killa-info': 'Killa area & measurements',
 };
 
 export function isLimitedUser(user: any): boolean {

@@ -5,7 +5,7 @@ import { useAppStore } from '@/app/store';
 import { LOCKED_FEATURE_LABEL, type LockedFeature } from '@/shared/lib/featureAccess';
 
 const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://naqsha-zameen.com').replace(/\/$/, '');
-const ALL: LockedFeature[] = ['satellite', 'live-location', 'saved-layers', 'shift-mouza', 'change-mouza'];
+const ALL: LockedFeature[] = ['satellite', 'live-location', 'killa-info', 'saved-layers', 'shift-mouza', 'change-mouza'];
 
 export default function SubscribeRequiredModal() {
   const feature = useAppStore((s) => s.subscribeFeature) as LockedFeature | null;

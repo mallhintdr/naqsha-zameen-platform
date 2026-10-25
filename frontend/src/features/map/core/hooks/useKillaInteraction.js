@@ -1,3 +1,4 @@
+import { killaInfoLocked } from '@/features/map/core/killaLock';
 import { useCallback } from 'react';
 import L from 'leaflet';
 import { VectorTile } from '@mapbox/vector-tile';
@@ -130,6 +131,7 @@ export function useKillaInteraction({
   const handleKillaClick = useCallback(async (e) => {
     if (!completePMTilesRef.current || !completeLayerLoadedRef.current) return;
     if (map._isDrawing) return;
+    if (killaInfoLocked(e)) return;
 
     try {
       const { lat, lng } = e.latlng;
