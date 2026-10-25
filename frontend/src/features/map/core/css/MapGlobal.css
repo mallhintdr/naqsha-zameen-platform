@@ -54,9 +54,10 @@
   }
   .map-container .leaflet-touch .leaflet-bar a,
   .map-container .leaflet-bar a {
-    width: 36px;
-    height: 36px;
-    line-height: 36px;
+    width: 29px;
+    height: 29px;
+    line-height: 29px;
+    font-size: 17px;
   }
   .map-container .leaflet-location-icon,
   .map-container .search-btn {
@@ -66,16 +67,16 @@
   /* Bigger touch target for the drawing buttons; the icon stays inside the button:
      it fills the padded area and the picture is drawn at a fixed size, centred. */
   .map-container .leaflet-pm-toolbar .leaflet-buttons-control-button {
-    width: 36px;
-    height: 36px;
-    padding: 6px;
+    width: 29px;
+    height: 29px;
+    padding: 5px;
     box-sizing: border-box;
     overflow: hidden;
   }
   .map-container .leaflet-pm-toolbar .control-icon {
     width: 100%;
     height: 100%;
-    background-size: 22px 22px;
+    background-size: 18px 18px;
     background-position: center;
     background-repeat: no-repeat;
   }
@@ -86,4 +87,28 @@
   .map-container .dropdown-select {
     min-height: 36px;
   }
+}
+
+/* Zoom (+/-) and drawing toolbar 20% smaller than Leaflet's 30px touch default on larger screens too. */
+@media (min-width: 769px) {
+.map-container .leaflet-touch .leaflet-bar a,
+.map-container .leaflet-bar a {
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  font-size: 16px;
+}
+.map-container .leaflet-pm-toolbar .leaflet-buttons-control-button {
+  width: 24px;
+  height: 24px;
+  padding: 3px;
+  box-sizing: border-box;
+}
+.map-container .leaflet-pm-toolbar .control-icon {
+  width: 100%;
+  height: 100%;
+  background-size: 16px 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 }
