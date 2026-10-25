@@ -241,7 +241,8 @@ export default function NavigationMenu() {
   const isUserActive = user?.userType === 'admin' || user?.status === 'Active';
   const shiftEnabled = Boolean(isUserActive && selectedMauza);
   // Limited users (expired / preview): locked items stay tappable and explain why.
-  const limited = isLimitedUser(user);
+  const previewActive = useAppStore((s) => s.previewActive);
+  const limited = isLimitedUser(user) || previewActive;
   const locked = (feature: LockedFeature) => {
     setOpenSubmenu(null);
     set({ subscribeFeature: feature });

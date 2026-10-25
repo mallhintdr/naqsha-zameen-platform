@@ -1,3 +1,4 @@
+import { mapTehsilOf } from '@/features/map/useMapTehsil';
 /**
  * Router + layout shell. Port of legacy App.js orchestration:
  * - map route is a fixed full-viewport flex column (safe-area aware), other routes scroll
@@ -15,6 +16,8 @@ import Header from '@/features/chrome/Header';
 import NavigationMenu from '@/features/chrome/NavigationMenu';
 import GlobalModals from '@/features/chrome/GlobalModals';
 import SubscriptionWarningBanner from '@/features/chrome/SubscriptionWarningBanner';
+import PreviewBanner from '@/features/chrome/PreviewBanner';
+import { useBrowseDeepLink } from '@/features/map/useBrowseDeepLink';
 
 const MapPage = lazy(() => import('@/features/map/MapPage'));
 const MapOverlays = lazy(() => import('@/features/map/MapOverlays'));
@@ -44,6 +47,7 @@ const AUTH_PAGE = /^\/(login|activate\/|subadmin\/activate\/|confirm-email\/)/;
 export default function App() {
   const { user, loading, warning, ipMisuse } = useAuth();
   const location = useLocation();
+  useBrowseDeepLink();
   const navigate = useNavigate();
   const s = useAppStore();
   const isMap = location.pathname === '/';
@@ -65,8 +69,8 @@ export default function App() {
 
   // Mouza offset fetch (legacy effect)
   useEffect(() => {
-    useAppStore.getState().fetchOffset(user?.activeTehsil || '', s.selectedMauza);
-  }, [s.selectedMauza, user?.activeTehsil]);
+    useAppStore.getState().fetchOffset(mapTehsilOf(user, s), s.selectedMauza);
+  }, [s.selectedMauza, user?.activeTehsil, s.browseMode, s.browseTehsil]);
 
   // Sequential warning modals: IP misuse (> 3 devices) first, then subscription
   useEffect(() => {
@@ -94,6 +98,7 @@ export default function App() {
         <>
           <Header />
           {!onAuthPage && <SubscriptionWarningBanner />}
+          {!onAuthPage && <PreviewBanner />}
           <NavigationMenu />
         </>
       )}

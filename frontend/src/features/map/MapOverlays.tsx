@@ -1,3 +1,4 @@
+import { useMapTehsil } from './useMapTehsil';
 /**
  * Map-feature modals mounted on every route by App.tsx (legacy App.js rendered these
  * outside the map DOM): GoToLocationForm, ShiftMouzaForm, SaveLayerModal, SavedLayersModal.
@@ -67,6 +68,7 @@ export default function MapOverlays() {
     [set],
   );
 
+  const mapTehsil = useMapTehsil();
   if (!showGoToForm && !showShiftForm && !showSaveLayerModal && !showSavedLayersModal) return null;
 
   return (
@@ -76,7 +78,7 @@ export default function MapOverlays() {
           show={showShiftForm}
           onHide={() => set({ showShiftForm: false })}
           onShift={onShift}
-          tehsil={user?.activeTehsil}
+          tehsil={mapTehsil}
           mauza={selectedMauza}
         />
       )}

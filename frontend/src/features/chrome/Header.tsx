@@ -10,7 +10,7 @@ import { EllipsisVertical } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useAppStore } from '@/app/store';
 import { api } from '@/shared/api/client';
-import { Spinner } from '@/shared/ui';
+import { Spinner, toast } from '@/shared/ui';
 import NotificationPanel from './NotificationPanel';
 import './chrome.css';
 
@@ -148,6 +148,17 @@ export default function Header() {
   const [shiftedMouzas, setShiftedMouzas] = useState<string[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
 
+  // ---- "All Mouzas" browsing: any mouza of any tehsil, unowned ones open as preview ----
+  const browseMode = useAppStore((s) => s.browseMode);
+  const browseTehsil = useAppStore((s) => s.browseTehsil);
+  const previewLeft = useAppStore((s) => s.previewLeft);
+  const previewLimit = useAppStore((s) => s.previewLimit);
+  const browseAll = browseMode === 'all';
+  const [allTehsils, setAllTehsils] = useState<{ name: string; own: boolean }[]>([]);
+  const [allMouzas, setAllMouzas] = useState<{ name: string; own: boolean }[]>([]);
+  const [allMouzasFor, setAllMouzasFor] = useState('');
+  const [browseLoading, setBrowseLoading] = useState(false);
+
   const tehsilInputRef = useRef<HTMLInputElement>(null);
   const mauzaInputRef = useRef<HTMLInputElement>(null);
   const murabbaInputRef = useRef<HTMLInputElement>(null);
@@ -155,7 +166,45 @@ export default function Header() {
   const mauzaF = useDebouncedFilter();
   const murabbaF = useDebouncedFilter();
 
-  const activeTehsil = user?.activeTehsil || '';
+  const activeTehsil = (browseAll && browseTehsil) || user?.activeTehsil || '';
+
+  const loadBrowseMouzas = useCallback(async (tehsil: string) => {
+    if (!tehsil) return;
+    setBrowseLoading(true);
+    try {
+      const { data } = await api.get(`/api/me/browse/mouzas/${encodeURIComponent(tehsil)}`);
+      setAllMouzas(Array.isArray(data?.mouzas) ? data.mouzas : []);
+      setAllMouzasFor(tehsil);
+      if (data?.preview) set({ previewLeft: data.preview.left, previewLimit: data.preview.limit });
+    } catch {
+      setAllMouzas([]);
+      setAllMouzasFor(tehsil);
+    } finally {
+      setBrowseLoading(false);
+    }
+  }, [set]);
+
+  // Lists for All Mouzas mode (names only; own mouzas marked by the server).
+  useEffect(() => {
+    if (!browseAll || !user) return;
+    if (!allTehsils.length) {
+      api.get('/api/me/browse/tehsils').then(({ data }) => setAllTehsils(Array.isArray(data?.tehsils) ? data.tehsils : [])).catch(() => {});
+    }
+    if (activeTehsil && allMouzasFor !== activeTehsil) loadBrowseMouzas(activeTehsil);
+  }, [browseAll, user, activeTehsil, allMouzasFor, allTehsils.length, loadBrowseMouzas]);
+
+  /** My Mouzas <-> All Mouzas. Leaving All Mouzas returns to the account's own tehsil. */
+  const setBrowse = (mode: 'mine' | 'all') => {
+    if (mode === browseMode) return;
+    const st = useAppStore.getState();
+    if (mode === 'mine') {
+      st.resetMapSelection();
+      set({ browseMode: 'mine', browseTehsil: null, previewActive: false });
+    } else {
+      set({ browseMode: 'all', browseTehsil: user?.activeTehsil || null });
+    }
+    try { localStorage.setItem('nz_browse_mode', mode); } catch { /* private mode */ }
+  };
 
   const fetchShiftedMouzas = useCallback(() => {
     if (!activeTehsil) {
@@ -203,17 +252,30 @@ export default function Header() {
     () => (Array.isArray(user?.tehsilAccess) ? user.tehsilAccess.map((e) => e.tehsil).filter(Boolean) : []),
     [user?.tehsilAccess],
   );
-  const canSwitchTehsil = availableTehsils.length > 1;
+  const canSwitchTehsil = browseAll || availableTehsils.length > 1;
+  const ownTehsils = useMemo(() => new Set(availableTehsils.map((t) => t.toLowerCase())), [availableTehsils]);
 
+  const tehsilSource = useMemo(
+    () => (browseAll && allTehsils.length ? allTehsils.map((t) => t.name) : availableTehsils),
+    [browseAll, allTehsils, availableTehsils],
+  );
   const tehsilList = useMemo(
-    () => sortList(availableTehsils.filter((t) => t.toLowerCase().includes(tehsilF.filter.toLowerCase())).slice(0, 1000)),
-    [availableTehsils, tehsilF.filter],
+    () => sortList(tehsilSource.filter((t) => t.toLowerCase().includes(tehsilF.filter.toLowerCase())).slice(0, 1000)),
+    [tehsilSource, tehsilF.filter],
   );
-  const mouzaList = useMemo(() => (activeTehsil && Array.isArray(user?.mauzaList) ? user.mauzaList : []), [activeTehsil, user?.mauzaList]);
-  const sortedMouzaList = useMemo(
-    () => sortList(mouzaList.filter((m) => String(m).toLowerCase().includes(mauzaF.filter.toLowerCase())).slice(0, 1000)),
-    [mouzaList, mauzaF.filter],
-  );
+  const ownMouzaSet = useMemo(() => new Set(allMouzas.filter((m) => m.own).map((m) => m.name)), [allMouzas]);
+  const mouzaList = useMemo(() => {
+    if (browseAll) return allMouzasFor === activeTehsil ? allMouzas.map((m) => m.name) : [];
+    return activeTehsil && Array.isArray(user?.mauzaList) ? user.mauzaList : [];
+  }, [browseAll, allMouzas, allMouzasFor, activeTehsil, user?.mauzaList]);
+  const sortedMouzaList = useMemo(() => {
+    const hit = (m: any) => String(m).toLowerCase().includes(mauzaF.filter.toLowerCase());
+    if (!browseAll) return sortList(mouzaList.filter(hit).slice(0, 1000));
+    // Own mouzas first, then the rest.
+    const own = sortList(mouzaList.filter((m: any) => ownMouzaSet.has(m) && hit(m)));
+    const rest = sortList(mouzaList.filter((m: any) => !ownMouzaSet.has(m) && hit(m)));
+    return [...own, ...rest].slice(0, 1500);
+  }, [browseAll, mouzaList, ownMouzaSet, mauzaF.filter]);
   const sortedMurabbaList = useMemo(
     () => sortList((Array.isArray(murabbaOptions) ? murabbaOptions : []).filter((m) => getOptionLabel(m).toLowerCase().includes(murabbaF.filter.toLowerCase()))),
     [murabbaOptions, murabbaF.filter],
@@ -254,6 +316,12 @@ export default function Header() {
     setOpenMenu(null);
     tehsilF.reset();
     if (tehsil === activeTehsil) return;
+    if (browseAll) {
+      // Browsing: the map follows the chosen tehsil; the account's active tehsil is unchanged.
+      useAppStore.getState().resetMapSelection();
+      set({ browseTehsil: tehsil, userLayerToLoad: null });
+      return;
+    }
     try {
       set({ mouzaLoading: true });
       await setActiveTehsil(tehsil);
@@ -266,6 +334,22 @@ export default function Header() {
   };
 
   const handleMauzaSelection = (mauza: string) => {
+    if (browseAll) {
+      mauzaF.reset();
+      setOpenMenu(null);
+      const own = user?.userType === 'admin' || ownMouzaSet.has(mauza);
+      if (!own && previewLeft === 0) {
+        // The server still allows mouzas already previewed today and refuses new ones.
+        toast.info('Daily preview limit reached. Mouzas you already opened today still work.');
+      }
+      const st = useAppStore.getState();
+      if (mauza !== st.selectedMauza || st.previewActive === own) {
+        set({ previewActive: !own });
+        st.selectMauza(activeTehsil, mauza);
+        if (!own) setTimeout(() => loadBrowseMouzas(activeTehsil), 2500); // refresh "previews left"
+      }
+      return;
+    }
     const allowed = new Set((user?.mauzaList || []).map(String));
     if (!allowed.has(String(mauza))) return;
     mauzaF.reset();
@@ -316,8 +400,8 @@ export default function Header() {
                   id="tehsil-dropdown"
                   open={openMenu === 'tehsil'}
                   onOpenChange={(o) => openOne('tehsil', o)}
-                  label={user.activeTehsil || 'Select Tehsil'}
-                  title={user.activeTehsil || 'Select Tehsil'}
+                  label={activeTehsil || 'Select Tehsil'}
+                  title={activeTehsil || 'Select Tehsil'}
                   inputRef={tehsilInputRef}
                   placeholder="Search Tehsil..."
                   filter={tehsilF.filter}
@@ -328,6 +412,7 @@ export default function Header() {
                   {tehsilList.length > 0 ? (
                     tehsilList.map((t) => (
                       <button type="button" key={t} className="dropdown-item" onClick={() => handleTehsilSelection(t)}>
+                        {browseAll && ownTehsils.has(t.toLowerCase()) && <span className="mr-1 text-[#34d399]">✓</span>}
                         {t}
                       </button>
                     ))
@@ -351,21 +436,31 @@ export default function Header() {
                 onClearFilter={() => clearInput(mauzaInputRef, mauzaF.reset)}
                 clearTitle="Clear Mouza filter"
               >
-                {mouzaLoading ? (
+                {user.userType !== 'subadmin' && (
+                  <div className="browse-switch" role="tablist" aria-label="Which mouzas">
+                    <button type="button" role="tab" aria-selected={!browseAll} className={!browseAll ? 'on' : ''} onClick={() => setBrowse('mine')}>My Mouzas</button>
+                    <button type="button" role="tab" aria-selected={browseAll} className={browseAll ? 'on' : ''} onClick={() => setBrowse('all')}>All Mouzas</button>
+                  </div>
+                )}
+                {mouzaLoading || (browseAll && browseLoading && !mouzaList.length) ? (
                   menuLoading('Loading mouzas...')
                 ) : sortedMouzaList.length > 0 ? (
                   sortedMouzaList.map((m, i) => (
                     <button
                       type="button"
                       key={`${m}-${i}`}
-                      className={'dropdown-item' + (shiftedMouzas.includes(m) ? ' shifted' : '')}
+                      className={'dropdown-item' + (shiftedMouzas.includes(m) ? ' shifted' : '') + (browseAll && !ownMouzaSet.has(m) ? ' preview-item' : '')}
                       onClick={() => handleMauzaSelection(m)}
                     >
+                      {browseAll && ownMouzaSet.has(m) && <span className="mr-1 text-[#34d399]">✓</span>}
                       {m}
                     </button>
                   ))
                 ) : (
                   <button type="button" className="dropdown-item" disabled>No Chak Found</button>
+                )}
+                {browseAll && user.userType !== 'admin' && previewLimit != null && (
+                  <div className="browse-footer">✓ your mouzas · others open as preview · {previewLeft ?? '–'} of {previewLimit} new previews left today</div>
                 )}
               </NavDropdown>
             </div>

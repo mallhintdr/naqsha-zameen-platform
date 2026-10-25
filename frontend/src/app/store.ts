@@ -36,6 +36,16 @@ interface AppState {
   showWarningModal: boolean;
   /** Locked feature the limited user tapped (opens the Subscribe message). */
   subscribeFeature: string | null;
+
+  // ---- "All Mouzas" browsing (docs/PUBLIC-BROWSE-PLAN.md) ----
+  browseMode: 'mine' | 'all';
+  /** Tehsil shown on the map in All Mouzas mode (the account's activeTehsil is unchanged). */
+  browseTehsil: string | null;
+  /** The open mouza is not in the subscription: preview (tiles, street map, locked features). */
+  previewActive: boolean;
+  /** Preview mouzas left today (from /api/me/browse/mouzas), null = unknown. */
+  previewLeft: number | null;
+  previewLimit: number | null;
   warningDismissed: boolean;
   showIPWarningModal: boolean;
   ipWarningDismissed: boolean;
@@ -88,6 +98,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   showSaveLayerModal: false,
   showSavedLayersModal: false,
   subscribeFeature: null,
+  browseMode: 'mine',
+  browseTehsil: null,
+  previewActive: false,
+  previewLeft: null,
+  previewLimit: null,
   showWarningModal: false,
   warningDismissed: false,
   showIPWarningModal: false,
@@ -130,7 +145,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (turningOn) get().setAdminMapMode('geojson');
   },
   resetMapSelection: () =>
-    set({ selectedMauza: '', selectedMurabba: null, murabbaOptions: [], shajraEnabled: false, shajraVisible: false, shiftResult: null }),
+    set({ selectedMauza: '', selectedMurabba: null, murabbaOptions: [], shajraEnabled: false, shajraVisible: false, shiftResult: null, previewActive: false }),
 
   selectMauza: async (tehsil, mouza) => {
     set({ selectedMauza: mouza, selectedMurabba: null, murabbaOptions: [], shajraEnabled: false, shajraVisible: false, murabbaLoading: true, userLayerToLoad: null });

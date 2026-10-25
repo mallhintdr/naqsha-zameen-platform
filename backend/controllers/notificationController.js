@@ -5,7 +5,11 @@ const logger = require('../utils/logger');
 // Get notification history
 exports.getNotifications = async (req, res) => {
     try {
-        const notifs = await Notification.find({ userId: req.user.userId })
+        // ?since=<ISO time>: only notifications created after it (the dashboard's cheap poll).
+        const filter = { userId: req.user.userId };
+        const since = req.query.since ? new Date(String(req.query.since)) : null;
+        if (since && !Number.isNaN(since.getTime())) filter.createdAt = { $gt: since };
+        const notifs = await Notification.find(filter)
             .sort({ createdAt: -1 })
             .limit(60)
             .lean();

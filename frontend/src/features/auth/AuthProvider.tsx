@@ -222,24 +222,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNotifications([]);
       return;
     }
+    // New notifications arrive instantly over the socket. Polling is only a safety net:
+    //  - small poll (?since=newest): every 5 min while the socket is connected, every 60 s if not
+    //  - full list (read marks / done actions from other devices): at start, when the app comes
+    //    back to the foreground (at most once a minute), and every 15 min
+    let newest = '';
+    let lastFull = 0;
+    const markNewest = (list: any[]) => {
+      for (const n of list) if (n?.timestamp && String(n.timestamp) > newest) newest = String(n.timestamp);
+    };
     const fetchNotifications = async () => {
       try {
+        lastFull = Date.now();
         const { data } = await api.get('/api/notifications');
         if (!Array.isArray(data?.notifications)) return;
+        markNewest(data.notifications);
         setNotifications((prev) => {
           const ids = new Set(prev.map((n) => n.id || n._id));
           const hasNew = data.notifications.some((n: any) => !ids.has(n.id || n._id));
-          const doneKey = (l: any[]) => l.map((n) => `${n.id || n._id}:${n.actionDone ? 1 : 0}`).join(',');
-          if (!hasNew && prev.length === data.notifications.length && doneKey(prev) === doneKey(data.notifications)) return prev;
+          const stateKey = (l: any[]) => l.map((n) => `${n.id || n._id}:${n.actionDone ? 1 : 0}:${n.read ? 1 : 0}`).join(',');
+          if (!hasNew && prev.length === data.notifications.length && stateKey(prev) === stateKey(data.notifications)) return prev;
           return data.notifications;
         });
       } catch {}
     };
+    const fetchNewer = async () => {
+      if (!newest) return fetchNotifications();
+      try {
+        const { data } = await api.get('/api/notifications', { params: { since: newest } });
+        const fresh = Array.isArray(data?.notifications) ? data.notifications : [];
+        if (!fresh.length) return;
+        markNewest(fresh);
+        setNotifications((prev) => {
+          const ids = new Set(prev.map((n) => n.id || n._id));
+          const add = fresh.filter((n: any) => !ids.has(n.id || n._id));
+          return add.length ? [...add, ...prev].slice(0, 60) : prev;
+        });
+      } catch {}
+    };
     fetchNotifications();
-    const poll = setInterval(fetchNotifications, 12000);
-    const onVis = () => document.visibilityState === 'visible' && fetchNotifications();
-    document.addEventListener('visibilitychange', onVis);
-    window.addEventListener('focus', fetchNotifications);
+    let ticks = 0;
+    const poll = setInterval(() => {
+      ticks += 1;
+      if (Date.now() - lastFull > 15 * 60e3) { fetchNotifications(); return; }
+      const connected = !!socketRef.current?.connected;
+      if (!connected || ticks % 5 === 0) fetchNewer(); // 60 s offline, 5 min online
+    }, 60000);
+    const onForeground = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastFull > 60e3) fetchNotifications();
+    };
+    document.addEventListener('visibilitychange', onForeground);
+    window.addEventListener('focus', onForeground);
 
     socketRef.current?.disconnect();
     const origin = socketOrigin();
@@ -250,6 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
 
     socket.on('notification', (n: AppNotification) => {
+      markNewest([n]);
       setNotifications((prev) => {
         const id = n.id || n._id;
         if (id && prev.some((p) => (p.id || p._id) === id)) return prev;
@@ -273,8 +307,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       clearInterval(poll);
-      document.removeEventListener('visibilitychange', onVis);
-      window.removeEventListener('focus', fetchNotifications);
+      document.removeEventListener('visibilitychange', onForeground);
+      window.removeEventListener('focus', onForeground);
       socket.disconnect();
       if (socketRef.current === socket) socketRef.current = null;
     };

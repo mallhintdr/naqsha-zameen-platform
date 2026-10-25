@@ -224,3 +224,12 @@
   .submenu-flyout-close { display: none; }
   .submenu-flyout-body .submenu-item { padding: 10px 12px; font-size: 0.85rem; }
 }
+
+/* "All Mouzas" browsing: My / All switch inside the mouza list, preview rows, footer */
+.browse-switch { position: sticky; top: 0; z-index: 2; display: flex; gap: 4px; padding: 4px; margin-bottom: 4px; background: rgba(15, 32, 39, 0.98); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.browse-switch button { flex: 1 1 0; padding: 4px 6px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; color: #cbd5e1; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); white-space: nowrap; }
+.browse-switch button.on { color: #0f2027; background: #00d4ff; border-color: #00d4ff; }
+.dropdown-item.preview-item { opacity: 0.88; }
+.browse-footer { position: sticky; bottom: 0; padding: 5px 8px; font-size: 0.68rem; line-height: 1.25; color: #fbbf24; background: rgba(15, 32, 39, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.preview-banner { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 3px 8px; font-size: 0.74rem; font-weight: 600; color: #78350f; background: #fde68a; border-bottom: 1px solid #f59e0b; }
+.preview-banner button { padding: 1px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; color: #fff; background: #b45309; }

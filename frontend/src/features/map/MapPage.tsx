@@ -7,12 +7,16 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useAppStore } from '@/app/store';
 import { fetchMauzas } from '@/shared/lib/mouzaApi';
 import MapComponentJs from './core/MapComponent';
+import { useMapUser } from './useMapTehsil';
 
 // Legacy JS forwardRef component (loosely typed props).
 const MapComponent = MapComponentJs as any;
 
 export default function MapPage() {
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  // In All Mouzas mode the map shows the browsed tehsil; preview mouzas are marked.
+  const user = useMapUser();
+  void authUser;
   const selectedMauza = useAppStore((s) => s.selectedMauza);
   const goToMarkers = useAppStore((s) => s.goToMarkers);
   const murabbaOptions = useAppStore((s) => s.murabbaOptions);

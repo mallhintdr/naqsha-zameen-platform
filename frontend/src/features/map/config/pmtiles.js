@@ -27,6 +27,12 @@ const signedUrlCache = new Map();
 // Expired / pending accounts get the map as PMTiles tiles only: the server refuses
 // their GeoJSON requests (EXPIRED_TILES_ONLY), so the loaders skip GeoJSON entirely.
 let tilesOnly = false;
+let lastQuotaNote = 0;
+function notifyPreviewQuota(message) {
+  if (Date.now() - lastQuotaNote < 20000) return;
+  lastQuotaNote = Date.now();
+  import('@/shared/ui').then(({ toast }) => toast.warning(message || 'Daily preview limit reached.')).catch(() => {});
+}
 export function setTilesOnly(on) { tilesOnly = Boolean(on); }
 export function isTilesOnly() { return tilesOnly; }
 
@@ -146,9 +152,16 @@ async function getSignedUrlFromBackend(tehsil, mouza, murabba, filename) {
     return cached.url;
   }
 
-  const response = await api.post(`${apiUrl}/api/pmtiles/signed-url`, {
-    tehsil, mouza, murabba, filename
-  });
+  let response;
+  try {
+    response = await api.post(`${apiUrl}/api/pmtiles/signed-url`, {
+      tehsil, mouza, murabba, filename
+    });
+  } catch (err) {
+    // "All Mouzas" preview: daily limit of new preview mouzas reached.
+    if (err?.response?.status === 429 && err.response.data?.code === 'PREVIEW_QUOTA') notifyPreviewQuota(err.response.data.message);
+    throw err;
+  }
 
   const data = response.data;
   if (!data || !data.url) throw new Error('Signed URL missing in response');
