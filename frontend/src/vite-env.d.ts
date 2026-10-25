@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_CLOUDFLARE_WORKER_URL?: string;
   readonly VITE_TURNSTILE_SITE_KEY?: string;
   readonly VITE_ENABLE_TURNSTILE?: string;
+  readonly VITE_SITE_URL?: string;
 }
 interface Window {
   __pushEnabled?: boolean;

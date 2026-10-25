@@ -1,3 +1,4 @@
+import { isLimitedUser } from '@/shared/lib/featureAccess';
 /**
  * Port of legacy src/hooks/useUserLayers.js.
  * Shared flags (showSaveLayerModal, showSavedLayersModal, saveLayerName, userLayerToLoad,
@@ -65,8 +66,10 @@ export function useUserLayers() {
     }
     if (loadedFor === userKey) return;
     setLayersState({ loadedFor: userKey });
+    // Saved layers need a full subscription (server returns SUBSCRIPTION_REQUIRED otherwise).
+    if (isLimitedUser(user)) { setLayersState({ userLayers: [] }); return; }
     fetchLayers();
-  }, [userKey, loadedFor, setLayersState]);
+  }, [userKey, loadedFor, setLayersState, user]);
 
   const setUserLayers = useCallback((userLayers: UserLayer[]) => setLayersState({ userLayers }), [setLayersState]);
   const setSavingLayer = useCallback((savingLayer: boolean) => setLayersState({ savingLayer }), [setLayersState]);

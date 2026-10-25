@@ -38,4 +38,21 @@ function requireMapAccess({ allowExpired }) {
     };
 }
 
-module.exports = { requireMapAccess, EXPIRED_BODY };
+/**
+ * Full-subscription-only features (saved layers, ...): expired / pending accounts get
+ * 403 SUBSCRIPTION_REQUIRED, which the dashboard turns into the "Subscribe to unlock" message.
+ */
+function requireFullSubscription(feature) {
+    return (req, res, next) => {
+        if (!req.user) return res.status(401).json({ message: 'Authentication required' });
+        const state = subscriptionState(req.user);
+        if (state === 'full') return next();
+        return res.status(403).json({
+            message: 'Please subscribe to use this feature. Your current access shows the map only.',
+            code: 'SUBSCRIPTION_REQUIRED',
+            feature,
+        });
+    };
+}
+
+module.exports = { requireMapAccess, requireFullSubscription, EXPIRED_BODY };

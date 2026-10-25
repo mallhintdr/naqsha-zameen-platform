@@ -11,10 +11,12 @@ const {
     recordDetailsValidation,
 } = require('../middleware/validationMiddleware');
 
-// User Layers
-router.post('/api/user-layers', isAuthenticated, createUserLayerValidation, asyncHandler(layersController.createUserLayer));
-router.get('/api/user-layers', isAuthenticated, asyncHandler(layersController.getUserLayers));
-router.put('/api/user-layers/:id', isAuthenticated, updateUserLayerValidation, asyncHandler(layersController.updateUserLayer));
+// User Layers: open / save need a full subscription (delete stays allowed).
+const { requireFullSubscription } = require('../middleware/mapAccess');
+const layersFull = requireFullSubscription('saved-layers');
+router.post('/api/user-layers', isAuthenticated, layersFull, createUserLayerValidation, asyncHandler(layersController.createUserLayer));
+router.get('/api/user-layers', isAuthenticated, layersFull, asyncHandler(layersController.getUserLayers));
+router.put('/api/user-layers/:id', isAuthenticated, layersFull, updateUserLayerValidation, asyncHandler(layersController.updateUserLayer));
 router.delete('/api/user-layers/:id', isAuthenticated, layerIdValidation, asyncHandler(layersController.deleteUserLayer));
 
 // Land Records

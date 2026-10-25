@@ -1,3 +1,4 @@
+import { isLimitedUser, type LockedFeature } from '@/shared/lib/featureAccess';
 /**
  * 240px off-canvas sidebar below the 42px navbar (legacy src/App/NavigationMenu.js, inv-01 §3).
  * D7: the duplicate second "Shift Mouza" entry (#nav-link-shift) is removed.
@@ -239,6 +240,14 @@ export default function NavigationMenu() {
 
   const isUserActive = user?.userType === 'admin' || user?.status === 'Active';
   const shiftEnabled = Boolean(isUserActive && selectedMauza);
+  // Limited users (expired / preview): locked items stay tappable and explain why.
+  const limited = isLimitedUser(user);
+  const locked = (feature: LockedFeature) => {
+    setOpenSubmenu(null);
+    set({ subscribeFeature: feature });
+    toggleMenu();
+  };
+  const lockTag = <span className="ml-1.5 text-[0.7rem]">🔒 subscribe</span>;
   const changeMouzasOk = canChangeMouzas(user);
   const layers = Array.isArray(userLayers) ? userLayers : [];
   const canSaveLayer = Boolean(drawnGeoJson && drawnGeoJson.features?.length && layers.length < 10);
@@ -303,38 +312,41 @@ export default function NavigationMenu() {
 
             <NavItem
               id="nav-link-shift-mouza"
-              disabled={!shiftEnabled}
+              disabled={!limited && !shiftEnabled}
               onClick={() => {
+                if (limited) return locked('shift-mouza');
                 setOpenSubmenu(null);
                 set({ showShiftForm: true });
                 toggleMenu();
               }}
             >
-              ↔️ Shift Mouza
+              ↔️ Shift Mouza{limited && lockTag}
             </NavItem>
 
             {user && (
               <>
                 <NavItem
                   id="nav-link-save-layer"
-                  disabled={!canSaveLayer}
+                  disabled={!limited && !canSaveLayer}
                   onClick={() => {
+                    if (limited) return locked('save-layer');
                     setOpenSubmenu(null);
                     handleSaveLayerClick?.();
                     toggleMenu();
                   }}
                 >
-                  💾 Save Layer
+                  💾 Save Layer{limited && lockTag}
                 </NavItem>
                 <NavItem
                   id="nav-link-saved-layers"
                   onClick={() => {
+                    if (limited) return locked('saved-layers');
                     setOpenSubmenu(null);
                     set({ showSavedLayersModal: true });
                     toggleMenu();
                   }}
                 >
-                  📁 Open Saved Layers
+                  📁 Open Saved Layers{limited && lockTag}
                 </NavItem>
               </>
             )}
@@ -466,16 +478,17 @@ export default function NavigationMenu() {
             {user?.userType === 'user' && (
               <NavItem
                 id="nav-link-change-mouzas"
-                disabled={!changeMouzasOk}
-                title={changeMouzasOk ? 'Request mouzas to be added or removed' : 'Available while your subscription is active. Please renew first.'}
-                style={changeMouzasOk ? undefined : { opacity: 0.5, cursor: 'not-allowed' }}
+                disabled={!limited && !changeMouzasOk}
+                title={changeMouzasOk ? 'Request mouzas to be added or removed' : 'Available while your subscription is active. Please subscribe first.'}
+                style={changeMouzasOk || limited ? undefined : { opacity: 0.5, cursor: 'not-allowed' }}
                 onClick={() => {
+                  if (limited) return locked('change-mouza');
                   setOpenSubmenu(null);
                   setShowChangeMouzas(true);
                   toggleMenu();
                 }}
               >
-                🗺️ Change Mouza{!changeMouzasOk && <span className="ml-1.5 text-[0.7rem]">(renew first)</span>}
+                🗺️ Change Mouza{limited ? lockTag : !changeMouzasOk && <span className="ml-1.5 text-[0.7rem]">(renew first)</span>}
               </NavItem>
             )}
 

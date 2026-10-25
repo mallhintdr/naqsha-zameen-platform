@@ -6,6 +6,8 @@ import L from 'leaflet';
 import { dialogs } from '@/shared/ui';
 import locationIcon from './images/location.png';
 import './css/LocateControl.css';
+import { useAppStore } from '@/app/store';
+import { isTilesOnly } from '@/features/map/config/pmtiles';
 
 /**
  * LocateControl with toggle functionality:
@@ -237,6 +239,11 @@ const LocateControl = L.Control.extend({
     this._stopTracking = stopTracking;
 
     const onButtonClick = () => {
+      // Limited users (expired / preview): live location needs a subscription.
+      if (this._watchId === null && isTilesOnly()) {
+        useAppStore.getState().set({ subscribeFeature: 'live-location' });
+        return;
+      }
       if (this._watchId === null) {
         this._hasZoomedToLocation = false;
         L.DomUtil.addClass(button, 'leaflet-location-icon-active');

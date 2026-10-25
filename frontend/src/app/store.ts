@@ -34,6 +34,8 @@ interface AppState {
   showSaveLayerModal: boolean;
   showSavedLayersModal: boolean;
   showWarningModal: boolean;
+  /** Locked feature the limited user tapped (opens the Subscribe message). */
+  subscribeFeature: string | null;
   warningDismissed: boolean;
   showIPWarningModal: boolean;
   ipWarningDismissed: boolean;
@@ -85,6 +87,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   showForgotPasswordModal: false,
   showSaveLayerModal: false,
   showSavedLayersModal: false,
+  subscribeFeature: null,
   showWarningModal: false,
   warningDismissed: false,
   showIPWarningModal: false,

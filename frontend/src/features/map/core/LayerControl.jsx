@@ -2,9 +2,23 @@ import React, { useEffect, useState, useRef } from "react";
 import { useMap } from './mapContext';
 import L from "leaflet";
 import "./css/LayerControl.css";
+import { useAppStore } from "@/app/store";
+import { SATELLITE_BASEMAPS, LIMITED_DEFAULT_BASEMAP } from "@/shared/lib/featureAccess";
 
-const LayerControlDropdown = ({ activeLayer = "Hybrid Satellite", setActiveLayer, currentMaxZoom = 21 }) => {
+const LayerControlDropdown = ({ activeLayer = "Hybrid Satellite", setActiveLayer, currentMaxZoom = 21, satelliteLocked = false }) => {
   const map = useMap();
+
+  // Limited users (expired / preview): satellite basemaps are locked, the map uses a street basemap.
+  useEffect(() => {
+    if (satelliteLocked && SATELLITE_BASEMAPS.has(activeLayer)) setActiveLayer(LIMITED_DEFAULT_BASEMAP);
+  }, [satelliteLocked, activeLayer, setActiveLayer]);
+  const choose = (name) => {
+    if (satelliteLocked && SATELLITE_BASEMAPS.has(name)) {
+      useAppStore.getState().set({ subscribeFeature: "satellite" });
+      return;
+    }
+    setActiveLayer(name);
+  };
 
   // Store the "currently active base layer" so we can remove it before adding the next.
   const baseLayerRef = useRef(null);
@@ -71,7 +85,8 @@ const LayerControlDropdown = ({ activeLayer = "Hybrid Satellite", setActiveLayer
     }
 
     // 2) Add the newly selected base layer
-    const newBaseLayer = layers[activeLayer] || layers["Google Hybrid Satellite"];
+    const wanted = satelliteLocked && SATELLITE_BASEMAPS.has(activeLayer) ? LIMITED_DEFAULT_BASEMAP : activeLayer;
+    const newBaseLayer = layers[wanted] || layers[satelliteLocked ? LIMITED_DEFAULT_BASEMAP : "Google Hybrid Satellite"];
     newBaseLayer.addTo(map);
 
     // 3) Store it in our ref
@@ -83,7 +98,7 @@ const LayerControlDropdown = ({ activeLayer = "Hybrid Satellite", setActiveLayer
         map.removeLayer(baseLayerRef.current);
       }
     };
-  }, [map, activeLayer]);
+  }, [map, activeLayer, satelliteLocked, currentMaxZoom]);
 
   const containerRef = useRef(null);
 
@@ -100,12 +115,12 @@ const LayerControlDropdown = ({ activeLayer = "Hybrid Satellite", setActiveLayer
         id="map-base-layer-select"
         className="dropdown-select"
         value={activeLayer}
-        onChange={(e) => setActiveLayer(e.target.value)}
+        onChange={(e) => choose(e.target.value)}
         style={{ width: `calc(${activeLayer.length * 0.95}ch + 32px)` }}
       >
         {Object.keys(layers).map((layerName) => (
           <option key={layerName} value={layerName}>
-            {layerName}
+            {satelliteLocked && SATELLITE_BASEMAPS.has(layerName) ? `🔒 ${layerName}` : layerName}
           </option>
         ))}
       </select>

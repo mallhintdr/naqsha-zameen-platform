@@ -1,6 +1,7 @@
 // src/Map Component/MapComponent.js
 
 import { setTilesOnly } from '@/features/map/config/pmtiles';
+import { isLimitedUser } from '@/shared/lib/featureAccess';
 import { useState, useRef, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { apiBase as getApiBase } from '@/shared/api/base';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -241,13 +242,11 @@ const MapComponent = forwardRef(({
 }, ref) => {
   useImperativeHandle(ref, () => mapRef.current);
   const { setModalError } = useAuth();
-  const isRestricted = user?.userType !== 'admin' && (
-      user?.status === 'Expired' || 
-      user?.status === 'Pending' || 
-      (user?.daysRemaining !== undefined && user.daysRemaining <= 0)
-  );
+  const isRestricted = isLimitedUser(user);
   setTilesOnly(isRestricted); // before any layer load in this render
-  const currentMaxZoom = isRestricted ? 14 : 21;
+  // Expired / pending: full zoom on tiles; satellite, live location, saved layers,
+  // shift and change mouza are locked instead (shared/lib/featureAccess).
+  const currentMaxZoom = 21;
   const currentMaxZoomRef = useRef(currentMaxZoom);
   currentMaxZoomRef.current = currentMaxZoom;
 
@@ -1708,6 +1707,7 @@ const MapComponent = forwardRef(({
           activeLayer={baseLayer}
           setActiveLayer={setBaseLayer}
           currentMaxZoom={currentMaxZoom}
+          satelliteLocked={isRestricted}
         />
         <GlobalZoomTracker />
         <ThreeFingerRotateControl />

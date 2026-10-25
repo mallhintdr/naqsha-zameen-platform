@@ -105,3 +105,18 @@ test('hasAccess (PMTiles signer, legacy callers) follows temp grants', async () 
     assert.equal((await (await get('/has/Ali Pur/Chak 5', 'grantOnly')).json()).ok, true);
     assert.equal((await (await get('/has/Ali Pur/Chak 6', 'grantOnly')).json()).ok, false);
 });
+
+test('saved layers need a full subscription', async () => {
+    const { requireFullSubscription } = require('../middleware/mapAccess');
+    const mw = requireFullSubscription('saved-layers');
+    const run = (user) => new Promise((resolve) => {
+        const res = { status(c) { this.c = c; return this; }, json(b) { resolve({ status: this.c, body: b }); } };
+        mw({ user }, res, () => resolve({ status: 200 }));
+    });
+    assert.equal((await run(U.active)).status, 200);
+    assert.equal((await run(U.admin)).status, 200);
+    const r = await run(U.expired);
+    assert.equal(r.status, 403);
+    assert.equal(r.body.code, 'SUBSCRIPTION_REQUIRED');
+    assert.equal((await run(U.pending)).status, 403);
+});

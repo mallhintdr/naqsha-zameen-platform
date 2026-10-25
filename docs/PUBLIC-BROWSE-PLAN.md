@@ -381,3 +381,15 @@ After you approve the decisions in section 6:
 2. **Phase 1:** follows straight after.
 
 Each phase ships to the `.com` test copy behind the flag before anything changes for `.pk` customers.
+
+---
+
+## Status log
+
+- **25 Oct 2026, Phase 1 done (expired / pending customers):**
+  - **Zoom:** the cap is removed; the map is served as tiles only.
+  - **Locked features:** satellite basemaps, live location, open / save saved layers, shift mouza and change mouza. Each one opens the "Subscribe for full features" message, which also links the website services.
+  - **Server enforcement:** saved layers return `403 SUBSCRIPTION_REQUIRED`; delete is still allowed. Shift and change mouza were already enforced on the server.
+  - **Code:** `shared/lib/featureAccess.ts`, `SubscribeRequiredModal`.
+  - **Check:** `frontend/e2e/expired-locks.mjs`.
+  - **Preview:** uses the same locks via `isLimitedUser` once preview users exist.

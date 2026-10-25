@@ -8,6 +8,7 @@ import { useChromeStore } from './chromeStore';
 import SubscriptionWarningModal from './modals/SubscriptionWarningModal';
 import ProfileModal from './modals/ProfileModal';
 import ReplyModal from './modals/ReplyModal';
+import SubscribeRequiredModal from './modals/SubscribeRequiredModal';
 import { ErrorModal, ForgotPasswordModal, IPMisuseModal, RealtimeNotificationModal } from './modals/SmallModals';
 
 export default function GlobalModals({ onAuthPage }: { onAuthPage: boolean }) {
@@ -28,6 +29,7 @@ export default function GlobalModals({ onAuthPage }: { onAuthPage: boolean }) {
         onHide={() => set({ showWarningModal: false, warningDismissed: true })}
         warningContent={warning}
       />
+      <SubscribeRequiredModal />
       <ProfileModal show={showProfileModal} onHide={() => set({ showProfileModal: false })} />
       <ErrorModal
         show={!!modalError?.show}
