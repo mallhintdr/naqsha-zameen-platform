@@ -2,18 +2,18 @@ const express = require('express');
 const router = express.Router();
 const geoController = require('../controllers/geoController');
 const { isAuthenticated, maybeAuthenticated, isSubscribed, isSubscribedOrLimitedZoom, isAdmin } = require('../middleware/authMiddleware');
-const { limiterGeo, apiLimiter, pmtilesSignLimiterMinute, pmtilesSignLimiterHour } = require('../middleware/rateLimiters');
+const { limiterGeo, apiLimiter, publicListLimiter, pmtilesSignLimiterMinute, pmtilesSignLimiterHour } = require('../middleware/rateLimiters');
 const signedPMTilesUrl = require('../middleware/signedPMTilesUrl');
 const { vectorGuards } = require('../middleware/vectorDataGuard');
 const { requireMapAccess } = require('../middleware/mapAccess');
 const { pathParamValidation } = require('../middleware/validationMiddleware');
 const { asyncHandler } = require('../middleware/errorHandler');
 
-router.get('/api/tehsil-list', maybeAuthenticated, apiLimiter, asyncHandler(geoController.getTehsilList));
-router.get('/api/mauza-list/:tehsil', maybeAuthenticated, apiLimiter, pathParamValidation, asyncHandler(geoController.getMauzaList));
+router.get('/api/tehsil-list', maybeAuthenticated, publicListLimiter, asyncHandler(geoController.getTehsilList));
+router.get('/api/mauza-list/:tehsil', maybeAuthenticated, publicListLimiter, pathParamValidation, asyncHandler(geoController.getMauzaList));
 // "All Mouzas" browsing: lists with own mouzas marked + today's preview usage (names only).
 const catalog = require('../controllers/catalogController');
-router.get('/api/public/catalog', apiLimiter, asyncHandler(catalog.publicCatalog));
+router.get('/api/public/catalog', publicListLimiter, asyncHandler(catalog.publicCatalog));
 router.get('/api/me/browse/tehsils', isAuthenticated, apiLimiter, asyncHandler(catalog.tehsils));
 router.get('/api/me/browse/mouzas/:tehsil', isAuthenticated, apiLimiter, pathParamValidation, asyncHandler(catalog.mouzas));
 router.get('/api/geojson/:tehsil/:mauza', isAuthenticated, requireMapAccess({ allowExpired: false }), limiterGeo, pathParamValidation, ...vectorGuards({ paramsFrom: 'params', tilesOnlyWhenExpired: true }), asyncHandler(geoController.serveGeoJson));

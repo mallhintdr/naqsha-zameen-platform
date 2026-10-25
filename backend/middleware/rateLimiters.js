@@ -152,6 +152,27 @@ const apiLimiter = rateLimit({
     ...makeStore('rl:api:')
 });
 
+// Own buckets so one kind of traffic can't lock out another on a shared connection:
+//  - csrfLimiter: the dashboard's start-up token request (was in apiLimiter, so a busy
+//    connection got "Too many requests" here and the whole app stopped loading)
+//  - publicListLimiter: name lists / catalog used by the website build and registration
+const csrfLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many requests, please try again later' },
+    ...makeStore('rl:csrf:')
+});
+const publicListLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 400,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many requests, please try again later' },
+    ...makeStore('rl:lists:')
+});
+
 // Per-sub-admin limit on write actions (create, renew, edit, resend...)
 const subAdminWriteLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -204,6 +225,7 @@ const pmtilesSignLimiterMinute = makePmtilesSignLimiter('m', 60 * 1000, Number(p
 const pmtilesSignLimiterHour = makePmtilesSignLimiter('h', 60 * 60 * 1000, Number(process.env.PMTILES_SIGN_MAX_PER_HOUR) || 1500);
 
 module.exports = {
+    csrfLimiter, publicListLimiter,
     pmtilesSignLimiterMinute,
     pmtilesSignLimiterHour,
     makeVectorLimiter,

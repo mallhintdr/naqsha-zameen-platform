@@ -257,7 +257,7 @@ app.use((req, res, next) => {
 
 // Expose CSRF token to the SPA (rate-limited)
 const { apiLimiter } = require('./middleware/rateLimiters');
-app.get('/api/csrf-token', apiLimiter, (req, res) => {
+app.get('/api/csrf-token', require('./middleware/rateLimiters').csrfLimiter, (req, res) => {
     res.json({ csrfToken: generateCsrfToken(req, res) });
 });
 
