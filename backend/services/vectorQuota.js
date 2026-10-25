@@ -49,6 +49,28 @@ async function touchDistinct(userId, member, max, { now = new Date(), tzOffsetMi
     return memTouch(key, member, max);
 }
 
+/** How many distinct members `userId` opened today in `scope` (no change). */
+async function countDistinct(userId, { now = new Date(), tzOffsetMin = 300, scope = 'mouza' } = {}) {
+    const key = `vq:${scope}:${String(userId).toLowerCase()}:${dayKey(now, tzOffsetMin)}`;
+    const client = getRedisClient && getRedisClient();
+    if (client && isRedisReady()) {
+        try { return await client.scard(key); } catch { /* memory below */ }
+    }
+    const e = memory.get(key);
+    return e && e.exp > Date.now() ? e.set.size : 0;
+}
+
+/** True if `member` was already opened today in `scope`. */
+async function hasDistinct(userId, member, { now = new Date(), tzOffsetMin = 300, scope = 'mouza' } = {}) {
+    const key = `vq:${scope}:${String(userId).toLowerCase()}:${dayKey(now, tzOffsetMin)}`;
+    const client = getRedisClient && getRedisClient();
+    if (client && isRedisReady()) {
+        try { return Boolean(await client.sismember(key, member)); } catch { /* memory below */ }
+    }
+    const e = memory.get(key);
+    return Boolean(e && e.exp > Date.now() && e.set.has(member));
+}
+
 const _resetMemory = () => memory.clear();
 
-module.exports = { touchDistinct, dayKey, _resetMemory };
+module.exports = { touchDistinct, countDistinct, hasDistinct, dayKey, _resetMemory };

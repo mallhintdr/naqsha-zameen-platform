@@ -1,4 +1,5 @@
 // Run: cd backend && node --test test/signedPMTilesUrl.test.js
+process.env.PUBLIC_BROWSE = 'false'; // these tests cover the owner-only rule; preview is tested in accessPolicy.test.js
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');

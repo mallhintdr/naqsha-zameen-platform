@@ -11,6 +11,10 @@ const { asyncHandler } = require('../middleware/errorHandler');
 
 router.get('/api/tehsil-list', maybeAuthenticated, apiLimiter, asyncHandler(geoController.getTehsilList));
 router.get('/api/mauza-list/:tehsil', maybeAuthenticated, apiLimiter, pathParamValidation, asyncHandler(geoController.getMauzaList));
+// "All Mouzas" browsing: lists with own mouzas marked + today's preview usage (names only).
+const catalog = require('../controllers/catalogController');
+router.get('/api/me/browse/tehsils', isAuthenticated, apiLimiter, asyncHandler(catalog.tehsils));
+router.get('/api/me/browse/mouzas/:tehsil', isAuthenticated, apiLimiter, pathParamValidation, asyncHandler(catalog.mouzas));
 router.get('/api/geojson/:tehsil/:mauza', isAuthenticated, requireMapAccess({ allowExpired: false }), limiterGeo, pathParamValidation, ...vectorGuards({ paramsFrom: 'params', tilesOnlyWhenExpired: true }), asyncHandler(geoController.serveGeoJson));
 router.post('/api/geojson/:tehsil/:mauza/shift', isAuthenticated, isAdmin, isSubscribedOrLimitedZoom, limiterGeo, asyncHandler(geoController.shiftGeoJson));
 router.post('/api/geojson/:tehsil/:mauza/reset', isAuthenticated, isAdmin, isSubscribedOrLimitedZoom, limiterGeo, asyncHandler(geoController.resetGeoJson));

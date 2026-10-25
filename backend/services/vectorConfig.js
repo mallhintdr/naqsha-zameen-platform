@@ -29,6 +29,10 @@ function vectorConfig() {
         watermarkUnits: Math.min(4, Math.max(1, int(e.VECTOR_WATERMARK_UNITS, 3))), // 1 unit = 1e-7° ≈ 1.1 cm
         watermarkAdmins: bool(e.VECTOR_WATERMARK_ADMINS, false),
         cacheMb: int(e.VECTOR_CACHE_MB, 256),
+        // "All Mouzas" preview (docs/PUBLIC-BROWSE-PLAN.md): registered users may view
+        // mouzas they don't own as tiles only, a few new ones per day.
+        publicBrowse: bool(e.PUBLIC_BROWSE, true),
+        previewMouzasPerDay: int(e.PREVIEW_MOUZAS_PER_DAY, 10),
         tehsilWideFiles: new RegExp(e.VECTOR_TEHSIL_WIDE_FILES || '(-mouza-index\\.json|^list-[^/]*\\.json|^index\\.json)$', 'i'),
     };
 }

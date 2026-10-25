@@ -410,7 +410,8 @@ const serveCaseInsensitiveStatic = (basePath, onFile = (req, res, file) => res.s
       const scope = parseVectorPath(req.path);
       if (!scope) return res.status(400).json({ message: 'Invalid data path' });
       const level = await accessLevel(user, scope.tehsil, scope.mouza);
-      if (level === 'none') {
+      // Preview mouzas: worker tiles only, never from this server.
+      if (level === 'none' || level === 'preview') {
         logger.warn('Forbidden access to static file', { userId: user.userId, path: req.path, tehsil: scope.tehsil, mouza: scope.mouza });
         return res.status(403).json({ message: 'Access denied to this mouza data.' });
       }

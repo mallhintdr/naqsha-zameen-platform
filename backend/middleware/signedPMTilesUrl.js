@@ -21,6 +21,15 @@ const MAX_BATCH = 50;
 const deps = {
   hasAccess: (...args) => require('./authMiddleware').hasAccess(...args),
   resolveTehsilForMouza: (...args) => require('../utils/linkedTehsilPath').resolveTehsilForMouza(...args),
+  // "All Mouzas" preview: a registered user may get tiles of a mouza they don't own,
+  // a few new mouzas per day (services/accessPolicy).
+  previewAllowed: async (user, tehsil, mouza) => {
+    const { vectorConfig } = require('../services/vectorConfig');
+    const { subscriptionState, previewQuota } = require('../services/accessPolicy');
+    if (!vectorConfig().publicBrowse || subscriptionState(user) === 'none') return { ok: false };
+    const q = await previewQuota(user, tehsil, mouza);
+    return { ok: q.allowed, quota: q };
+  },
 };
 
 const generateSignature = (payload) => {
@@ -109,11 +118,19 @@ const signForUser = async (user, fileSpec) => {
 
   // Entitlement on the tehsil the user asked for (may be a group name).
   const allowed = await deps.hasAccess(user, norm.spec.tehsil, norm.mouza);
-  if (!allowed) return { status: 403, error: 'Access denied: You do not have permission to access this tehsil/mouza.' };
+  let preview = false;
+  if (!allowed) {
+    const p = await deps.previewAllowed(user, norm.spec.tehsil, norm.mouza);
+    if (p.quota && !p.ok) {
+      return { status: 429, error: `Daily preview limit reached: you can preview ${p.quota.limit} new mouzas per day. Mouzas you already opened today still work.`, code: 'PREVIEW_QUOTA' };
+    }
+    if (!p.ok) return { status: 403, error: 'Access denied: You do not have permission to access this tehsil/mouza.' };
+    preview = true;
+  }
 
   const tehsil = await realTehsil(norm.spec.tehsil, norm.mouza);
   if (!isSafeSegment(tehsil)) return { status: 400, error: 'Invalid tehsil' };
-  return { status: 200, result: createSignedUrl({ ...norm.spec, tehsil }, userId) };
+  return { status: 200, result: { ...createSignedUrl({ ...norm.spec, tehsil }, userId), ...(preview ? { preview: true } : {}) } };
 };
 
 const logDenied = (req, spec, error) => {
@@ -134,9 +151,9 @@ module.exports = {
       const out = await signForUser(req.user, spec);
       if (out.status !== 200) {
         if (out.status === 403) logDenied(req, spec, out.error);
-        return res.status(out.status).json({ success: false, message: out.error });
+        return res.status(out.status).json({ success: false, message: out.error, ...(out.code ? { code: out.code } : {}) });
       }
-      res.json({ success: true, url: out.result.url, expiresAt: out.result.expiresAt });
+      res.json({ success: true, url: out.result.url, expiresAt: out.result.expiresAt, ...(out.result.preview ? { preview: true } : {}) });
     } catch (error) {
       console.error('Error generating signed URL:', error);
       res.status(500).json({ success: false, message: 'Failed to generate signed URL' });
@@ -164,6 +181,7 @@ module.exports = {
           const out = await signForUser(req.user, file);
           if (out.status === 200) return out.result;
           if (out.status === 403) logDenied(req, file, out.error);
+          if (out.code) return { error: out.error, code: out.code, fileSpec: file };
           return { error: out.status === 403 ? 'Access denied' : 'Invalid parameters', fileSpec: file };
         } catch (e) {
           return { error: 'Generation failed', fileSpec: file };

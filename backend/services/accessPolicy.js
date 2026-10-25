@@ -5,13 +5,17 @@
  *   'full'    admin, or entitled to the mouza with an active subscription
  *   'expired' entitled, but the subscription is expired / pending activation:
  *             map tiles only (PMTiles, shajra raster), no GeoJSON downloads
- *   'none'    not entitled, suspended, or not logged in
+ *   'preview' not entitled, but "All Mouzas" browsing is on (PUBLIC_BROWSE): tiles only via
+ *             the signed worker URLs, a few new mouzas per day (previewQuota)
+ *   'none'    suspended, not logged in, or not entitled with browsing off
  *
  * Entitlement is the mouza-level rule from vectorAccess.isEntitled (temp grants,
  * linked / grouped tehsils), so every route gives the same answer.
  */
 const { isEntitled } = require('./vectorAccess');
 const { calculateDatesAndStatus } = require('../utils/dateUtils');
+const { vectorConfig } = require('./vectorConfig');
+const { touchDistinct, countDistinct, hasDistinct } = require('./vectorQuota');
 
 const EXPIRED_STATUSES = new Set(['Expired', 'Pending', 'AwaitingActivation']);
 
@@ -42,8 +46,32 @@ async function accessLevel(user, tehsil, mouza, opts = {}) {
     if (user.userType === 'admin') return 'full';
     const state = subscriptionState(user);
     if (state === 'none') return 'none';
-    if (!(await isEntitled(user, tehsil, mouza ?? null, opts))) return 'none';
+    if (!(await isEntitled(user, tehsil, mouza ?? null, opts))) {
+        return vectorConfig().publicBrowse && mouza ? 'preview' : 'none';
+    }
     return state;
 }
 
-module.exports = { accessLevel, subscriptionState };
+const member = (tehsil, mouza) => `${String(tehsil).toLowerCase()}|${String(mouza).toLowerCase()}`;
+const quotaOpts = () => ({ scope: 'preview', tzOffsetMin: vectorConfig().quotaTzOffsetMin });
+
+/**
+ * Daily limit on distinct preview mouzas. A mouza already previewed today stays open.
+ * @returns {Promise<{allowed: boolean, used: number, limit: number}>}
+ */
+async function previewQuota(user, tehsil, mouza) {
+    const limit = vectorConfig().previewMouzasPerDay;
+    const r = await touchDistinct(user.userId, member(tehsil, mouza), limit, quotaOpts());
+    return { allowed: r.allowed, used: r.count, limit };
+}
+
+/** Preview mouzas used today and the daily limit (no change). */
+async function previewUsage(user) {
+    return { used: await countDistinct(user.userId, quotaOpts()), limit: vectorConfig().previewMouzasPerDay };
+}
+
+async function previewOpenedToday(user, tehsil, mouza) {
+    return hasDistinct(user.userId, member(tehsil, mouza), quotaOpts());
+}
+
+module.exports = { accessLevel, subscriptionState, previewQuota, previewUsage, previewOpenedToday };

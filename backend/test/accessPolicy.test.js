@@ -1,4 +1,5 @@
 require('./helpers');
+process.env.PMTILES_SIGNING_KEY = process.env.PMTILES_SIGNING_KEY || 'unit-test-key';
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
@@ -37,7 +38,8 @@ test('subscription state', () => {
     assert.equal(subscriptionState(null), 'none');
 });
 
-test('access level per mouza', async () => {
+test('access level per mouza (browsing off)', async () => {
+    process.env.PUBLIC_BROWSE = 'false';
     const o = { linked };
     assert.equal(await accessLevel(U.active, 'Ali Pur', 'Chak 1', o), 'full');
     assert.equal(await accessLevel(U.active, 'Ali Pur', 'Chak 2', o), 'none');
@@ -50,6 +52,7 @@ test('access level per mouza', async () => {
 });
 
 test('G4: an entry holding only temp grants is not the whole tehsil', async () => {
+    process.env.PUBLIC_BROWSE = 'false';
     const o = { linked };
     assert.equal(await accessLevel(U.grantOnly, 'Ali Pur', 'Chak 5', o), 'full');
     assert.equal(await accessLevel(U.grantOnly, 'Ali Pur', 'Chak 6', o), 'none');
@@ -119,4 +122,56 @@ test('saved layers need a full subscription', async () => {
     assert.equal(r.status, 403);
     assert.equal(r.body.code, 'SUBSCRIPTION_REQUIRED');
     assert.equal((await run(U.pending)).status, 403);
+});
+
+test('preview: browsing on gives unowned mouzas the preview level, with a daily limit', async () => {
+    process.env.PUBLIC_BROWSE = 'true';
+    process.env.PREVIEW_MOUZAS_PER_DAY = '2';
+    _resetMemory();
+    const { previewQuota, previewUsage } = require('../services/accessPolicy');
+    const o = { linked };
+    assert.equal(await accessLevel(U.active, 'Ali Pur', 'Chak 2', o), 'preview');
+    assert.equal(await accessLevel(U.expired, 'Ali Pur', 'Chak 2', o), 'preview');
+    assert.equal(await accessLevel(U.active, 'Ali Pur', 'Chak 1', o), 'full', 'own mouza unchanged');
+    assert.equal(await accessLevel(U.suspended, 'Ali Pur', 'Chak 2', o), 'none');
+    assert.equal(await accessLevel(U.active, 'Elsewhere', null, o), 'none', 'tehsil-wide files of other tehsils are never preview');
+    assert.equal((await previewQuota(U.active, 'Ali Pur', 'Chak 2')).allowed, true);
+    assert.equal((await previewQuota(U.active, 'Ali Pur', 'Chak 3')).allowed, true);
+    assert.equal((await previewQuota(U.active, 'Ali Pur', 'Chak 4')).allowed, false, 'third new mouza refused');
+    assert.equal((await previewQuota(U.active, 'Ali Pur', 'Chak 2')).allowed, true, 'already opened today stays open');
+    assert.deepEqual(await previewUsage(U.active), { used: 2, limit: 2 });
+    // Preview is tiles only: map-data routes refuse it.
+    const r = await get('/tiles/Ali Pur/Chak 2', 'active');
+    assert.equal(r.status, 403);
+    assert.equal((await r.json()).code, 'PREVIEW_TILES_ONLY');
+    assert.equal((await get('/geojson/Ali Pur/Chak 2', 'active')).status, 403);
+    process.env.PUBLIC_BROWSE = 'false';
+    delete process.env.PREVIEW_MOUZAS_PER_DAY;
+});
+
+test('signer: preview user gets a signed URL marked preview; quota then 429', async () => {
+    process.env.PUBLIC_BROWSE = 'true';
+    process.env.PREVIEW_MOUZAS_PER_DAY = '1';
+    _resetMemory();
+    const { _internal } = require('../middleware/signedPMTilesUrl');
+    const { signForUser, deps } = _internal;
+    const realHas = deps.hasAccess, realResolve = deps.resolveTehsilForMouza;
+    deps.hasAccess = async (u, t, m) => m === 'Chak 1';
+    deps.resolveTehsilForMouza = async (t) => t;
+    try {
+        const own = await signForUser(U.active, { tehsil: 'Ali Pur', mouza: 'Chak 1' });
+        assert.equal(own.status, 200);
+        assert.equal(own.result.preview, undefined);
+        const p1 = await signForUser(U.active, { tehsil: 'Ali Pur', mouza: 'Chak 7' });
+        assert.equal(p1.status, 200);
+        assert.equal(p1.result.preview, true);
+        const p2 = await signForUser(U.active, { tehsil: 'Ali Pur', mouza: 'Chak 8' });
+        assert.equal(p2.status, 429);
+        assert.equal(p2.code, 'PREVIEW_QUOTA');
+        assert.equal((await signForUser(U.suspended, { tehsil: 'Ali Pur', mouza: 'Chak 9' })).status, 403);
+    } finally {
+        deps.hasAccess = realHas; deps.resolveTehsilForMouza = realResolve;
+        process.env.PUBLIC_BROWSE = 'false';
+        delete process.env.PREVIEW_MOUZAS_PER_DAY;
+    }
 });

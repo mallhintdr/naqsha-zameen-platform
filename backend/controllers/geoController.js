@@ -129,32 +129,31 @@ const syncMouzaIndex = async (tehsil, mouzas) => {
 
 // --- Controller Methods ---
 
+/** Every tehsil with data (database + data folders). */
+async function listTehsils() {
+    const dbData = await getAllTehsilsAndMouzas();
+    const dbTehsils = dbData.map(item => item.tehsil);
+    const [geoDirs, tileDirs, pmtilesDirs] = await Promise.all([
+        listFilesystemDirs(path.join(PUBLIC_DIR, 'JSON Murabba')),
+        listFilesystemDirs(path.join(PUBLIC_DIR, 'Shajra Parcha')),
+        listFilesystemDirs(path.join(PUBLIC_DIR, 'pmtiles'))
+    ]);
+    return Array.from(new Set([...dbTehsils, ...geoDirs, ...tileDirs, ...pmtilesDirs].filter(Boolean))).sort((a, b) => a.localeCompare(b));
+}
+exports.listTehsils = listTehsils;
+
 exports.getTehsilList = async (req, res) => {
     try {
-        // 1. Get from Database
-        const dbData = await getAllTehsilsAndMouzas();
-        const dbTehsils = dbData.map(item => item.tehsil);
-
-        // 2. Scan Filesystem (JSON Murabba, Shajra Parcha & pmtiles)
-        const [geoDirs, tileDirs, pmtilesDirs] = await Promise.all([
-            listFilesystemDirs(path.join(PUBLIC_DIR, 'JSON Murabba')),
-            listFilesystemDirs(path.join(PUBLIC_DIR, 'Shajra Parcha')),
-            listFilesystemDirs(path.join(PUBLIC_DIR, 'pmtiles'))
-        ]);
-
-        // 3. Merge and deduplicate
-        const allTehsils = Array.from(new Set([...dbTehsils, ...geoDirs, ...tileDirs, ...pmtilesDirs])).sort((a, b) => a.localeCompare(b));
-
-        res.json(allTehsils);
+        res.json(await listTehsils());
     } catch (error) {
         logger.error('getTehsilList error:', { error: error.message, stack: error.stack });
         res.status(500).json({ message: 'Error fetching tehsil list' });
     }
 };
 
-exports.getMauzaList = async (req, res) => {
-    try {
-        const { tehsil } = req.params;
+/** Every mouza of a tehsil and its linked tehsils (database + data folders). */
+async function listMouzas(tehsil) {
+    {
         const linkedTehsils = await getLinkedTehsils(tehsil);
 
         // 1. Get from Database for all linked tehsils
@@ -199,7 +198,14 @@ exports.getMauzaList = async (req, res) => {
                 syncMouzaIndex(tName, allMouzas).catch(() => {});
             });
         }
+        return allMouzas;
+    }
+}
+exports.listMouzas = listMouzas;
 
+exports.getMauzaList = async (req, res) => {
+    try {
+        const allMouzas = await listMouzas(req.params.tehsil);
         if (allMouzas.length > 0) {
             return res.json(allMouzas);
         } else {

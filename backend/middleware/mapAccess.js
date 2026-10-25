@@ -29,6 +29,10 @@ function requireMapAccess({ allowExpired }) {
             req.accessLevel = level;
             if (level === 'full' || (level === 'expired' && allowExpired)) return next();
             if (level === 'expired') return res.status(403).json(EXPIRED_BODY);
+            if (level === 'preview') {
+                // Preview mouzas are shown only as worker tiles (PMTiles signing), never here.
+                return res.status(403).json({ message: 'This mouza is in preview: shown as map tiles only. Subscribe for full access.', code: 'PREVIEW_TILES_ONLY' });
+            }
             if (req.user.status === 'Suspended') {
                 return res.status(403).json({ message: 'Your account is suspended. Please contact your provider.', suspended: true });
             }

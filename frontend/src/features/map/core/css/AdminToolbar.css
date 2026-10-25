@@ -8,19 +8,19 @@
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   background-color: #ffffff;
   border: 2px solid rgba(0, 0, 0, 0.2);
-  border-radius: 25px;
-  padding: 6px;
+  border-radius: 20px;
+  padding: 5px;
   box-shadow: 0 1px 5px rgba(0,0,0,0.4);
   font-family: 'Segoe UI', 'Arial', sans-serif;
 }
 
 .admin-toolbar-btn {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 2px solid rgba(0, 0, 0, 0.2);
   background-color: #ffffff;
@@ -30,7 +30,7 @@
   justify-content: center;
   cursor: pointer;
   outline: none;
-  font-size: 18px;
+  font-size: 15px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   transition: all 0.2s ease;
 }
@@ -47,11 +47,14 @@
 }
 
 .admin-toolbar-icon {
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
-  min-height: 18px;
-  font-size: 18px;
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  min-height: 15px;
+  font-size: 15px;
+  /* Lines 15% thicker and 15% darker than the button colour. */
+  stroke-width: 2.3;
+  filter: brightness(0.85);
 }
 
 /* Premium Tooltip styling */
