@@ -50,6 +50,8 @@ export interface PolicyToggles {
   shiaChildlessWidowLandRule: 'classical' | 'equal';
   applyMFLOs4: boolean;
   hinduDaughterOrder: 'benares' | 'bombay';
+  /** Hindu: separate (self-acquired) property or coparcenary (joint family) interest. */
+  hinduProperty?: 'separate' | 'coparcenary';
   policyVersion: string;
 }
 
@@ -66,6 +68,8 @@ export interface Case {
   estate: Estate;
   policy: PolicyToggles;
   parentCaseId?: string;
+  /** Munasakha: the heir (person id in the parent case) whose share this sub-case distributes. */
+  parentHeirId?: string;
 }
 
 export interface ExplainEntry { ruleId: string; i18nKey: string; params?: Record<string, string>; citationKey: string }

@@ -7,6 +7,9 @@ import { add, cmp, commonBase, div, eq, frac, isZero, max, min, mul, ONE, percen
 import { buildGraph, deriveRelations, type Relation } from './relations.ts';
 import { allocateWholeSqft, toSqft, type AreaUnit } from './units.ts';
 import { sunniShares, type RuleOutput } from './rules/sunni.ts';
+import { shiaShares } from './rules/shia.ts';
+import { successionActShares } from './rules/succession-act.ts';
+import { hinduShares } from './rules/hindu.ts';
 import type { Case, ComputeResult, ExplainEntry, Person, ShareResult } from './types.ts';
 
 const MUSLIM = new Set(['sunni-hanafi', 'sunni-shafii', 'sunni-maliki', 'sunni-hanbali', 'shia-ithna']);
@@ -24,7 +27,17 @@ function ruleSet(c: Case) {
     case 'sunni-shafii':
     case 'sunni-maliki':
     case 'sunni-hanbali':
-      return (heirs: Relation[]) => sunniShares(heirs, { ...c.policy, grandfatherExcludesSiblings: c.lawSystem === 'sunni-hanafi' ? c.policy.grandfatherExcludesSiblings : false });
+      return (heirs: Relation[], _cc?: Case) => sunniShares(heirs, { ...c.policy, grandfatherExcludesSiblings: c.lawSystem === 'sunni-hanafi' ? c.policy.grandfatherExcludesSiblings : false });
+    case 'christian':
+    case 'other':
+      return (heirs: Relation[], cc: Case) => successionActShares(heirs, cc, buildGraph(cc), 'christian');
+    case 'parsi':
+      return (heirs: Relation[], cc: Case) => successionActShares(heirs, cc, buildGraph(cc), 'parsi');
+    case 'hindu-mitakshara-benares':
+    case 'hindu-mitakshara-bombay':
+      return (heirs: Relation[], cc: Case) => hinduShares(heirs, { ...cc, policy: { ...cc.policy, hinduDaughterOrder: cc.lawSystem === 'hindu-mitakshara-bombay' ? 'bombay' : 'benares' } }, buildGraph(cc));
+    case 'shia-ithna':
+      return (heirs: Relation[], cc: Case) => shiaShares(heirs, cc, buildGraph(cc));
     default:
       throw new Error(`Law system "${c.lawSystem}" is not available yet`);
   }
@@ -38,6 +51,7 @@ function capacityBar(c: Case, p: Person, r: Relation, deceased: Person): Explain
   }
   if (muslim && (p.religion || '').toLowerCase() !== (deceased.religion || '').toLowerCase()) return note('bar.religion', 'bar-religion');
   if (p.flags.adopted && (r.kind === 'agnatic-descendant' || r.kind === 'distant-kindred')) return note('bar.adopted', 'bar-adopted');
+  if (p.flags.illegitimate && !muslim) return note('bar.illegitimate-not-kindred', 'bar-illegitimate');
   if (p.flags.illegitimate && muslim) {
     const viaMother = deceased.gender === 'F' && r.kind === 'agnatic-descendant' && r.level === 1;
     const uterine = r.kind === 'sibling' && r.blood === 'uterine';
@@ -56,14 +70,16 @@ function runOnce(c: Case, opts: { extraAlive?: Set<string>; forceDead?: Set<stri
   const eligible: Relation[] = [];
   for (const p of c.persons) {
     const r = rel.get(p.id)!;
-    if (p.id === c.deceasedId || r.kind === 'unrelated') continue;
+    // A predeceased son's widow is "unrelated" by blood but inherits under the 1937 Act.
+    const hinduInLaw = c.lawSystem.startsWith('hindu') && r.kind === 'unrelated' && c.unions.some((u) => u.partners.includes(p.id));
+    if (p.id === c.deceasedId || (r.kind === 'unrelated' && !hinduInLaw)) continue;
     const alive = (opts.extraAlive?.has(p.id) || survived(p, c.dateOfDeath)) && !opts.forceDead?.has(p.id);
     if (!alive) { bars.set(p.id, note(p.dateOfDeath === c.dateOfDeath ? 'bar.simultaneous-death' : 'bar.predeceased', 'bar-predeceased')); continue; }
     const bar = capacityBar(c, p, r, deceased);
     if (bar) { bars.set(p.id, bar); continue; }
     eligible.push(r);
   }
-  return { out: ruleSet(c)(eligible), rel, eligible, bars };
+  return { out: ruleSet(c)(eligible, c), rel, eligible, bars };
 }
 
 /** Adds an unborn child (posthumous) of the deceased and the pregnant widow. */
