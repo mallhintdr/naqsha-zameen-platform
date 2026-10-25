@@ -233,3 +233,10 @@
 .browse-footer { position: sticky; bottom: 0; padding: 5px 8px; font-size: 0.68rem; line-height: 1.25; color: #fbbf24; background: rgba(15, 32, 39, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.08); }
 .preview-banner { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 3px 8px; font-size: 0.74rem; font-weight: 600; color: #78350f; background: #fde68a; border-bottom: 1px solid #f59e0b; }
 .preview-banner button { padding: 1px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; color: #fff; background: #b45309; }
+
+/* Preview mode: minimal account panel (no notifications) and website link */
+.preview-account { position: absolute; right: 0; top: calc(100% + 8px); z-index: 9999; min-width: 200px; padding: 6px; border-radius: 12px; background: #0f2027; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); }
+.preview-account-name { padding: 6px 10px 8px; font-size: 0.82rem; font-weight: 700; color: #e2e8f0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 4px; }
+.preview-account-item { display: block; width: 100%; padding: 8px 10px; border-radius: 8px; text-align: left; font-size: 0.85rem; color: #e2e8f0; text-decoration: none; }
+.preview-account-item:hover { background: rgba(255, 255, 255, 0.08); }
+.preview-banner-link { padding: 1px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; color: #78350f; border: 1px solid #b45309; text-decoration: none; }

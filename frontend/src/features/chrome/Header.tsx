@@ -136,7 +136,9 @@ function NavDropdown({
 }
 
 export default function Header() {
-  const { user, setActiveTehsil, unreadNotificationsCount } = useAuth();
+  const { user, setActiveTehsil, unreadNotificationsCount, logout } = useAuth();
+  // Preview mode: only the mouza, account (log out) and a way back to the website.
+  const previewActive = useAppStore((s) => s.previewActive);
   const navigate = useNavigate();
   const selectedMauza = useAppStore((s) => s.selectedMauza);
   const murabbaOptions = useAppStore((s) => s.murabbaOptions);
@@ -510,7 +512,7 @@ export default function Header() {
                 alt="User Icon"
                 className="profile-icon block h-[80%] w-[80%] shrink-0 rounded-full object-contain [filter:brightness(0)_invert(1)_drop-shadow(0_1px_1px_rgba(0,0,0,0.2))]"
               />
-              {unreadNotificationsCount > 0 && (
+              {!previewActive && unreadNotificationsCount > 0 && (
                 <span
                   className="notification-badge absolute -right-1 -top-1 z-10 box-border flex h-4 min-w-4 select-none items-center justify-center rounded-lg border-[1.5px] border-[#1a1f2e] bg-[#EA4335] px-[3.5px] text-center text-[9.2px] font-bold leading-none text-white shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
                   style={{ fontFamily: 'Arial, sans-serif' }}
@@ -520,7 +522,14 @@ export default function Header() {
               )}
             </span>
           </button>
-          {showNotif && user && (
+          {showNotif && user && previewActive && (
+            <div className="preview-account" role="menu">
+              <div className="preview-account-name">👤 {user.userName || user.userId}</div>
+              <a className="preview-account-item" href={`${SITE_URL}/maps/`}>🌐 Back to website</a>
+              <button type="button" className="preview-account-item" onClick={() => { setShowNotif(false); logout(); }}>🚪 Log out</button>
+            </div>
+          )}
+          {showNotif && user && !previewActive && (
             <NotificationPanel
               onClose={() => setShowNotif(false)}
               onProfile={() => {

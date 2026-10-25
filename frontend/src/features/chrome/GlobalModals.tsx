@@ -18,6 +18,7 @@ export default function GlobalModals({ onAuthPage }: { onAuthPage: boolean }) {
   const showForgotPasswordModal = useAppStore((s) => s.showForgotPasswordModal);
   const showIPWarningModal = useAppStore((s) => s.showIPWarningModal);
   const tourType = useAppStore((s) => s.tourType);
+  const previewActive = useAppStore((s) => s.previewActive);
   const set = useAppStore((s) => s.set);
   const replyFor = useChromeStore((s) => s.replyFor);
   const setReplyFor = useChromeStore((s) => s.setReplyFor);
@@ -48,7 +49,7 @@ export default function GlobalModals({ onAuthPage }: { onAuthPage: boolean }) {
         ipMisuseData={ipMisuse}
       />
       <RealtimeNotificationModal
-        show={!!realtimeNotification}
+        show={!!realtimeNotification && !previewActive}
         onHide={() => setRealtimeNotification(null)}
         realtimeNotification={realtimeNotification}
       />

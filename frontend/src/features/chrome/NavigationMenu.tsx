@@ -141,6 +141,8 @@ function SubmenuFlyout({ title, onClose, children }: { title: string; onClose: (
   );
 }
 
+const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://naqsha-zameen.com').replace(/\/$/, '');
+
 export default function NavigationMenu() {
   const { user, logout, clearAppData } = useAuth();
   const navigate = useNavigate();
@@ -298,6 +300,18 @@ export default function NavigationMenu() {
         style={{ transitionProperty: 'transform, visibility' }}
       >
         <div className="sidebar-body offcanvas-body flex flex-1 flex-col overflow-y-auto overflow-x-hidden overscroll-contain bg-white px-2 py-2.5 pb-[calc(10px+env(safe-area-inset-bottom))]">
+          {previewActive && user ? (
+          <nav className="nav flex flex-col">
+            <div className="px-3 pb-2 pt-1 text-[0.78rem] font-semibold text-[#b45309]">Preview mode: {selectedMauza || 'mouza'}</div>
+            <NavItem onClick={() => { setOpenSubmenu(null); set({ subscribeFeature: 'preview' }); toggleMenu(); }}>⭐ Get full access</NavItem>
+            <NavItem onClick={() => { window.location.href = `${SITE_URL}/maps/`; }}>🌐 Back to website</NavItem>
+            <div className="nav-divider" />
+            <div className="nav-user-info">
+              <div className="user-greeting">👤 {user.userName}</div>
+            </div>
+            <NavItem className="logout" onClick={() => { setOpenSubmenu(null); logout(); toggleMenu(); }}>🚪 Logout</NavItem>
+          </nav>
+          ) : (
           <nav className="nav flex flex-col">
             <NavItem id="nav-link-map" onClick={() => go('/')}>🗺️ Map</NavItem>
 
@@ -528,6 +542,7 @@ export default function NavigationMenu() {
               <NavItem onClick={() => go('/login')}>🔐 Login</NavItem>
             )}
           </nav>
+          )}
 
           <div className="mt-auto flex flex-col gap-[3px] pb-[5px] pt-5 text-center text-[0.65rem] text-[#4b5563]">
             <div className="font-extrabold uppercase tracking-[0.02em] text-[#2563eb]">GeoMatrix Technologies</div>

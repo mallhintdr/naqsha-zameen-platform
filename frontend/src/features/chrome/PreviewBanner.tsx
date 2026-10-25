@@ -6,6 +6,8 @@ import { Eye } from 'lucide-react';
 import { useAppStore } from '@/app/store';
 import './chrome.css';
 
+const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://naqsha-zameen.com').replace(/\/$/, '');
+
 export default function PreviewBanner() {
   const previewActive = useAppStore((s) => s.previewActive);
   const selectedMauza = useAppStore((s) => s.selectedMauza);
@@ -18,6 +20,7 @@ export default function PreviewBanner() {
       <span className="min-w-0 truncate">
         Preview: {selectedMauza} · street map{previewLeft != null ? ` · ${previewLeft} left today` : ''}
       </span>
+      <a className="preview-banner-link" href={`${SITE_URL}/maps/`}>Website</a>
       <button type="button" onClick={() => set({ subscribeFeature: 'preview' })}>Get full access</button>
     </div>
   );
