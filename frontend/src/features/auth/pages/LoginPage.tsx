@@ -1,3 +1,4 @@
+import { pendingBrowse } from '@/features/map/useBrowseDeepLink';
 /** Port of legacy components/Auth/Login.js (inv-02 §2). Route: /login */
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
@@ -35,6 +36,7 @@ export default function LoginPage() {
   const forgotHandled = useRef(false);
 
   const search = new URLSearchParams(location.search);
+  const pending = pendingBrowse();
   const redirectTo = (() => {
     const r = search.get('redirect');
     return r && r.startsWith('/') && !r.startsWith('//') ? r : '/';
@@ -191,6 +193,12 @@ export default function LoginPage() {
               <h3 className="m-0 text-[1.5rem] font-bold text-[#212529]">Welcome Back</h3>
               <p className="mt-2 text-[0.9rem] text-[#6c757d]">Sign in to your account</p>
             </div>
+            {pending && (
+              <Alert variant="info" className="mb-5 px-[15px] py-2.5 text-[0.88rem]">
+                Log in to preview <b>{pending.m || pending.t}</b>{pending.m ? <>, Tehsil {pending.t}</> : null} on the map. New here?{' '}
+                <a href="/register" className="font-semibold underline">Create a free account</a>; the preview opens after you log in.
+              </Alert>
+            )}
 
             {switching && (
               <Alert variant="info" className="mb-5 items-center px-[15px] py-2.5">

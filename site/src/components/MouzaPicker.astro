@@ -30,7 +30,7 @@ const { tehsil = '' } = Astro.props;
   .mp-input { width: 100%; border-radius: 0.75rem; border: 1px solid rgb(255 255 255 / 0.15); background: rgb(255 255 255 / 0.06); padding: 0.7rem 0.9rem; color: #fff; font-size: 1rem; outline: none; }
   .mp-input:focus { border-color: rgb(103 232 249 / 0.6); }
   .mp-input:disabled { opacity: 0.5; }
-  .mp-list { position: absolute; z-index: 40; left: 0; right: 0; top: 100%; margin-top: 4px; max-height: 260px; overflow-y: auto; border-radius: 0.75rem; border: 1px solid rgb(255 255 255 / 0.12); background: #0b1230; padding: 4px; box-shadow: 0 20px 40px rgb(0 0 0 / 0.5); }
+  .mp-list { position: absolute; z-index: 40; left: 0; right: 0; top: 100%; margin-top: 4px; max-height: min(400px, 60vh); overflow-y: auto; border-radius: 0.75rem; border: 1px solid rgb(255 255 255 / 0.12); background: #0b1230; padding: 4px; box-shadow: 0 20px 40px rgb(0 0 0 / 0.5); }
   .mp-list li { padding: 0.5rem 0.75rem; border-radius: 0.5rem; color: #e2e8f0; cursor: pointer; }
   .mp-list li:hover { background: rgb(103 232 249 / 0.15); color: #fff; }
   .mp-list .mp-empty { color: #94a3b8; cursor: default; }
