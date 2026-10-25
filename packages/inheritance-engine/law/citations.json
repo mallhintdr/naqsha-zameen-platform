@@ -1,0 +1,42 @@
+{
+  "policyVersion": "2026.10-draft",
+  "note": "Every citation is verified:false until confirmed by the legal reviewer.",
+  "citations": {
+    "quran-4-11": { "en": "Qur'an 4:11 (children, parents)", "ur": "سورۃ النساء 4:11", "verified": false },
+    "quran-4-12": { "en": "Qur'an 4:12 (spouses, uterine siblings)", "ur": "سورۃ النساء 4:12", "verified": false },
+    "quran-4-176": { "en": "Qur'an 4:176 (kalalah: full and consanguine siblings)", "ur": "سورۃ النساء 4:176", "verified": false },
+    "hanafi-consensus": { "en": "Hanafi fiqh (Sirajiyyah), classical rule", "ur": "فقہ حنفی (سراجیہ)", "verified": false },
+    "umariyyatan": { "en": "Umariyyatan: decision of Caliph Umar (mother takes 1/3 of the remainder)", "ur": "عمریتین", "verified": false },
+    "aul-umar": { "en": "Aul (proportional reduction), adopted under Caliph Umar", "ur": "عول", "verified": false },
+    "zayd-ibn-thabit": { "en": "Grandfather with siblings: view of Zayd ibn Thabit (Shafi'i/Maliki/Hanbali)", "ur": "دادا مع بہن بھائی", "verified": false },
+    "hanafi-dhawil-arham": { "en": "Distant kindred (dhawi al-arham), Hanafi order", "ur": "ذوی الارحام", "verified": false },
+    "pk-practice-radd-spouse": { "en": "Return (radd) to a sole spouse: Pakistani court practice", "ur": "زوج پر رد (پاکستانی عدالتی رواج)", "verified": false },
+    "escheat": { "en": "No heir: estate to Government / Baitul-Mal", "ur": "لاوارث ترکہ حکومت کو", "verified": false },
+    "mflo-1961-s4": { "en": "Muslim Family Laws Ordinance 1961, s.4 (children of a predeceased son or daughter). FSC PLD 2000 FSC 1 held it repugnant; appeal pending; in force.", "ur": "مسلم عائلی قوانین آرڈیننس 1961، دفعہ 4", "verified": false, "dated": true },
+    "shariat-act-1962": { "en": "West Pakistan Muslim Personal Law (Shariat) Application Act 1962", "ur": "مسلم پرسنل لا (شریعت) ایپلیکیشن ایکٹ 1962", "verified": false },
+    "succession-act-1925": { "en": "Succession Act 1925, ss.31–56", "ur": "قانون وراثت 1925", "verified": false },
+    "hindu-women-1937": { "en": "Hindu Women's Rights to Property Act 1937", "ur": "", "verified": false },
+    "plra-1967-s42": { "en": "Punjab Land Revenue Act 1967, s.42 (inheritance mutation)", "ur": "پنجاب لینڈ ریونیو ایکٹ 1967، دفعہ 42 (انتقال وراثت)", "verified": false },
+    "lasc-2021": { "en": "Letters of Administration and Succession Certificates Act 2021", "ur": "", "verified": false },
+    "ewpr-acts": { "en": "Enforcement of Women's Property Rights Acts (Punjab 2021, KP 2019, ICT 2020)", "ur": "", "verified": false },
+    "ppc-498a": { "en": "Pakistan Penal Code s.498-A (depriving women of inheritance)", "ur": "تعزیرات پاکستان دفعہ 498-A", "verified": false },
+    "bar-homicide": { "en": "A killer does not inherit (Hanafi: intentional and accidental killing)", "ur": "قاتل وارث نہیں", "verified": false },
+    "bar-religion": { "en": "Difference of religion bars inheritance under Muslim law", "ur": "اختلاف دین", "verified": false },
+    "bar-adopted": { "en": "Adoption creates no right of inheritance", "ur": "متبنیٰ وارث نہیں", "verified": false },
+    "bar-illegitimate": { "en": "Illegitimate child: Hanafi inherits from the mother only; Shia from neither", "ur": "ولد الزنا", "verified": false },
+    "bar-divorced": { "en": "Irrevocable divorce / khula: no inheritance; revocable divorce within iddat: inherits", "ur": "طلاق بائن", "verified": false },
+    "bar-predeceased": { "en": "Heir must survive the deceased; simultaneous deaths do not inherit from each other", "ur": "", "verified": false },
+    "reserve-pregnancy": { "en": "Pregnant widow: reserve the larger of a son's or a daughter's share", "ur": "حمل کا حصہ محفوظ", "verified": false },
+    "reserve-missing": { "en": "Missing person (mafqud): share reserved", "ur": "مفقود الخبر", "verified": false },
+    "will-one-third": { "en": "Bequest limited to one third of the net estate", "ur": "وصیت ایک تہائی تک", "verified": false },
+    "will-heir-consent": { "en": "Sunni law: bequest to an heir needs the other heirs' consent", "ur": "وارث کے حق میں وصیت", "verified": false },
+    "estate-deductions": { "en": "Funeral expenses, debts and unpaid dower are paid before distribution", "ur": "تجہیز و تکفین، قرض، حق مہر", "verified": false },
+    "estate-exclusions": { "en": "Pension, family pension and benevolent fund are not part of the estate", "ur": "پنشن ترکہ نہیں", "verified": false },
+    "cases": {
+      "ghulam-ali-1990": { "en": "Ghulam Ali v Ghulam Sarwar Naqvi PLD 1990 SC 1", "verified": false },
+      "khair-din-2002": { "en": "Khair Din v Salaman PLD 2002 SC 677", "verified": false },
+      "phul-peer-shah-2016": { "en": "Mst Phul Peer Shah v Hafeez Fatima 2016 SCMR 1225", "verified": false },
+      "grana-2014": { "en": "Mst Grana v Sahib Kamala Bibi PLD 2014 SC 167", "verified": false }
+    }
+  }
+}

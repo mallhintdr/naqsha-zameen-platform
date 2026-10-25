@@ -1,0 +1,15 @@
+{
+  "name": "inheritance-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pure TypeScript inheritance (wirasat) calculator: exact BigInt fractions, explain log, no dependencies.",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": { ".": "./src/index.ts", "./law/*": "./law/*" },
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "demo": "node scripts/demo.ts",
+    "check:no-floats": "node scripts/no-floats.ts"
+  },
+  "engines": { "node": ">=22.18" }
+}

@@ -1,10 +1,11 @@
 {
   "name": "naqsha-zameen",
   "private": true,
-  "version": "5.3.0",
+  "version": "5.3.1",
   "workspaces": [
     "frontend",
-    "backend"
+    "backend",
+    "packages/*"
   ],
   "engines": {
     "node": ">=20"
@@ -15,7 +16,7 @@
     "build": "npm run build -w frontend",
     "start": "npm start -w backend",
     "lint": "npm run lint -w frontend",
-    "test": "npm test -w frontend && node --test scripts/bump-version.test.mjs",
+    "test": "npm run test -w frontend && npm test -w packages/inheritance-engine && node --test scripts/bump-version.test.mjs",
     "typecheck": "npm run typecheck -w frontend",
     "setup-hooks": "git config core.hooksPath .githooks",
     "version:bump": "node scripts/bump-version.mjs"
