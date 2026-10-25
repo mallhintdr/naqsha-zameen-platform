@@ -14,6 +14,8 @@ import { Spinner, toast } from '@/shared/ui';
 import NotificationPanel from './NotificationPanel';
 import './chrome.css';
 
+const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://naqsha-zameen.com').replace(/\/$/, '');
+
 type MenuKey = 'tehsil' | 'mauza' | 'murabba' | null;
 
 const getOptionLabel = (o: any) => (typeof o === 'object' && o !== null ? String(o.label) : String(o));
@@ -152,12 +154,10 @@ export default function Header() {
   const browseMode = useAppStore((s) => s.browseMode);
   const browseTehsil = useAppStore((s) => s.browseTehsil);
   const previewLeft = useAppStore((s) => s.previewLeft);
-  const previewLimit = useAppStore((s) => s.previewLimit);
   const browseAll = browseMode === 'all';
-  const [allTehsils, setAllTehsils] = useState<{ name: string; own: boolean }[]>([]);
-  const [allMouzas, setAllMouzas] = useState<{ name: string; own: boolean }[]>([]);
-  const [allMouzasFor, setAllMouzasFor] = useState('');
-  const [browseLoading, setBrowseLoading] = useState(false);
+  const allTehsils: { name: string; own: boolean }[] = [];
+  const allMouzas: { name: string; own: boolean }[] = [];
+  const browseLoading = false;
 
   const tehsilInputRef = useRef<HTMLInputElement>(null);
   const mauzaInputRef = useRef<HTMLInputElement>(null);
@@ -168,30 +168,7 @@ export default function Header() {
 
   const activeTehsil = (browseAll && browseTehsil) || user?.activeTehsil || '';
 
-  const loadBrowseMouzas = useCallback(async (tehsil: string) => {
-    if (!tehsil) return;
-    setBrowseLoading(true);
-    try {
-      const { data } = await api.get(`/api/me/browse/mouzas/${encodeURIComponent(tehsil)}`);
-      setAllMouzas(Array.isArray(data?.mouzas) ? data.mouzas : []);
-      setAllMouzasFor(tehsil);
-      if (data?.preview) set({ previewLeft: data.preview.left, previewLimit: data.preview.limit });
-    } catch {
-      setAllMouzas([]);
-      setAllMouzasFor(tehsil);
-    } finally {
-      setBrowseLoading(false);
-    }
-  }, [set]);
 
-  // Lists for All Mouzas mode (names only; own mouzas marked by the server).
-  useEffect(() => {
-    if (!browseAll || !user) return;
-    if (!allTehsils.length) {
-      api.get('/api/me/browse/tehsils').then(({ data }) => setAllTehsils(Array.isArray(data?.tehsils) ? data.tehsils : [])).catch(() => {});
-    }
-    if (activeTehsil && allMouzasFor !== activeTehsil) loadBrowseMouzas(activeTehsil);
-  }, [browseAll, user, activeTehsil, allMouzasFor, allTehsils.length, loadBrowseMouzas]);
 
   /** My Mouzas <-> All Mouzas. Leaving All Mouzas returns to the account's own tehsil. */
   const setBrowse = (mode: 'mine' | 'all') => {
@@ -252,7 +229,7 @@ export default function Header() {
     () => (Array.isArray(user?.tehsilAccess) ? user.tehsilAccess.map((e) => e.tehsil).filter(Boolean) : []),
     [user?.tehsilAccess],
   );
-  const canSwitchTehsil = browseAll || availableTehsils.length > 1;
+  const canSwitchTehsil = !browseAll && availableTehsils.length > 1;
   const ownTehsils = useMemo(() => new Set(availableTehsils.map((t) => t.toLowerCase())), [availableTehsils]);
 
   const tehsilSource = useMemo(
@@ -265,9 +242,9 @@ export default function Header() {
   );
   const ownMouzaSet = useMemo(() => new Set(allMouzas.filter((m) => m.own).map((m) => m.name)), [allMouzas]);
   const mouzaList = useMemo(() => {
-    if (browseAll) return allMouzasFor === activeTehsil ? allMouzas.map((m) => m.name) : [];
+    if (browseAll) return selectedMauza ? [selectedMauza] : [];
     return activeTehsil && Array.isArray(user?.mauzaList) ? user.mauzaList : [];
-  }, [browseAll, allMouzas, allMouzasFor, activeTehsil, user?.mauzaList]);
+  }, [browseAll, selectedMauza, activeTehsil, user?.mauzaList]);
   const sortedMouzaList = useMemo(() => {
     const hit = (m: any) => String(m).toLowerCase().includes(mauzaF.filter.toLowerCase());
     if (!browseAll) return sortList(mouzaList.filter(hit).slice(0, 1000));
@@ -346,7 +323,6 @@ export default function Header() {
       if (mauza !== st.selectedMauza || st.previewActive === own) {
         set({ previewActive: !own });
         st.selectMauza(activeTehsil, mauza);
-        if (!own) setTimeout(() => loadBrowseMouzas(activeTehsil), 2500); // refresh "previews left"
       }
       return;
     }
@@ -439,7 +415,7 @@ export default function Header() {
                 {user.userType !== 'subadmin' && (
                   <div className="browse-switch" role="tablist" aria-label="Which mouzas">
                     <button type="button" role="tab" aria-selected={!browseAll} className={!browseAll ? 'on' : ''} onClick={() => setBrowse('mine')}>My Mouzas</button>
-                    <button type="button" role="tab" aria-selected={browseAll} className={browseAll ? 'on' : ''} onClick={() => setBrowse('all')}>All Mouzas</button>
+                    <a role="tab" aria-selected={browseAll} className={browseAll ? 'on' : ''} href={`${SITE_URL}/maps/`} title="Browse every tehsil and mouza on naqsha-zameen.com">All Mouzas ↗</a>
                   </div>
                 )}
                 {mouzaLoading || (browseAll && browseLoading && !mouzaList.length) ? (
@@ -459,8 +435,8 @@ export default function Header() {
                 ) : (
                   <button type="button" className="dropdown-item" disabled>No Chak Found</button>
                 )}
-                {browseAll && user.userType !== 'admin' && previewLimit != null && (
-                  <div className="browse-footer">✓ your mouzas · others open as preview · {previewLeft ?? '–'} of {previewLimit} new previews left today</div>
+                {browseAll && (
+                  <a className="browse-footer block" href={`${SITE_URL}/maps/`}>Preview of another mouza · find more on naqsha-zameen.com/maps ↗</a>
                 )}
               </NavDropdown>
             </div>
