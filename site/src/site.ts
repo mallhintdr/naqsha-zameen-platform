@@ -43,13 +43,28 @@ export const adsEnabled = () => ADS.adsenseClient.startsWith('ca-pub-');
 export const waLink = (text = 'Assalam-o-Alaikum, I want information about Naqsha Zameen services.') =>
   `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(text)}`;
 
-export const NAV = [
-  { href: '/services/digital-mapping/', label: 'Digital Maps' },
-  { href: '/services/rtk-survey/', label: 'RTK Survey' },
-  { href: '/services/drone-imagery/', label: 'Drone Imagery' },
-  { href: '/services/land-consultancy/', label: 'Consultancy' },
-  { href: '/dashboard/', label: 'Dashboard' },
-  { href: '/maps/', label: 'Mouza Maps' },
+export interface NavItem { href: string; label: string; children?: { href: string; label: string }[] }
+
+/** Header menu: services grouped under one dropdown, maps/dashboard under another. */
+export const NAV: NavItem[] = [
+  {
+    href: '/services/digital-mapping/',
+    label: 'Services',
+    children: [
+      { href: '/services/digital-mapping/', label: 'Digital Land Maps' },
+      { href: '/services/rtk-survey/', label: 'RTK Land Measurement' },
+      { href: '/services/drone-imagery/', label: 'Drone Imagery' },
+      { href: '/services/land-consultancy/', label: 'Revenue Record Consultancy' },
+    ],
+  },
+  {
+    href: '/maps/',
+    label: 'Maps',
+    children: [
+      { href: '/maps/', label: 'Mouza Maps (all tehsils)' },
+      { href: '/dashboard/', label: 'The Dashboard' },
+    ],
+  },
   { href: '/about/', label: 'About' },
   { href: '/contact/', label: 'Contact' },
 ];

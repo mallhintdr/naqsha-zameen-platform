@@ -101,3 +101,7 @@ h1.font-display {
     transform: translateY(400%);
   }
 }
+
+/* Header dropdowns (Services, Maps): open on hover and keyboard focus. */
+.nav-dd:hover .nav-dd-panel,
+.nav-dd:focus-within .nav-dd-panel { display: block; }

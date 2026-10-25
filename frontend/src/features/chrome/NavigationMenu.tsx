@@ -148,7 +148,6 @@ export default function NavigationMenu() {
   const showMenu = useAppStore((s) => s.showMenu);
   const selectedMauza = useAppStore((s) => s.selectedMauza);
   const tourType = useAppStore((s) => s.tourType);
-  const runTour = useAppStore((s) => s.runTour);
   const testMode = useAppStore((s) => s.testMode);
   const killaMeasurement = useAppStore((s) => s.killaMeasurement);
   const forceMobileMode = useAppStore((s) => s.forceMobileMode);
@@ -266,21 +265,6 @@ export default function NavigationMenu() {
     </button>
   );
 
-  /** A folder in the menu. During a guided tour its items are shown inline so the tour can point at them. */
-  const group = (name: string, title: string, children: ReactNode) =>
-    runTour ? (
-      <>{children}</>
-    ) : (
-      <div className="submenu-wrapper">
-        {accordionHead(name, title)}
-        {openSubmenu === name && (
-          <SubmenuFlyout title={title} onClose={() => setOpenSubmenu(null)}>
-            {children}
-          </SubmenuFlyout>
-        )}
-      </div>
-    );
-
   const adminToggle = (label: ReactNode, on: boolean, action: () => void) => (
     <NavItem
       onClick={() => {
@@ -317,78 +301,57 @@ export default function NavigationMenu() {
           <nav className="nav flex flex-col">
             <NavItem id="nav-link-map" onClick={() => go('/')}>🗺️ Map</NavItem>
 
+            <NavItem
+              id="nav-link-goto"
+              onClick={() => {
+                setOpenSubmenu(null);
+                if (location.pathname === '/') set({ showGoToForm: true, showMenu: false });
+              }}
+            >
+              📍 Go To Location
+            </NavItem>
 
+            <NavItem
+              id="nav-link-shift-mouza"
+              disabled={!limited && !shiftEnabled}
+              onClick={() => {
+                if (limited) return locked('shift-mouza');
+                setOpenSubmenu(null);
+                set({ showShiftForm: true });
+                toggleMenu();
+              }}
+            >
+              ↔️ Shift Mouza{limited && lockTag}
+            </NavItem>
 
-
-            {group('maptools', '📍 Map Tools', (
+            {user && (
               <>
                 <NavItem
-                  id="nav-link-goto"
+                  id="nav-link-save-layer"
+                  disabled={!limited && !canSaveLayer}
                   onClick={() => {
+                    if (limited) return locked('save-layer');
                     setOpenSubmenu(null);
-                    if (location.pathname === '/') set({ showGoToForm: true, showMenu: false });
-                  }}
-                >
-                  📍 Go To Location
-                </NavItem>
-                <NavItem
-                  id="nav-link-shift-mouza"
-                  disabled={!limited && !shiftEnabled}
-                  onClick={() => {
-                    if (limited) return locked('shift-mouza');
-                    setOpenSubmenu(null);
-                    set({ showShiftForm: true });
+                    handleSaveLayerClick?.();
                     toggleMenu();
                   }}
                 >
-                  ↔️ Shift Mouza{limited && lockTag}
+                  💾 Save Layer{limited && lockTag}
                 </NavItem>
-                {user?.userType === 'user' && (
-                  <NavItem
-                    id="nav-link-change-mouzas"
-                    disabled={!limited && !changeMouzasOk}
-                    title={changeMouzasOk ? 'Request mouzas to be added or removed' : 'Available while your subscription is active. Please subscribe first.'}
-                    style={changeMouzasOk || limited ? undefined : { opacity: 0.5, cursor: 'not-allowed' }}
-                    onClick={() => {
-                      if (limited) return locked('change-mouza');
-                      setOpenSubmenu(null);
-                      setShowChangeMouzas(true);
-                      toggleMenu();
-                    }}
-                  >
-                    🗺️ Change Mouza{limited ? lockTag : !changeMouzasOk && <span className="ml-1.5 text-[0.7rem]">(renew first)</span>}
-                  </NavItem>
-                )}
+                <NavItem
+                  id="nav-link-saved-layers"
+                  onClick={() => {
+                    if (limited) return locked('saved-layers');
+                    setOpenSubmenu(null);
+                    set({ showSavedLayersModal: true });
+                    toggleMenu();
+                  }}
+                >
+                  📁 Open Saved Layers{limited && lockTag}
+                </NavItem>
+              </>
+            )}
 
-              </>
-            ))}
-            {user && group('layers', '📁 Layers', (
-              <>
-                  <NavItem
-                    id="nav-link-save-layer"
-                    disabled={!limited && !canSaveLayer}
-                    onClick={() => {
-                      if (limited) return locked('save-layer');
-                      setOpenSubmenu(null);
-                      handleSaveLayerClick?.();
-                      toggleMenu();
-                    }}
-                  >
-                    💾 Save Layer{limited && lockTag}
-                  </NavItem>
-                  <NavItem
-                    id="nav-link-saved-layers"
-                    onClick={() => {
-                      if (limited) return locked('saved-layers');
-                      setOpenSubmenu(null);
-                      set({ showSavedLayersModal: true });
-                      toggleMenu();
-                    }}
-                  >
-                    📁 Open Saved Layers{limited && lockTag}
-                  </NavItem>
-              </>
-            ))}
             {availableTours.length > 0 && (
               <div className="submenu-wrapper">
                 {accordionHead('tutorials', '📚 Guided Tutorials')}
@@ -422,9 +385,9 @@ export default function NavigationMenu() {
 
             {user?.userType === 'admin' && (
               <div className="submenu-wrapper">
-                {accordionHead('admin', '🛠️ Admin Pages')}
+                {accordionHead('admin', '🛠️ Admin Tools')}
                 {openSubmenu === 'admin' && (
-                  <SubmenuFlyout title="🛠️ Admin Pages" onClose={() => setOpenSubmenu(null)}>
+                  <SubmenuFlyout title="🛠️ Admin Tools" onClose={() => setOpenSubmenu(null)}>
                     <NavItem className="submenu-item" onClick={() => go('/admin/register')}>➕ Register User</NavItem>
                     <NavItem className="submenu-item" onClick={() => go('/users')}>👥 Manage Users</NavItem>
                     <NavItem className="submenu-item" onClick={() => go('/admin/subadmins')}>🤝 Sub-admins</NavItem>
@@ -442,99 +405,107 @@ export default function NavigationMenu() {
                     >
                       🔗 Link & Group Tehsils
                     </NavItem>
+                    {adminToggle(testMode ? '🟢 Test Mode: ON' : '⚪ Test Mode: OFF', testMode, () => set({ testMode: !testMode }))}
+                    {adminToggle(killaMeasurement ? '🟢 Killa Measurement: ON' : '⚪ Killa Measurement: OFF', killaMeasurement, () => set({ killaMeasurement: !killaMeasurement }))}
+                    {adminToggle(forceMobileMode ? '📱 Mobile Mode: ON' : '📱 Mobile Mode: OFF', forceMobileMode, () => useAppStore.getState().toggleMobileMode())}
+
+                    <div className="nav-divider" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }} />
+
+                    <div className="nav-link-clean submenu-item flex items-center justify-between !pr-3">
+                      <label htmlFor="nav-limits-toggle" className="cursor-pointer text-[0.9rem]" style={{ color: limitsEnabled ? '#28a745' : '#dc3545' }}>
+                        {limitsEnabled ? '🔒 Limits: ON' : '🔓 Limits: OFF'}
+                      </label>
+                      <Switch id="nav-limits-toggle" checked={limitsEnabled} onChange={toggleLimits} />
+                    </div>
+                    <div className="nav-link-clean submenu-item flex items-center justify-between !pr-3">
+                      <label htmlFor="nav-invoices-toggle" className="cursor-pointer text-[0.9rem]" style={{ color: invoicesOn ? '#28a745' : undefined }}>
+                        {invoicesOn ? '🧾 Mouza Invoices: ON' : '🧾 Mouza Invoices: OFF'}
+                      </label>
+                      <Switch id="nav-invoices-toggle" checked={invoicesOn} onChange={toggleInvoices} />
+                    </div>
+
+                    <div className="nav-divider" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }} />
+                    <ScanHostingButton onDone={() => setOpenSubmenu(null)} />
+                    <div className="nav-divider" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }} />
+
+                    <div className="px-2 pb-1 pt-1.5">
+                      <div className="mb-1 text-[0.68rem] font-bold uppercase tracking-[0.04em] text-[#6b7280]">🗺️ Layer Mode</div>
+                      <div className="flex gap-1">
+                        {([
+                          { value: 'auto', label: 'Auto', emoji: '⚙️' },
+                          { value: 'pmtiles', label: 'PMTiles', emoji: '⚡' },
+                          { value: 'geojson', label: 'GeoJSON', emoji: '📐' },
+                        ] as { value: AdminMapMode; label: string; emoji: string }[]).map(({ value, label, emoji }) => {
+                          const active = adminMapMode === value;
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => {
+                                setOpenSubmenu(null);
+                                useAppStore.getState().setAdminMapMode(value);
+                              }}
+                              className="flex-1 rounded py-[3px] text-center text-[0.65rem] leading-[1.3] transition-all duration-[180ms] max-sm:py-1.5"
+                              style={{
+                                fontWeight: active ? 700 : 500,
+                                border: active ? '1.5px solid #2563eb' : '1px solid rgba(0,0,0,0.15)',
+                                background: active ? '#eff6ff' : '#ffffff',
+                                color: active ? '#1e40af' : '#4b5563',
+                              }}
+                            >
+                              <div>{emoji}</div>
+                              <div>{label}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </SubmenuFlyout>
                 )}
-
-            {user?.userType === 'admin' && group('adminSettings', '⚙️ Admin Settings', (
-              <>
-                      {adminToggle(testMode ? '🟢 Test Mode: ON' : '⚪ Test Mode: OFF', testMode, () => set({ testMode: !testMode }))}
-                      {adminToggle(killaMeasurement ? '🟢 Killa Measurement: ON' : '⚪ Killa Measurement: OFF', killaMeasurement, () => set({ killaMeasurement: !killaMeasurement }))}
-                      {adminToggle(forceMobileMode ? '📱 Mobile Mode: ON' : '📱 Mobile Mode: OFF', forceMobileMode, () => useAppStore.getState().toggleMobileMode())}
-
-                      <div className="nav-divider" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }} />
-
-                      <div className="nav-link-clean submenu-item flex items-center justify-between !pr-3">
-                        <label htmlFor="nav-limits-toggle" className="cursor-pointer text-[0.9rem]" style={{ color: limitsEnabled ? '#28a745' : '#dc3545' }}>
-                          {limitsEnabled ? '🔒 Limits: ON' : '🔓 Limits: OFF'}
-                        </label>
-                        <Switch id="nav-limits-toggle" checked={limitsEnabled} onChange={toggleLimits} />
-                      </div>
-                      <div className="nav-link-clean submenu-item flex items-center justify-between !pr-3">
-                        <label htmlFor="nav-invoices-toggle" className="cursor-pointer text-[0.9rem]" style={{ color: invoicesOn ? '#28a745' : undefined }}>
-                          {invoicesOn ? '🧾 Mouza Invoices: ON' : '🧾 Mouza Invoices: OFF'}
-                        </label>
-                        <Switch id="nav-invoices-toggle" checked={invoicesOn} onChange={toggleInvoices} />
-                      </div>
-
-                      <div className="nav-divider" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }} />
-                      <ScanHostingButton onDone={() => setOpenSubmenu(null)} />
-                      <div className="nav-divider" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }} />
-
-                      <div className="px-2 pb-1 pt-1.5">
-                        <div className="mb-1 text-[0.68rem] font-bold uppercase tracking-[0.04em] text-[#6b7280]">🗺️ Layer Mode</div>
-                        <div className="flex gap-1">
-                          {([
-                            { value: 'auto', label: 'Auto', emoji: '⚙️' },
-                            { value: 'pmtiles', label: 'PMTiles', emoji: '⚡' },
-                            { value: 'geojson', label: 'GeoJSON', emoji: '📐' },
-                          ] as { value: AdminMapMode; label: string; emoji: string }[]).map(({ value, label, emoji }) => {
-                            const active = adminMapMode === value;
-                            return (
-                              <button
-                                key={value}
-                                type="button"
-                                onClick={() => {
-                                  setOpenSubmenu(null);
-                                  useAppStore.getState().setAdminMapMode(value);
-                                }}
-                                className="flex-1 rounded py-[3px] text-center text-[0.65rem] leading-[1.3] transition-all duration-[180ms] max-sm:py-1.5"
-                                style={{
-                                  fontWeight: active ? 700 : 500,
-                                  border: active ? '1.5px solid #2563eb' : '1px solid rgba(0,0,0,0.15)',
-                                  background: active ? '#eff6ff' : '#ffffff',
-                                  color: active ? '#1e40af' : '#4b5563',
-                                }}
-                              >
-                                <div>{emoji}</div>
-                                <div>{label}</div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-              </>
-            ))}
               </div>
             )}
 
+            <NavItem
+              id="nav-link-clear-cache"
+              onClick={() => {
+                setOpenSubmenu(null);
+                clearAppData();
+                toggleMenu();
+              }}
+            >
+              🧹 Clear Cache
+            </NavItem>
 
-
-            <div className="nav-divider" />
-
-            {(user || tourType === 'changePassword') && group('account', '👤 Account', (
-              <>
-                <NavItem
-                  id="nav-link-change-password"
-                  onClick={() => {
-                    setOpenSubmenu(null);
-                    set({ showForgotPasswordModal: true });
-                    toggleMenu();
-                  }}
-                >
-                  🔑 Change Password
-                </NavItem>
+            {user?.userType === 'user' && (
               <NavItem
-                id="nav-link-clear-cache"
+                id="nav-link-change-mouzas"
+                disabled={!limited && !changeMouzasOk}
+                title={changeMouzasOk ? 'Request mouzas to be added or removed' : 'Available while your subscription is active. Please subscribe first.'}
+                style={changeMouzasOk || limited ? undefined : { opacity: 0.5, cursor: 'not-allowed' }}
                 onClick={() => {
+                  if (limited) return locked('change-mouza');
                   setOpenSubmenu(null);
-                  clearAppData();
+                  setShowChangeMouzas(true);
                   toggleMenu();
                 }}
               >
-                🧹 Clear Cache
+                🗺️ Change Mouza{limited ? lockTag : !changeMouzasOk && <span className="ml-1.5 text-[0.7rem]">(renew first)</span>}
               </NavItem>
-              </>
-            ))}
+            )}
+
+            <div className="nav-divider" />
+            {(user || tourType === 'changePassword') && (
+              <NavItem
+                id="nav-link-change-password"
+                onClick={() => {
+                  setOpenSubmenu(null);
+                  set({ showForgotPasswordModal: true });
+                  toggleMenu();
+                }}
+              >
+                🔑 Change Password
+              </NavItem>
+            )}
 
             {user && (
               <div className="nav-user-info">
