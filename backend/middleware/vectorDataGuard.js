@@ -13,7 +13,7 @@
 const logger = require('../utils/logger');
 const { vectorConfig } = require('../services/vectorConfig');
 const { parseVectorPath, isEntitled } = require('../services/vectorAccess');
-const { subscriptionState } = require('../services/accessPolicy');
+const { subscriptionState, previewOpenedToday } = require('../services/accessPolicy');
 const { EXPIRED_BODY } = require('./mapAccess');
 const { touchDistinct } = require('../services/vectorQuota');
 const { makeVectorLimiter } = require('./rateLimiters');
@@ -58,7 +58,7 @@ async function withLegacyFields(user) {
  * Entitlement. `paramsFrom`: 'path' (static roots: tehsil/mouza parsed from the
  * URL below the mount point) or 'params' (express :tehsil/:mauza).
  */
-function vectorEntitlement({ paramsFrom = 'path', tilesOnlyWhenExpired = false } = {}) {
+function vectorEntitlement({ paramsFrom = 'path', tilesOnlyWhenExpired = false, allowPreview = false } = {}) {
     // Expired / pending accounts: mouza GeoJSON is refused (EXPIRED_TILES_ONLY) so the
     // app shows the map as PMTiles tiles instead. Tehsil-wide index files stay open.
     const expiredBlock = (req, res, scope, user) => {
@@ -86,6 +86,11 @@ function vectorEntitlement({ paramsFrom = 'path', tilesOnlyWhenExpired = false }
             // Kill-switch keeps the old tehsil-level rule (mouza ignored).
             const mouza = vectorConfig().entitlement ? scope.mouza : null;
             if (await isEntitled(user, scope.tehsil, mouza)) return next();
+            // "All Mouzas" preview: labels (Metadata: murabba / killa numbers) for a mouza
+            // the user opened as a preview today (it counted against the daily preview limit
+            // when its tiles were signed). No boundary geometry is served this way.
+            if (allowPreview && scope.mouza && vectorConfig().publicBrowse && subscriptionState(user) !== 'none'
+                && await previewOpenedToday(user, scope.tehsil, scope.mouza)) return next();
             auditVector(req, 'VECTOR_ACCESS_DENIED', { tehsil: scope.tehsil, mouza: scope.mouza });
             return res.status(403).json({
                 message: scope.mouza ? 'Access denied: this mouza is not in your subscription.' : 'Access denied to this tehsil data.',

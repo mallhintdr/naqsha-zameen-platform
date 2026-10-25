@@ -175,3 +175,21 @@ test('signer: preview user gets a signed URL marked preview; quota then 429', as
         delete process.env.PREVIEW_MOUZAS_PER_DAY;
     }
 });
+
+test('preview: Metadata labels allowed only for a mouza previewed today', async () => {
+    process.env.PUBLIC_BROWSE = 'true';
+    _resetMemory();
+    const { previewQuota } = require('../services/accessPolicy');
+    const app = express();
+    app.use((req, res, next) => { req.user = U[req.headers['x-test-user']]; next(); });
+    app.use(['/Metadata', '/Metadata'], ...vectorGuards({ allowPreview: true }), (req, res) => res.json({ ok: true }));
+    const srv = app.listen(0); await new Promise(r => srv.once('listening', r));
+    const g = (p) => fetch(`http://127.0.0.1:${srv.address().port}` + encodeURI(p), { headers: { 'x-test-user': 'active', 'X-NZ-Client': 'dashboard' } });
+    try {
+        assert.equal((await g('/Metadata/Ali Pur/Chak 7-Metadata.json')).status, 403, 'not previewed yet');
+        await previewQuota(U.active, 'Ali Pur', 'Chak 7');
+        assert.equal((await g('/Metadata/Ali Pur/Chak 7-Metadata.json')).status, 200);
+        assert.equal((await g('/Metadata/Ali Pur/Chak 7-Killa.json')).status, 200);
+        assert.equal((await g('/Metadata/Ali Pur/Chak 8-Metadata.json')).status, 403, 'other mouza');
+    } finally { srv.close(); process.env.PUBLIC_BROWSE = 'false'; }
+});

@@ -438,7 +438,7 @@ const serveCaseInsensitiveStatic = (basePath, onFile = (req, res, file) => res.s
   app.get('/api/vector-key', isAuthenticatedVector, vectorKeyHandler);
   app.use('/JSON%20Murabba', ...dataRoute('JSON Murabba', { tilesOnlyWhenExpired: true }));
   app.use('/JSON Murabba', ...dataRoute('JSON Murabba', { tilesOnlyWhenExpired: true }));
-  app.use('/Metadata', ...dataRoute('Metadata'));
+  app.use('/Metadata', ...dataRoute('Metadata', { allowPreview: true }));
   app.use('/Shajra%20Parcha', ...dataRoute('Shajra Parcha'));
   app.use('/Shajra Parcha', ...dataRoute('Shajra Parcha'));
   app.use('/tiles', ...dataRoute('tiles'));
