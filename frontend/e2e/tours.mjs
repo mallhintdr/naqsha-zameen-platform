@@ -11,7 +11,9 @@ const WORKER = 'https://pmtiles-worker.mallhintdr.workers.dev';
 const TEHSIL = 'Lodhran';
 fs.mkdirSync(OUT, { recursive: true });
 
-const mouzas = (await (await fetch(`${WORKER}/list-mouzas/${TEHSIL}`)).json()).mouzas.slice(0, 40);
+// The secured worker no longer lists mouzas; use the dashboard's public list, else a fixed one.
+const mouzas = await fetch(`https://dashboard.naqsha-zameen.com/api/mauza-list/${TEHSIL}`).then((r) => r.json()).then((l) => (Array.isArray(l) && l.length ? l.filter((m) => /^[A-Za-z0-9]/.test(m)).slice(0, 40) : null)).catch(() => null)
+  || ['Lodhran', 'Kahror Pacca', 'Dunyapur'];
 const user = {
   userId: 'tour.user', userName: 'Tour User', userType: 'user', status: 'Active', subscriptionType: 'Monthly', daysRemaining: 20,
   startDate: new Date(Date.now() - 10 * 864e5).toISOString(), endDate: new Date(Date.now() + 20 * 864e5).toISOString(),
