@@ -444,7 +444,8 @@ exports.register = async (req, res) => {
          notifyAdmins({
              type: 'info',
              title: 'New Public Registration',
-             message: `${newUser.userId} (${newUser.userName || newUser.userId}) created their account.`
+             message: `${newUser.userId} (${newUser.userName || newUser.userId}) created their account.`,
+             details: require('../utils/notificationUtils').accountDetails(newUser),
          }).catch(err => logger.error('Public registration admin notification failed', { error: err.message }));
     } catch (error) {
         if (error.code === 11000) {
@@ -493,11 +494,17 @@ exports.verifyEmail = async (req, res) => {
         await recordEvent({ userId: user.userId, ownerAtEvent: user.managedBy || null, type: 'ACTIVATED', plan: user.subscriptionType, periodStart: user.startDate, periodEnd: user.endDate }, { ip: req.ip, user: { userId: user.userId, userType: 'user' } });
 
         // Notify admins in the background that public user has activated
-        const { notifyAdmins } = require('../utils/notificationUtils');
+        // One notification per new public user: the "registered" one is replaced by this
+        // merged "activated" one (created and activated times in the fold-out details).
+        const { notifyAdmins, accountDetails } = require('../utils/notificationUtils');
+        require('../models/Notification')
+            .deleteMany({ 'details.kind': 'account', 'details.userId': user.userId, title: 'New Public Registration' })
+            .catch(() => {});
         notifyAdmins({
             type: 'activation',
             title: 'Public User Activated',
-            message: `${user.userId} (${user.userName || user.userId}) activated their account.`
+            message: `${user.userId} (${user.userName || user.userId}) registered and activated their account.`,
+            details: { ...accountDetails(user), activatedAt: user.startDate },
         }).catch(err => logger.error('Public user activation admin notification failed', { error: err.message }));
 
         res.status(200).json({ 

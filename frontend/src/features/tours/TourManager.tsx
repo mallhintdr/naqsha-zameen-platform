@@ -32,8 +32,8 @@ const tourMap: Record<string, TourComp> = {
 /** Tours that only open and close windows; ending them needs no page reload. */
 const NO_RELOAD = new Set(['welcome', 'compass', 'notifications', 'account', 'changeMouza']);
 
-/** localStorage key: the Quick Tour has been shown in this browser. */
-export const WELCOME_TOUR_KEY = 'nz_welcome_tour_done';
+import { WELCOME_TOUR_KEY, WELCOME_TOUR_SHOWN_KEY, WELCOME_TOUR_MAX_AUTO } from './tourKeys';
+export { WELCOME_TOUR_KEY };
 
 function useAutoWelcomeTour() {
   const { user } = useAuth();
@@ -43,7 +43,9 @@ function useAutoWelcomeTour() {
   useEffect(() => {
     if (!userId || pathname !== '/' || userType === 'admin') return;
     try {
+      // Stops once the user ticks "Don't show this at start again", and after a few showings anyway.
       if (localStorage.getItem(WELCOME_TOUR_KEY)) return;
+      if (Number(localStorage.getItem(WELCOME_TOUR_SHOWN_KEY) || 0) >= WELCOME_TOUR_MAX_AUTO) return;
     } catch {
       return;
     }
@@ -53,7 +55,7 @@ function useAutoWelcomeTour() {
       const busy = st.runTour || st.showWarningModal || st.showIPWarningModal || st.showMenu || document.querySelector('[role="dialog"]');
       if (busy) return;
       try {
-        localStorage.setItem(WELCOME_TOUR_KEY, '1');
+        localStorage.setItem(WELCOME_TOUR_SHOWN_KEY, String(Number(localStorage.getItem(WELCOME_TOUR_SHOWN_KEY) || 0) + 1));
       } catch {}
       st.set({ tourType: 'welcome', runTour: true });
     }, 3500);
@@ -80,11 +82,6 @@ export default function TourManager() {
           .delete(`/api/geo/adjustment/${encodeURIComponent(user.activeTehsil)}/${encodeURIComponent(st.selectedMauza)}`)
           .catch(() => {});
       }
-    }
-    if (tourType === 'welcome') {
-      try {
-        localStorage.setItem(WELCOME_TOUR_KEY, '1');
-      } catch {}
     }
     st.set({ tourType: '', runTour: false });
     if (!NO_RELOAD.has(tourType)) window.location.reload();

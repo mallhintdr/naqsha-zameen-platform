@@ -5,7 +5,7 @@ import {
   Bell, Check, CheckCheck, ChevronDown, ChevronUp, ExternalLink, Filter, RefreshCw, Reply, Trash2, User, UserCheck, UserPlus, X,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { fmtDate, rs } from '@/shared/lib/format';
+import { fmtDate, fmtDateTime, rs } from '@/shared/lib/format';
 import { useChromeStore } from './chromeStore';
 
 const NOTIF_FILTERS: [string, string][] = [
@@ -30,16 +30,22 @@ const countNotif = (list: any[], f: string) => (list || []).filter((n) => matchN
 
 function NotifDetails({ d }: { d: any }) {
   const rows = [
+    d.kind === 'account' && d.name ? ['Name', d.name] : null,
+    d.kind === 'account' && d.userId ? ['User ID', d.userId] : null,
     d.removed?.length ? ['Removed', d.removed.join(', '), '#b91c1c'] : null,
     d.added?.length ? ['Added', d.added.join(', '), '#166534'] : null,
     d.plan ? ['Plan', d.plan] : null,
     d.tehsil ? ['Tehsil', d.tehsil] : null,
+    d.mouzaList?.length ? [`Mouzas (${d.mouzaList.length})`, d.mouzaList.join(', ')] : null,
+    d.mouzaAll ? ['Mouzas', 'Whole tehsil'] : null,
     d.currentMouzas !== undefined ? ['Current mouzas', d.currentMouzas] : null,
     d.totalAfter !== undefined ? ['After approval', d.totalAfter, '#0b5ed7'] : null,
     d.lastFeePaid !== undefined ? ['Fee paid', rs(d.lastFeePaid)] : null,
     d.daysLeft !== undefined ? ['Days left', d.daysLeft] : null,
     d.endDate ? ['Ends', fmtDate(d.endDate)] : null,
     d.mobile ? ['Mobile', d.mobile] : null,
+    d.createdAt ? ['Created', fmtDateTime(d.createdAt)] : null,
+    d.activatedAt ? ['Activated', fmtDateTime(d.activatedAt), '#166534'] : null,
     d.note ? ['Note', d.note] : null,
   ].filter(Boolean) as [string, any, string?][];
   if (!rows.length) return null;

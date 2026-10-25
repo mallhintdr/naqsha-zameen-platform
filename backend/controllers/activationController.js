@@ -120,8 +120,9 @@ exports.activateCustomer = async (req, res) => {
             tellAdmins({ type: 'alert', title: `[${u.managedBy}] activation from the sub-admin's own connection`, message: `${u.userId} was activated from IP ${req.ip}, which ${u.managedBy} also used recently.` });
         }
 
-        tellUser(u.managedBy, { type: 'activation', title: 'Customer activated', message: `${u.userId} activated their ${plan === 'Trial24' ? '24-hour trial' : plan + ' plan'}.` });
-        tellAdmins({ type: 'activation', title: `[${u.managedBy}] customer activated`, message: `${u.userId} — ${plan}${quote ? `, billed Rs ${quote.price}` : ''}.` });
+        const accDetails = require('../utils/notificationUtils').accountDetails(u);
+        tellUser(u.managedBy, { type: 'activation', title: 'Customer activated', message: `${u.userId} activated their ${plan === 'Trial24' ? '24-hour trial' : plan + ' plan'}.`, details: accDetails });
+        tellAdmins({ type: 'activation', title: `[${u.managedBy}] customer activated`, message: `${u.userId} — ${plan}${quote ? `, billed Rs ${quote.price}` : ''}.`, details: accDetails });
 
         res.json({
             message: plan === 'Trial24'

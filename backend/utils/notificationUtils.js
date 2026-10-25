@@ -137,4 +137,22 @@ const completeActions = async (kind, ref) => {
     }
 };
 
-module.exports = { sendNotification, notifyAdmins, completeActions };
+/** Fold-out details for "account created / activated" notifications: tehsil(s), mouzas, plan. */
+const accountDetails = (u) => {
+    const entries = (Array.isArray(u?.tehsilAccess) ? u.tehsilAccess : []).filter(e => e && e.tehsil);
+    const mouzas = entries.flatMap(e => (e.mouzas || []).map(String)).filter(m => m.trim());
+    return {
+        kind: 'account',
+        userId: u?.userId || undefined,
+        name: u?.userName || undefined,
+        createdAt: u?.createdAt || undefined,
+        tehsil: entries.map(e => e.tehsil).join(', ') || u?.activeTehsil || undefined,
+        mouzaList: mouzas.length ? mouzas : undefined,
+        mouzaAll: !mouzas.length && entries.length > 0 ? true : undefined,
+        plan: u?.subscriptionType || undefined,
+        mobile: u?.mobileNumber || undefined,
+    };
+};
+
+module.exports = {
+    accountDetails, sendNotification, notifyAdmins, completeActions };

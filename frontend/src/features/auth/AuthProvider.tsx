@@ -345,6 +345,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await disablePushForThisAccount();
+    // Map tile pieces cached on this device belong to this account.
+    import('@/features/map/core/tileCache').then((m) => m.clearTileCache()).catch(() => {});
     try {
       const res = await api.post('/api/logout', {});
       if (res.data?.adminRestored) {

@@ -1,3 +1,4 @@
+import { useAppStore } from '@/app/store';
 // src/Map Component/VectorTileLoader.js
 import { useEffect, useRef, useCallback } from 'react';
 import { apiBase as getApiBase } from '@/shared/api/base';
@@ -791,6 +792,13 @@ const VectorTileLoader = ({
                 }
                 if (clickedMurabba) return;
               });
+
+              // A tap inside the murabba that is already open is a killa tap: the killa
+              // handler shows the killa; do not re-select the murabba (zoom + tooltip pulse).
+              if (clickedMurabba && completeLayerLoadedRef.current
+                  && String(useAppStore.getState().selectedMurabba ?? '') === clickedMurabba) {
+                return;
+              }
 
               if (clickedMurabba) {
                 // Mark that a feature was clicked – suppresses native dblclick zoom

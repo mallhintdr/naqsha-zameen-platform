@@ -4,6 +4,7 @@
 // localStorage (XSS-safe), so no Authorization header is constructed here.
 import { PMTiles } from 'pmtiles';
 import { isWorkerUrl, refreshSignedWorkerUrl } from '@/features/map/config/pmtiles';
+import { tileCacheKey, readTile, writeTile, deleteTile } from './tileCache';
 
 /**
  * Creates a secure PMTiles instance that authenticates via the session cookie.
@@ -62,6 +63,17 @@ export const setupSecurePMTilesFetch = () => {
 
     if (!isWorkerUrl(url)) return originalFetch.call(this, url, options);
 
+    // On-device encrypted cache of tile pieces (tileCache.js). A reload / no-store
+    // request (PMTiles retrying after a changed file) skips and refreshes it.
+    const rangeHeader = options.headers instanceof Headers ? options.headers.get('Range') : options.headers?.Range || options.headers?.range;
+    const cacheKey = tileCacheKey(url, rangeHeader);
+    const bypass = options.cache === 'no-store' || options.cache === 'reload';
+    if (cacheKey && bypass) deleteTile(cacheKey);
+    if (cacheKey && !bypass) {
+      const hit = await readTile(cacheKey);
+      if (hit) return hit;
+    }
+
     let signed = url;
     try { signed = await refreshSignedWorkerUrl(url); } catch { /* use the URL we have */ }
     let response = await originalFetch.call(this, signed, options);
@@ -71,6 +83,7 @@ export const setupSecurePMTilesFetch = () => {
       try { fresh = await refreshSignedWorkerUrl(url, { force: true }); } catch { /* keep 403 */ }
       if (fresh !== signed) response = await originalFetch.call(this, fresh, options);
     }
+    if (cacheKey && response.status === 206) writeTile(cacheKey, response.clone());
     return response;
   };
 };

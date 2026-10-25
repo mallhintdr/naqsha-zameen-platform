@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/features/auth/AuthProvider';
 import TourRunner, { q, type TourStep } from './TourRunner';
+import { WELCOME_TOUR_KEY } from './tourKeys';
 import { setShowMenu } from './tourActions';
 
 export default function WelcomeTour({ onEnd }: { onEnd: () => void }) {
@@ -87,5 +88,5 @@ export default function WelcomeTour({ onEnd }: { onEnd: () => void }) {
     },
   ];
 
-  return <TourRunner steps={steps} actionMode="enter" onEnd={onEnd} onStop={() => setShowMenu(false)} />;
+  return <TourRunner steps={steps} actionMode="enter" onEnd={onEnd} onStop={() => setShowMenu(false)} dontShowAgainKey={WELCOME_TOUR_KEY} />;
 }

@@ -32,6 +32,8 @@ export interface TourRunnerProps {
   onStop?: () => void;
   /** Desktop: place the tooltip to the right of the target instead of below. */
   sideOnDesktop?: boolean;
+  /** localStorage key: shows a "Don't show at start again" tick box (start-up tours). */
+  dontShowAgainKey?: string;
 }
 
 type Rect = { top: number; left: number; width: number; height: number; bottom: number; right: number };
@@ -56,7 +58,18 @@ export const modalEl = (...extra: string[]) =>
 
 const POPUP_H = 200;
 
-export default function TourRunner({ steps, onEnd, actionMode = 'enter', onStop, sideOnDesktop }: TourRunnerProps) {
+export default function TourRunner({ steps, onEnd, actionMode = 'enter', onStop, sideOnDesktop, dontShowAgainKey }: TourRunnerProps) {
+  const [dontShow, setDontShow] = useState(() => {
+    try { return !!dontShowAgainKey && localStorage.getItem(dontShowAgainKey) === '1'; } catch { return false; }
+  });
+  const toggleDontShow = (v: boolean) => {
+    setDontShow(v);
+    try {
+      if (!dontShowAgainKey) return;
+      if (v) localStorage.setItem(dontShowAgainKey, '1');
+      else localStorage.removeItem(dontShowAgainKey);
+    } catch { /* private mode */ }
+  };
   const [step, setStep] = useState(0);
   const [coords, setCoords] = useState<Rect | null>(null);
   const [avoid, setAvoid] = useState<Rect | null>(null);
@@ -199,6 +212,12 @@ export default function TourRunner({ steps, onEnd, actionMode = 'enter', onStop,
       <div ref={tipRef} className="tour-tooltip" style={{ top, left }} role="dialog" aria-label={s.title}>
         <h6>{s.title}</h6>
         <p>{s.text}</p>
+        {dontShowAgainKey && (
+          <label className="mb-1.5 flex cursor-pointer items-center gap-1.5 text-[0.72rem] text-[#6b7280]">
+            <input type="checkbox" checked={dontShow} onChange={(e) => toggleDontShow(e.target.checked)} />
+            Don&apos;t show this at start again
+          </label>
+        )}
         <div className="flex items-center justify-between gap-2">
           <span className="text-[0.7rem] text-[#9ca3af]">
             Step {step + 1} of {total}
