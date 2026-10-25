@@ -6,7 +6,7 @@ import { childrenOf, fatherOf, motherOf, spousesOf } from './model.ts';
 export const NODE_W = 132;
 export const NODE_H = 92;
 export const GAP_X = 18;
-export const ROW_H = 150;
+export const ROW_H = 165;
 
 export interface Placed { id: string; x: number; y: number; gen: number }
 
@@ -46,7 +46,12 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
     const push = (id: string) => {
       if (placed.includes(id)) return;
       placed.push(id);
-      for (const s of spousesOf(c, id)) if (gen.get(s) === r && !placed.includes(s) && !(fatherOf(c, s) || motherOf(c, s))) placed.push(s);
+      // Patwari style: first wife on the left of her husband, second on the right, alternating.
+      const sp = spousesOf(c, id).filter((s) => gen.get(s) === r && !placed.includes(s) && !(fatherOf(c, s) || motherOf(c, s)));
+      sp.forEach((s, i) => {
+        const at = placed.indexOf(id);
+        if (i % 2 === 0) placed.splice(at, 0, s); else placed.splice(at + 1 + Math.floor(i / 2), 0, s);
+      });
     };
     for (const id of inRow) push(id);
     // Spouses that have their own parents may be far apart; keep them in sorted position.
@@ -70,6 +75,33 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
     for (let i = 1; i < inRow.length; i++) {
       const min = inRow[i - 1].x + NODE_W + GAP_X;
       if (inRow[i].x < min) inRow[i].x = min;
+    }
+  }
+
+  // 2b. Descendant rows: centre each family (children of one couple) under its parents,
+  //     left to right, never overlapping. A child's spouse stays next to the child.
+  for (const r of rows) {
+    if (r <= 0) continue;
+    const inRow = [...nodes.values()].filter((n) => n.gen === r).sort((a, b) => a.x - b.x);
+    const groups: { key: string; items: Placed[] }[] = [];
+    for (const n of inRow) {
+      const f = fatherOf(c, n.id), m = motherOf(c, n.id);
+      if (f || m) {
+        const key = `${f ?? ''}|${m ?? ''}`;
+        const last = groups[groups.length - 1];
+        if (last && last.key === key) last.items.push(n); else groups.push({ key, items: [n] });
+      } else if (groups.length) groups[groups.length - 1].items.push(n);
+      else groups.push({ key: `solo-${n.id}`, items: [n] });
+    }
+    const step = NODE_W + GAP_X;
+    let end = -Infinity;
+    for (const g of groups) {
+      const [f, m] = g.key.split('|');
+      const ps = [f, m].map((id) => (id ? nodes.get(id) : undefined)).filter((p) => p && p.gen === r - 1) as Placed[];
+      const want = ps.length ? ps.reduce((a, p) => a + p.x, 0) / ps.length - ((g.items.length - 1) * step) / 2 : g.items[0].x;
+      let x = Math.max(want, end + step);
+      for (const n of g.items) { n.x = x; x += step; }
+      end = x - step;
     }
   }
 

@@ -73,6 +73,14 @@ A public tool on the website, at **https://naqsha-zameen.com/tools/shajra-nasab/
 
 **Patwari style:** ink lines on off-white paper, with no boxes. Each person is a short stroke with the name written under it (in Nastaliq when the name is typed in Urdu) and the share in brackets, coloured by result. Children hang from the father's line through a bar over the siblings; the mother's line is dashed and used only when no father is in the tree. A wife is attached beside her husband by a single line. The deceased is underlined and marked "متوفی".
 
+**Matched to a real patwari sketch (26 Oct 2026):** checked against a sketch from a patwari (Zulfiqar Ali, dated 23-10-25).
+- **Wives:** the name is written **inside** a sideways heart (a leaf with a small notch), with the point facing away from the husband. The first wife sits on the left of her husband and the second on the right, each joined to him by a line.
+- **Children by mother:** each wife's children hang from their own bar, at a different height from the other wife's bar, joined to the husband's line. A family is centred under its parents.
+- **People:** a son is a short stroke with the name under it; a daughter is a large Λ with the name under it.
+- **Status in red Urdu:** **زندہ** (alive), **پہلے فوت شدہ** (died before the deceased), **بعد میں فوت شدہ** (died after), and **حال متوفی** beside the deceased.
+- **Shares:** shown in brackets under the status.
+- **Test case:** `frontend/e2e/shajra-patwari-sketch.mjs` recreates the sketch's family. Expected shares: each widow 1/16, each son 7/32, each daughter 7/64, and the predeceased son's daughter 7/32 (MFLO s.4).
+
 **Chart symbols (revenue-record style, updated 26 Oct 2026):**
 - **People:** male = short vertical branch line; daughter (or sister) = inverted V (Λ); wife or widow of a relation = heart turned 90° anticlockwise; a woman who is both a daughter of the family and a wife = the inverted V inside the heart.
 - **Marks:** diagonal slash = died; dashed box = the deceased; dotted triangle = pregnant.
