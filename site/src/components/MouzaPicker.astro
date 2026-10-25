@@ -1,0 +1,141 @@
+---
+// Tehsil + mouza picker with type-to-filter lists. "Preview on the map" turns on once both
+// are chosen from the lists. Names come from /maps/catalog.json (loaded on first use).
+import Icon from './Icon.astro';
+import { SITE } from '../site';
+interface Props { tehsil?: string }
+const { tehsil = '' } = Astro.props;
+---
+<form class="mouza-picker card mx-auto mt-10 max-w-3xl text-left" data-dashboard={SITE.dashboardUrl} data-tehsil={tehsil} autocomplete="off">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="relative">
+      <label class="mb-1.5 block text-sm font-semibold text-slate-200" for="mp-tehsil">Tehsil</label>
+      <input id="mp-tehsil" class="mp-input" placeholder="Type to search tehsil…" value={tehsil} role="combobox" aria-expanded="false" aria-controls="mp-tehsil-list" />
+      <ul id="mp-tehsil-list" class="mp-list" role="listbox" hidden></ul>
+    </div>
+    <div class="relative">
+      <label class="mb-1.5 block text-sm font-semibold text-slate-200" for="mp-mouza">Mouza / Chak</label>
+      <input id="mp-mouza" class="mp-input" placeholder="Choose a tehsil first" disabled role="combobox" aria-expanded="false" aria-controls="mp-mouza-list" />
+      <ul id="mp-mouza-list" class="mp-list" role="listbox" hidden></ul>
+    </div>
+  </div>
+  <div class="mt-5 flex flex-wrap items-center gap-3">
+    <a id="mp-preview" class="btn-primary pointer-events-none opacity-40" aria-disabled="true"><Icon name="map" class="size-5" /> Preview on the map</a>
+    <a id="mp-page" class="btn-ghost hidden" href="#">Mouza page &amp; services</a>
+    <span id="mp-hint" class="text-sm text-slate-400">Select a tehsil and a mouza from the lists.</span>
+  </div>
+</form>
+
+<style is:global>
+  .mp-input { width: 100%; border-radius: 0.75rem; border: 1px solid rgb(255 255 255 / 0.15); background: rgb(255 255 255 / 0.06); padding: 0.7rem 0.9rem; color: #fff; font-size: 1rem; outline: none; }
+  .mp-input:focus { border-color: rgb(103 232 249 / 0.6); }
+  .mp-input:disabled { opacity: 0.5; }
+  .mp-list { position: absolute; z-index: 40; left: 0; right: 0; top: 100%; margin-top: 4px; max-height: 260px; overflow-y: auto; border-radius: 0.75rem; border: 1px solid rgb(255 255 255 / 0.12); background: #0b1230; padding: 4px; box-shadow: 0 20px 40px rgb(0 0 0 / 0.5); }
+  .mp-list li { padding: 0.5rem 0.75rem; border-radius: 0.5rem; color: #e2e8f0; cursor: pointer; }
+  .mp-list li:hover { background: rgb(103 232 249 / 0.15); color: #fff; }
+  .mp-list .mp-empty { color: #94a3b8; cursor: default; }
+</style>
+
+<script>
+  type Entry = [string, string, [string, string][]];
+  const form = document.querySelector<HTMLFormElement>('.mouza-picker');
+  if (form) {
+    form.addEventListener('submit', (e) => e.preventDefault());
+    const dash = form.dataset.dashboard!;
+    const tIn = form.querySelector<HTMLInputElement>('#mp-tehsil')!;
+    const mIn = form.querySelector<HTMLInputElement>('#mp-mouza')!;
+    const tList = form.querySelector<HTMLUListElement>('#mp-tehsil-list')!;
+    const mList = form.querySelector<HTMLUListElement>('#mp-mouza-list')!;
+    const btn = form.querySelector<HTMLAnchorElement>('#mp-preview')!;
+    const page = form.querySelector<HTMLAnchorElement>('#mp-page')!;
+    const hint = form.querySelector<HTMLSpanElement>('#mp-hint')!;
+    let data: Entry[] | null = null;
+    let tehsil: Entry | null = null;
+    let mouza: [string, string] | null = null;
+
+    const load = async (): Promise<Entry[]> => {
+      if (data) return data;
+      try { data = await (await fetch('/maps/catalog.json')).json(); } catch { data = []; }
+      return data!;
+    };
+    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+
+    const update = () => {
+      const ok = !!(tehsil && mouza);
+      btn.classList.toggle('pointer-events-none', !ok);
+      btn.classList.toggle('opacity-40', !ok);
+      btn.setAttribute('aria-disabled', String(!ok));
+      page.classList.toggle('hidden', !ok);
+      if (ok) {
+        btn.href = `${dash}/?browse=all&t=${encodeURIComponent(tehsil![0])}&m=${encodeURIComponent(mouza![0])}`;
+        page.href = `/maps/${tehsil![1]}/${mouza![1]}/`;
+        hint.textContent = `${mouza![0]}, Tehsil ${tehsil![0]}`;
+      } else {
+        btn.removeAttribute('href');
+        hint.textContent = tehsil ? 'Now select a mouza from the list.' : 'Select a tehsil and a mouza from the lists.';
+      }
+    };
+
+    const render = (list: HTMLUListElement, input: HTMLInputElement, items: string[], pick: (i: number) => void) => {
+      const q = norm(input.value);
+      const hits = items.map((n, i) => [n, i] as const).filter(([n]) => !q || norm(n).includes(q)).slice(0, 200);
+      list.innerHTML = '';
+      if (!hits.length) {
+        const li = document.createElement('li');
+        li.className = 'mp-empty';
+        li.textContent = 'No match';
+        list.appendChild(li);
+      }
+      for (const [n, i] of hits) {
+        const li = document.createElement('li');
+        li.setAttribute('role', 'option');
+        li.textContent = n;
+        li.addEventListener('mousedown', (e) => { e.preventDefault(); pick(i); });
+        list.appendChild(li);
+      }
+      list.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+    };
+    const close = (list: HTMLUListElement, input: HTMLInputElement) => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); };
+
+    const chooseTehsil = (t: Entry | null) => {
+      tehsil = t;
+      mouza = null;
+      mIn.value = '';
+      mIn.disabled = !t;
+      mIn.placeholder = t ? `Type to search ${t[2].length} mouzas…` : 'Choose a tehsil first';
+      if (t) tIn.value = t[0];
+      update();
+    };
+    const showMouzas = () => {
+      if (!tehsil) return;
+      const ms = tehsil[2];
+      render(mList, mIn, ms.map((m) => m[0]), (i) => { mouza = ms[i]; mIn.value = ms[i][0]; close(mList, mIn); update(); });
+    };
+    const showTehsils = async () => {
+      const d = await load();
+      render(tList, tIn, d.map((t) => t[0]), (i) => { chooseTehsil(d[i]); close(tList, tIn); mIn.focus(); showMouzas(); });
+    };
+
+    tIn.addEventListener('focus', showTehsils);
+    tIn.addEventListener('input', () => { if (tehsil && tIn.value !== tehsil[0]) chooseTehsil(null); showTehsils(); });
+    tIn.addEventListener('blur', () => setTimeout(() => close(tList, tIn), 150));
+    mIn.addEventListener('focus', showMouzas);
+    mIn.addEventListener('input', () => { if (mouza && mIn.value !== mouza[0]) { mouza = null; update(); } showMouzas(); });
+    mIn.addEventListener('blur', () => setTimeout(() => close(mList, mIn), 150));
+    // Enter picks the first match; Escape closes the list.
+    for (const [input, list] of [[tIn, tList], [mIn, mList]] as const) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          list.querySelector('li[role=option]')?.dispatchEvent(new MouseEvent('mousedown'));
+        }
+        if (e.key === 'Escape') close(list, input);
+      });
+    }
+    // Tehsil pages pre-select their tehsil.
+    if (form.dataset.tehsil) {
+      load().then((d) => { const t = d.find((x) => x[0] === form.dataset.tehsil); if (t) chooseTehsil(t); });
+    }
+  }
+</script>

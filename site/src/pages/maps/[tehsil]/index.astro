@@ -3,6 +3,7 @@ import Base from '../../../layouts/Base.astro';
 import Icon from '../../../components/Icon.astro';
 import IconBox from '../../../components/IconBox.astro';
 import CTA from '../../../components/CTA.astro';
+import MouzaPicker from '../../../components/MouzaPicker.astro';
 import MapServices from '../../../components/MapServices.astro';
 import { SITE } from '../../../site';
 import { getCatalog, type Tehsil } from '../../../mouza-catalog';
@@ -45,6 +46,7 @@ const ld = {
         <a href={`${SITE.dashboardUrl}/?browse=all&t=${encodeURIComponent(t.name)}`} class="btn-primary"><Icon name="map" class="size-5" /> Open {t.name} on the map</a>
       </div>
     </div>
+    <div class="px-4 sm:px-6"><MouzaPicker tehsil={t.name} /></div>
   </section>
 
   <section class="mx-auto mt-16 max-w-7xl px-4 sm:px-6 lg:px-8">
