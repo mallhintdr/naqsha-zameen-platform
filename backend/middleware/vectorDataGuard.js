@@ -13,6 +13,8 @@
 const logger = require('../utils/logger');
 const { vectorConfig } = require('../services/vectorConfig');
 const { parseVectorPath, isEntitled } = require('../services/vectorAccess');
+const { subscriptionState } = require('../services/accessPolicy');
+const { EXPIRED_BODY } = require('./mapAccess');
 const { touchDistinct } = require('../services/vectorQuota');
 const { makeVectorLimiter } = require('./rateLimiters');
 
@@ -56,7 +58,16 @@ async function withLegacyFields(user) {
  * Entitlement. `paramsFrom`: 'path' (static roots: tehsil/mouza parsed from the
  * URL below the mount point) or 'params' (express :tehsil/:mauza).
  */
-function vectorEntitlement({ paramsFrom = 'path' } = {}) {
+function vectorEntitlement({ paramsFrom = 'path', tilesOnlyWhenExpired = false } = {}) {
+    // Expired / pending accounts: mouza GeoJSON is refused (EXPIRED_TILES_ONLY) so the
+    // app shows the map as PMTiles tiles instead. Tehsil-wide index files stay open.
+    const expiredBlock = (req, res, scope, user) => {
+        if (!tilesOnlyWhenExpired || !scope.mouza || !isVectorRequest(req)) return false;
+        if (subscriptionState(user) !== 'expired') return false;
+        auditVector(req, 'VECTOR_EXPIRED_TILES_ONLY', { tehsil: scope.tehsil, mouza: scope.mouza });
+        res.status(403).json(EXPIRED_BODY);
+        return true;
+    };
     return async (req, res, next) => {
         try {
             if (!req.user) return res.status(401).json({ message: 'Authentication required' });
@@ -68,8 +79,10 @@ function vectorEntitlement({ paramsFrom = 'path' } = {}) {
                 if (!scope) return res.status(400).json({ message: 'Invalid data path' });
             }
             req.vectorScope = scope;
-            if (isAdmin(req) || !vectorConfig().entitlement && paramsFrom === 'params') return next();
+            if (isAdmin(req)) return next();
             const user = await withLegacyFields(req.user);
+            if (expiredBlock(req, res, scope, user)) return;
+            if (!vectorConfig().entitlement && paramsFrom === 'params') return next();
             // Kill-switch keeps the old tehsil-level rule (mouza ignored).
             const mouza = vectorConfig().entitlement ? scope.mouza : null;
             if (await isEntitled(user, scope.tehsil, mouza)) return next();

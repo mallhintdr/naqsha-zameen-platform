@@ -61,24 +61,13 @@ const isAuthenticated = async (req, res, next) => {
     next();
 };
 
-const { getLinkedTehsils } = require('../services/tehsilAliasService');
-
+// Same mouza-level rule as the vector guards (temp grants, linked / grouped tehsils).
+// The old version ignored tempGrants, so an entry holding only temp grants counted as
+// the whole tehsil.
 const hasAccess = async (user, tehsil, mouza) => {
-    if (user.userType === 'admin') return true;
+    if (user?.userType === 'admin') return true;
     if (!tehsil) return true;
-
-    const linked = await getLinkedTehsils(tehsil);
-    const linkedLower = (linked || [tehsil]).map(t => t.toLowerCase());
-
-    const userTehsil = Array.isArray(user.tehsilAccess) && user.tehsilAccess.find(
-        t => linkedLower.includes(t.tehsil.toLowerCase())
-    );
-    if (!userTehsil) return false;
-
-    if (!mouza) return true;
-    if (!userTehsil.mouzas || userTehsil.mouzas.length === 0) return true;
-
-    return userTehsil.mouzas.some(m => m.toLowerCase() === mouza.toLowerCase());
+    return require('../services/vectorAccess').isEntitled(user, tehsil, mouza || null);
 };
 
 const isSubscribed = async (req, res, next) => {

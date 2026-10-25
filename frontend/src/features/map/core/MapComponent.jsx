@@ -1,5 +1,6 @@
 // src/Map Component/MapComponent.js
 
+import { setTilesOnly } from '@/features/map/config/pmtiles';
 import { useState, useRef, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { apiBase as getApiBase } from '@/shared/api/base';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -245,6 +246,7 @@ const MapComponent = forwardRef(({
       user?.status === 'Pending' || 
       (user?.daysRemaining !== undefined && user.daysRemaining <= 0)
   );
+  setTilesOnly(isRestricted); // before any layer load in this render
   const currentMaxZoom = isRestricted ? 14 : 21;
   const currentMaxZoomRef = useRef(currentMaxZoom);
   currentMaxZoomRef.current = currentMaxZoom;

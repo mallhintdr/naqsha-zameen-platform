@@ -6,7 +6,7 @@ import { VectorTile } from '@mapbox/vector-tile';
 import { PbfReader as Pbf } from 'pbf';
 import { setupSecurePMTilesFetch } from './securePMTilesProtocol';
 import { showKaramSegmentLengths, clearActiveKillaSelection } from './measurementUtils';
-import { getSignedPMTilesUrl } from '@/features/map/config/pmtiles';
+import { getSignedPMTilesUrl, isTilesOnly } from '@/features/map/config/pmtiles';
 import { focusBounds } from './utils/murabbaCamera';
 import { isKillaBandiMouza } from '@/shared/lib/killaBandi';
 import MustateelGeojson from './Map/MustateelGeojson';
@@ -279,7 +279,8 @@ export const loadMurabbaPMTiles = async (murabbaNo, tehsil, mouza, map, mustatee
   } else if (adminMapMode === 'pmtiles') {
     isMobile = false;
   }
-  const shouldPreferGeoJson = Boolean(preferGeoJson || isMobile);
+  // Expired accounts: tiles only (server refuses their GeoJSON).
+  const shouldPreferGeoJson = !isTilesOnly() && Boolean(preferGeoJson || isMobile);
 
   console.log('📍 loadMurabbaPMTiles called with:');
   console.log('   murabbaNo:', murabbaNo);

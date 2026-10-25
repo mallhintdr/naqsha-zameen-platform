@@ -5,12 +5,13 @@ const { isAuthenticated, maybeAuthenticated, isSubscribed, isSubscribedOrLimited
 const { limiterGeo, apiLimiter, pmtilesSignLimiterMinute, pmtilesSignLimiterHour } = require('../middleware/rateLimiters');
 const signedPMTilesUrl = require('../middleware/signedPMTilesUrl');
 const { vectorGuards } = require('../middleware/vectorDataGuard');
+const { requireMapAccess } = require('../middleware/mapAccess');
 const { pathParamValidation } = require('../middleware/validationMiddleware');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 router.get('/api/tehsil-list', maybeAuthenticated, apiLimiter, asyncHandler(geoController.getTehsilList));
 router.get('/api/mauza-list/:tehsil', maybeAuthenticated, apiLimiter, pathParamValidation, asyncHandler(geoController.getMauzaList));
-router.get('/api/geojson/:tehsil/:mauza', isAuthenticated, isSubscribedOrLimitedZoom, limiterGeo, pathParamValidation, ...vectorGuards({ paramsFrom: 'params' }), asyncHandler(geoController.serveGeoJson));
+router.get('/api/geojson/:tehsil/:mauza', isAuthenticated, requireMapAccess({ allowExpired: false }), limiterGeo, pathParamValidation, ...vectorGuards({ paramsFrom: 'params', tilesOnlyWhenExpired: true }), asyncHandler(geoController.serveGeoJson));
 router.post('/api/geojson/:tehsil/:mauza/shift', isAuthenticated, isAdmin, isSubscribedOrLimitedZoom, limiterGeo, asyncHandler(geoController.shiftGeoJson));
 router.post('/api/geojson/:tehsil/:mauza/reset', isAuthenticated, isAdmin, isSubscribedOrLimitedZoom, limiterGeo, asyncHandler(geoController.resetGeoJson));
 
@@ -22,17 +23,17 @@ router.post('/api/offset/:tehsil/:mouza', isAuthenticated, isAdmin, asyncHandler
 router.get('/api/geo/adjustment/:tehsil/:mauza', maybeAuthenticated, asyncHandler(geoController.getUserAdjustment));
 router.post('/api/geo/adjustment/:tehsil/:mauza', isAuthenticated, isSubscribed, asyncHandler(geoController.saveUserAdjustment));
 router.delete('/api/geo/adjustment/:tehsil/:mauza', isAuthenticated, isSubscribed, pathParamValidation, asyncHandler(geoController.resetUserAdjustment));
-router.get('/api/geo/shifted-mouzas/:tehsil', maybeAuthenticated, asyncHandler(geoController.getShiftedMouzas));
+router.get('/api/geo/shifted-mouzas/:tehsil', isAuthenticated, asyncHandler(geoController.getShiftedMouzas));
 
-router.get('/api/shajra-tiles/:tehsil/:mouza/:z/:x/:y.png', isAuthenticated, isSubscribedOrLimitedZoom, pathParamValidation, asyncHandler(geoController.serveShajraTile));
+router.get('/api/shajra-tiles/:tehsil/:mouza/:z/:x/:y.png', isAuthenticated, requireMapAccess({ allowExpired: true }), pathParamValidation, asyncHandler(geoController.serveShajraTile));
 
 router.get('/api/geo/ip-lookup', isAuthenticated, isAdmin, apiLimiter, asyncHandler(geoController.ipLookup));
 
 // PMTiles
-router.get('/pmtiles/:tehsil/:mouza.pmtiles', isAuthenticated, isSubscribedOrLimitedZoom, pathParamValidation, asyncHandler(geoController.servePMTiles));
+router.get('/pmtiles/:tehsil/:mouza.pmtiles', isAuthenticated, requireMapAccess({ allowExpired: true }), pathParamValidation, asyncHandler(geoController.servePMTiles));
 
 // Signed Cloudflare-worker URLs (mouza entitlement is checked inside the handler)
-router.post('/api/pmtiles/signed-url', isAuthenticated, isSubscribedOrLimitedZoom, pmtilesSignLimiterMinute, pmtilesSignLimiterHour, asyncHandler(signedPMTilesUrl.generateSignedUrlMiddleware));
-router.post('/api/pmtiles/signed-urls', isAuthenticated, isSubscribedOrLimitedZoom, pmtilesSignLimiterMinute, pmtilesSignLimiterHour, asyncHandler(signedPMTilesUrl.generateBatchSignedUrlsMiddleware));
+router.post('/api/pmtiles/signed-url', isAuthenticated, requireMapAccess({ allowExpired: true }), pmtilesSignLimiterMinute, pmtilesSignLimiterHour, asyncHandler(signedPMTilesUrl.generateSignedUrlMiddleware));
+router.post('/api/pmtiles/signed-urls', isAuthenticated, requireMapAccess({ allowExpired: true }), pmtilesSignLimiterMinute, pmtilesSignLimiterHour, asyncHandler(signedPMTilesUrl.generateBatchSignedUrlsMiddleware));
 
 module.exports = router;

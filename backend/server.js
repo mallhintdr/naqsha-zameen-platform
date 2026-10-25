@@ -394,34 +394,25 @@ const serveCaseInsensitiveStatic = (basePath, onFile = (req, res, file) => res.s
     }
   };
 
-  // Enforce Tehsil Access Restrictions for Static File serving
-  const { getLinkedTehsils } = require('./services/tehsilAliasService');
+  // Static /pmtiles fallback: mouza-level check (was tehsil-only, so any user of a
+  // tehsil could range-read every mouza's .pmtiles in it). Expired users may read
+  // tiles; suspended / not entitled may not.
+  const { accessLevel } = require('./services/accessPolicy');
+  const { parseVectorPath } = require('./services/vectorAccess');
   const checkTehsilAccessForStatic = async (req, res, next) => {
     try {
-      const user = await User.findOne({ userId: req.userId }).select('userType tehsilAccess').lean();
+      const user = await User.findOne({ userId: req.userId })
+        .select('userId userType tehsilAccess tehsil mauzaList status subscriptionType startDate').lean();
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
       if (user.userType === 'admin') return next();
-
-      const decodedPath = decodeURIComponent(req.path);
-      const parts = decodedPath.split(/[\\/]/).filter(Boolean);
-      if (parts.length === 0) return next();
-
-      let tehsilName = '';
-      if (parts[0].toLowerCase().endsWith('-mouza-index.json')) {
-        tehsilName = parts[0].substring(0, parts[0].length - 17);
-      } else {
-        tehsilName = parts[0];
-      }
-
-      const linked = await getLinkedTehsils(tehsilName);
-      const linkedLower = (linked || [tehsilName]).map(t => t.toLowerCase());
-
-      const hasAccess = user.tehsilAccess?.some(t => linkedLower.includes(t.tehsil.toLowerCase()));
-      if (!hasAccess) {
-        logger.warn('Forbidden access to static file', { userId: user.userId, path: req.path, tehsil: tehsilName, linked });
-        return res.status(403).json({ message: 'Access denied to this tehsil data.' });
+      const scope = parseVectorPath(req.path);
+      if (!scope) return res.status(400).json({ message: 'Invalid data path' });
+      const level = await accessLevel(user, scope.tehsil, scope.mouza);
+      if (level === 'none') {
+        logger.warn('Forbidden access to static file', { userId: user.userId, path: req.path, tehsil: scope.tehsil, mouza: scope.mouza });
+        return res.status(403).json({ message: 'Access denied to this mouza data.' });
       }
       next();
     } catch (err) {
@@ -442,10 +433,10 @@ const serveCaseInsensitiveStatic = (basePath, onFile = (req, res, file) => res.s
   const { vectorGuards } = require('./middleware/vectorDataGuard');
   const { sendVectorFile, vectorKeyHandler } = require('./services/vectorResponder');
   const sendDataFile = (req, res, file) => (/\.(geo)?json$/i.test(file) ? sendVectorFile(req, res, file) : res.sendFile(file));
-  const dataRoute = (sub) => [isAuthenticatedVector, ...vectorGuards(), linkedTehsilRewrite(path.join(PRIVATE_DATA_ROOT, sub)), serveCaseInsensitiveStatic(path.join(PRIVATE_DATA_ROOT, sub), sendDataFile)];
+  const dataRoute = (sub, guardOpts = {}) => [isAuthenticatedVector, ...vectorGuards(guardOpts), linkedTehsilRewrite(path.join(PRIVATE_DATA_ROOT, sub)), serveCaseInsensitiveStatic(path.join(PRIVATE_DATA_ROOT, sub), sendDataFile)];
   app.get('/api/vector-key', isAuthenticatedVector, vectorKeyHandler);
-  app.use('/JSON%20Murabba', ...dataRoute('JSON Murabba'));
-  app.use('/JSON Murabba', ...dataRoute('JSON Murabba'));
+  app.use('/JSON%20Murabba', ...dataRoute('JSON Murabba', { tilesOnlyWhenExpired: true }));
+  app.use('/JSON Murabba', ...dataRoute('JSON Murabba', { tilesOnlyWhenExpired: true }));
   app.use('/Metadata', ...dataRoute('Metadata'));
   app.use('/Shajra%20Parcha', ...dataRoute('Shajra Parcha'));
   app.use('/Shajra Parcha', ...dataRoute('Shajra Parcha'));

@@ -10,7 +10,7 @@ import { MAP_STYLES } from './tileStyles';
 import { bindMurabbaTooltip, bindKillaTooltip, clearRegisteredTooltips } from './Map/bindTooltips';
 import { loadMurabbaPMTiles, prefetchMurabbaGeoJson } from './loadMurabbaPMTiles';
 import { setupSecurePMTilesFetch } from './securePMTilesProtocol';
-import { getSignedPMTilesUrl } from '@/features/map/config/pmtiles';
+import { getSignedPMTilesUrl, isTilesOnly } from '@/features/map/config/pmtiles';
 import { fetchMurabbaJson, fetchKillaJson } from '@/shared/lib/mouzaApi';
 import LRUCache from '@/shared/lib/lruCache';
 import { showSegmentLengths } from './measurementUtils';
@@ -1323,6 +1323,9 @@ const VectorTileLoader = ({
         let isMobile =
           (L.Browser && L.Browser.mobile) ||
           /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        // Expired accounts: tiles only (server refuses their GeoJSON).
+        if (isTilesOnly()) isMobile = false;
 
         // Allow admin dev mode overrides
         const isAdmin = user?.userType === 'admin';

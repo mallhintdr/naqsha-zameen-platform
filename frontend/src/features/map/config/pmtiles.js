@@ -24,6 +24,12 @@ const signedUrlCache = new Map();
 
 // Signed URLs live 15 min (backend PMTILES_URL_TTL_SECONDS). A cached URL is
 // reused until it is within this buffer of expiry, then re-signed.
+// Expired / pending accounts get the map as PMTiles tiles only: the server refuses
+// their GeoJSON requests (EXPIRED_TILES_ONLY), so the loaders skip GeoJSON entirely.
+let tilesOnly = false;
+export function setTilesOnly(on) { tilesOnly = Boolean(on); }
+export function isTilesOnly() { return tilesOnly; }
+
 export const SIGNED_URL_REFRESH_BUFFER_MS = 240000; // 4 min
 
 // Worker pathname (as signed) -> file spec, so a long-lived PMTiles reader can
