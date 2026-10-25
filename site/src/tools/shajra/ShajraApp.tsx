@@ -292,7 +292,7 @@ export default function ShajraApp() {
       {/* Step 3: results */}
       <section className="border-t border-slate-200 p-4" id="shajra-results">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-bold">Shares (حصص)</h2>
+          <h2 className="text-lg font-bold">Shares <span className="urdu font-normal" lang="ur">(حصص)</span></h2>
           <div className="no-print ml-auto flex items-center gap-1" role="group" aria-label="Language of the notes">
             <button className={`${btn} ${lang === 'en' ? '!bg-slate-800 !text-white' : ''}`} aria-pressed={lang === 'en'} onClick={() => setLang('en')}>English</button>
             <button className={`${btn} urdu ${lang === 'ur' ? '!bg-slate-800 !text-white' : ''}`} aria-pressed={lang === 'ur'} onClick={() => setLang('ur')} lang="ur">اردو</button>
@@ -362,7 +362,7 @@ export default function ShajraApp() {
 
             <div className="mt-4">
               <h3 className="text-sm font-bold">Computation notes</h3>
-              <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-sm text-slate-700">
+              <ol className={`mt-1 list-decimal text-sm text-slate-700 ${lang === 'ur' ? 'urdu space-y-2 pr-6 leading-[2.2]' : 'space-y-0.5 pl-5'}`} lang={lang === 'ur' ? 'ur' : undefined} dir={lang === 'ur' ? 'rtl' : undefined}>
                 {heirs.filter((s) => s.reasons.length).map((s) => (
                   <li key={`n-${s.personId}`}><b>{name(s.personId)}:</b> {s.reasons.map((r) => ruleText(r.ruleId)).join(' ')} <span className="text-[11px] text-slate-500">[{s.reasons.map((r) => r.citationKey).join(', ')}]</span></li>
                 ))}

@@ -83,7 +83,9 @@ export default function Tree({ c, results, selected, onSelect }: { c: Case; resu
             {p.flags.pregnant && <path d={`M${x + sym / 2 + 4},${y + sym} l7,-12 l7,12 z`} fill="none" stroke="#d97706" strokeDasharray="2 2" />}
             {dead && <line x1={x - sym / 2 - 2} y1={y + sym + 2} x2={x + sym / 2 + 2} y2={y - 2} stroke="#0f172a" strokeWidth="2" />}
             <text x={x} y={y + sym + 15} textAnchor="middle" fontSize="11.5" fontWeight="700" fill="#0f172a">{(p.name || 'Unnamed').slice(0, 20)}</text>
-            <text x={x} y={y + sym + 28} textAnchor="middle" fontSize="10" fill="#334155">{en}{ur ? ` · ${ur}` : ''}</text>
+            <text x={x} y={y + sym + 28} textAnchor="middle" fontSize="10" fill="#334155">
+              {en}{ur && <tspan className="urdu" fontFamily="'Noto Nastaliq Urdu', serif" fontSize="9.5" direction="rtl"> · {ur}</tspan>}
+            </text>
             {r && r.fraction.n > 0n && (
               <g>
                 <rect x={x - 30} y={y + sym + 34} width="60" height="17" rx="8.5" fill={st?.stroke ?? '#16a34a'} />

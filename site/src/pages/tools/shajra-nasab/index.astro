@@ -42,7 +42,10 @@ const ld = {
 </Base>
 
 <style is:global>
-  .shajra .urdu { font-family: 'Noto Nastaliq Urdu', serif; }
+  /* Every Urdu text in the tool (and its print / PDF) in Nastaliq. */
+  .shajra .urdu, .shajra [lang='ur'] { font-family: 'Noto Nastaliq Urdu', serif; line-height: 2; }
+  .shajra td .urdu, .shajra button.urdu { line-height: 1.6; }
+  .shajra svg .urdu { font-family: 'Noto Nastaliq Urdu', serif; }
   @media print {
     @page { size: A4 portrait; margin: 10mm; }
     body { background: #fff !important; }
