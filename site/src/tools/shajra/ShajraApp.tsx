@@ -36,10 +36,49 @@ const LAWS: { value: LawSystem; label: string; ready: boolean }[] = [
   { value: 'hindu-mitakshara-bombay', label: 'Hindu / Sikh: Mitakshara, Bombay (beta)', ready: HINDU_BETA },
 ];
 
-const ADD: { kind: AddKind; label: string }[] = [
-  { kind: 'father', label: '+ Father' }, { kind: 'mother', label: '+ Mother' }, { kind: 'spouse', label: '+ Spouse' },
-  { kind: 'son', label: '+ Son' }, { kind: 'daughter', label: '+ Daughter' }, { kind: 'brother', label: '+ Brother' }, { kind: 'sister', label: '+ Sister' },
+const ADD: { kind: AddKind; label: string; ur: string }[] = [
+  { kind: 'father', label: 'Father', ur: 'والد' }, { kind: 'mother', label: 'Mother', ur: 'والدہ' }, { kind: 'spouse', label: 'Spouse', ur: 'زوج' },
+  { kind: 'son', label: 'Son', ur: 'بیٹا' }, { kind: 'daughter', label: 'Daughter', ur: 'بیٹی' }, { kind: 'brother', label: 'Brother', ur: 'بھائی' }, { kind: 'sister', label: 'Sister', ur: 'بہن' },
 ];
+
+/** Menu shown when a person is tapped: Edit, Add relative (list), Delete. Keyboard: arrows, Escape. */
+function PersonMenu({ p, isDeceased, addOpen, setAddOpen, onEdit, onAdd, onDelete, onClose }: {
+  p: Person; isDeceased: boolean; addOpen: boolean; setAddOpen: (v: boolean) => void;
+  onEdit: () => void; onAdd: (k: AddKind) => void; onDelete: () => void; onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => { ref.current?.querySelector<HTMLButtonElement>('button[role=menuitem]')?.focus(); }, [addOpen]);
+  const onKey = (e: import('react').KeyboardEvent) => {
+    if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...(ref.current?.querySelectorAll<HTMLButtonElement>('button[role=menuitem]') ?? [])];
+    const i = items.indexOf(document.activeElement as HTMLButtonElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+  };
+  const item = 'flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100 focus:bg-sky-50 focus:outline-none';
+  return (
+    <div ref={ref} role="menu" aria-label={`Actions for ${p.name || 'this person'}`} onKeyDown={onKey}
+      className="w-[200px] rounded-xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-xl">
+      <div className="flex items-center justify-between px-2 pb-1 text-xs font-semibold text-slate-500">
+        <span className="truncate">{p.name || 'Unnamed'}</span>
+        <button aria-label="Close menu" className="rounded px-1 text-base leading-none hover:bg-slate-100" onClick={onClose}>×</button>
+      </div>
+      <button role="menuitem" className={item} onClick={onEdit}>✏️ Edit details</button>
+      <button role="menuitem" className={item} aria-expanded={addOpen} onClick={() => setAddOpen(!addOpen)}>➕ Add relative <span aria-hidden="true">{addOpen ? '▾' : '▸'}</span></button>
+      {addOpen && (
+        <div role="group" aria-label="Add relative" className="ml-2 border-l border-slate-200 pl-1">
+          {ADD.map((a) => (
+            <button key={a.kind} role="menuitem" className={item} onClick={() => onAdd(a.kind)}>
+              {a.label} <span className="urdu text-slate-500" lang="ur">{a.ur}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {!isDeceased && <button role="menuitem" className={`${item} text-red-700`} onClick={onDelete}>🗑️ Delete</button>}
+    </div>
+  );
+}
 
 const input = 'w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none';
 const btn = 'rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50';
@@ -55,6 +94,9 @@ export default function ShajraApp() {
   };
   const [selected, setSelected] = useState<string | null>('D');
   const [lang, setLang] = useState<Lang>('en');
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
   const ruleText = (id: string) => ruleTextL(id, lang);
   const [editShares, setEditShares] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -274,18 +316,31 @@ export default function ShajraApp() {
             </div>
             {shareUrl && <Qr text={shareUrl} />}
           </div>
-          <p className="no-print mb-2 text-xs text-slate-500">Click a person to edit them or add relatives. Start with the deceased (dashed box).</p>
+          <p className="no-print mb-2 text-xs text-slate-500">Tap any person for Edit, Add relative or Delete. Start with the deceased (underlined, متوفی).</p>
           <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-50" style={{ maxHeight: '70vh' }}>
-            <Tree c={c} results={byId} selected={selected} onSelect={setSelected} />
+            <Tree c={c} results={byId} selected={selected} onSelect={(id) => { setSelected(id); setMenuFor(id); setAddOpen(false); }}
+              menu={menuFor && sel && sel.id === menuFor ? (
+                <PersonMenu p={sel} isDeceased={sel.id === c.deceasedId} addOpen={addOpen} setAddOpen={setAddOpen}
+                  onEdit={() => { setEditing(sel.id); setMenuFor(null); setTimeout(() => document.getElementById('shajra-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50); }}
+                  onAdd={(k) => { add(k); setMenuFor(null); }}
+                  onDelete={() => { if (confirm(`Delete ${sel.name || 'this person'} from the tree?`)) { setC(removePerson(c, sel.id)); setSelected('D'); setEditing(null); } setMenuFor(null); }}
+                  onClose={() => setMenuFor(null)} />
+              ) : null} />
           </div>
           <div className="mt-2"><Legend /></div>
         </div>
 
         {/* Person editor */}
-        <aside className="no-print border-t border-slate-200 p-4 lg:border-t-0">
-          {sel ? <Editor c={c} p={sel} share={byId.get(sel.id)} onPatch={(p) => patch(sel.id, p)} onAdd={add}
+        <aside id="shajra-editor" className="no-print border-t border-slate-200 p-4 lg:border-t-0">
+          {sel && editing === sel.id ? <Editor c={c} p={sel} share={byId.get(sel.id)} onPatch={(p) => patch(sel.id, p)}
             onParent={(role, id) => setC(setParentOf(c, sel.id, role, id))}
-            onRemove={() => { setC(removePerson(c, sel.id)); setSelected('D'); }} /> : <p className="text-sm text-slate-500">Select a person.</p>}
+            onRemove={() => { setC(removePerson(c, sel.id)); setSelected('D'); setEditing(null); }} onClose={() => setEditing(null)} /> : (
+            <div className="text-sm text-slate-600">
+              <p className="font-semibold text-slate-800">Tap a person on the shajra</p>
+              <p className="mt-1">A menu opens with <b>Edit</b>, <b>Add relative</b> (father, mother, spouse, son, daughter, brother, sister) and <b>Delete</b>.</p>
+              <p className="mt-2 text-xs text-slate-500">Keyboard: Tab to a person, Enter to open the menu, arrow keys to move, Escape to close.</p>
+            </div>
+          )}
         </aside>
       </div>
 
@@ -398,9 +453,9 @@ export default function ShajraApp() {
   );
 }
 
-function Editor({ c, p, share, onPatch, onAdd, onParent, onRemove }: {
-  c: Case; p: Person; share?: ShareResult; onPatch: (p: Partial<Person>) => void; onAdd: (k: AddKind) => void;
-  onParent: (role: 'fatherId' | 'motherId', id: string | undefined) => void; onRemove: () => void;
+function Editor({ c, p, share, onPatch, onParent, onRemove, onClose }: {
+  c: Case; p: Person; share?: ShareResult; onPatch: (p: Partial<Person>) => void;
+  onParent: (role: 'fatherId' | 'motherId', id: string | undefined) => void; onRemove: () => void; onClose: () => void;
 }) {
   const isD = p.id === c.deceasedId;
   const ruleText = (id: string) => ruleTextL(id);
@@ -414,9 +469,7 @@ function Editor({ c, p, share, onPatch, onAdd, onParent, onRemove }: {
         <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{isD ? 'Deceased' : relLabel(share?.relationKey ?? '')[0]}</div>
         <input className={`${input} mt-1 font-semibold`} value={p.name} placeholder="Name" onChange={(e) => onPatch({ name: e.target.value })} />
       </div>
-      <div className="flex flex-wrap gap-1.5">
-        {ADD.filter((a) => !(isD && false)).map((a) => <button key={a.kind} className={btn} onClick={() => onAdd(a.kind)}>{a.label}</button>)}
-      </div>
+      <button className={`${btn} w-full`} onClick={onClose}>Done</button>
       {!isD && (
         <>
           <div className="grid grid-cols-2 gap-2">

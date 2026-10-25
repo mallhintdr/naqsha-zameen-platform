@@ -10,11 +10,16 @@ const page = await (await b.newContext({ viewport: { width: 1280, height: 900 } 
 const errors = []; page.on('pageerror', (e) => errors.push(e.message)); page.on('dialog', (d) => d.accept());
 const check = (label, ok) => { console.log(`${ok ? 'PASS' : 'FAIL'} ${label}`); if (!ok) process.exitCode = 1; };
 
-await page.goto(`${BASE}/tools/shajra-nasab/?beta=hindu`, { waitUntil: 'networkidle' });
-await page.waitForSelector('svg.shajra-tree');
+await page.goto(`${BASE}/tools/shajra-nasab/?beta=hindu`, { waitUntil: 'load', timeout: 90000 });
+await page.waitForSelector('svg.shajra-tree', { timeout: 90000 });
 await page.getByPlaceholder('e.g. Muhammad Aslam').fill('Test');
-const add = async (l) => page.locator('.shajra aside button', { hasText: l }).first().click();
-await add('+ Spouse'); await page.locator('svg.shajra-tree g[role=button]').first().click(); await add('+ Son');
+// Tap a person -> menu -> Add relative -> choose
+const add = async (who, rel) => {
+  await page.locator('svg.shajra-tree g[role=button]').nth(who).click();
+  await page.locator('[role=menu] button', { hasText: 'Add relative' }).click();
+  await page.locator('[role=menu] button[role=menuitem]', { hasText: new RegExp(`^${rel}`) }).click();
+};
+await add(0, 'Spouse'); await add(0, 'Son');
 await page.waitForTimeout(300);
 
 // Accessibility of the tool area
@@ -23,10 +28,21 @@ const res = await page.evaluate(async () => (await window.axe.run('.shajra', { r
 console.log(res.length ? res.join('\n') : 'axe: no violations');
 check('axe: no serious/critical violations', !res.some((r) => /^(serious|critical)/.test(r)));
 
-// Keyboard: tree nodes focusable, Enter selects
+// Keyboard: Enter on a person opens the menu; arrows move; Edit opens the editor; Escape closes
 await page.locator('svg.shajra-tree g[role=button]').nth(1).focus();
 await page.keyboard.press('Enter');
-check('keyboard selects a person', /Wife|Widow|Spouse/i.test(await page.locator('.shajra aside').innerText()));
+check('keyboard opens the person menu', await page.locator('[role=menu]').count() === 1);
+await page.keyboard.press('Enter'); // first item: Edit details
+check('Edit opens the editor', /Gender|Religion/.test(await page.locator('#shajra-editor').innerText()));
+await page.locator('svg.shajra-tree g[role=button]').nth(1).click();
+await page.keyboard.press('Escape');
+check('Escape closes the menu', await page.locator('[role=menu]').count() === 0);
+// Delete from the menu
+await add(0, 'Daughter');
+const before = await page.locator('svg.shajra-tree g[role=button]').count();
+await page.locator('svg.shajra-tree g[role=button]').nth(before - 1).click();
+await page.locator('[role=menu] button', { hasText: 'Delete' }).click();
+check('Delete removes the person', (await page.locator('svg.shajra-tree g[role=button]').count()) === before - 1);
 
 // Urdu notes
 await page.locator('button', { hasText: 'اردو' }).click();

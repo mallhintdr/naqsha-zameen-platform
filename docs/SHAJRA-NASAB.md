@@ -69,6 +69,10 @@ A public tool on the website, at **https://naqsha-zameen.com/tools/shajra-nasab/
    - **Computation notes:** numbered, with citation keys, the policy version, the settings used and the case ID.
 7. **Save and share:** autosaves in the browser. Export and import the case as JSON. **Print / Save PDF** uses the browser's print with an A4 portrait layout, hiding the website header, footer and buttons.
 
+**Interaction (updated 26 Oct 2026):** tapping a person opens a small menu with **Edit details**, **Add relative ▸** (father, mother, spouse, son, daughter, brother or sister, with Urdu names) and **Delete**. The add buttons in the side panel were removed. Keyboard: Tab to a person, Enter to open the menu, arrow keys to move, Escape to close.
+
+**Patwari style:** ink lines on off-white paper, with no boxes. Each person is a short stroke with the name written under it (in Nastaliq when the name is typed in Urdu) and the share in brackets, coloured by result. Children hang from the father's line through a bar over the siblings; the mother's line is dashed and used only when no father is in the tree. A wife is attached beside her husband by a single line. The deceased is underlined and marked "متوفی".
+
 **Chart symbols (revenue-record style, updated 26 Oct 2026):**
 - **People:** male = short vertical branch line; daughter (or sister) = inverted V (Λ); wife or widow of a relation = heart turned 90° anticlockwise; a woman who is both a daughter of the family and a wife = the inverted V inside the heart.
 - **Marks:** diagonal slash = died; dashed box = the deceased; dotted triangle = pregnant.
