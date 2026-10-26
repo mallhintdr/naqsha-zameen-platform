@@ -33,6 +33,7 @@ export default defineConfig({
     server: { fs: { allow: ['..'] } },
   },
   // concurrency: render several pages at once (thousands of /maps/ pages).
-  build: { inlineStylesheets: 'auto', concurrency: 8 },
+  // Pages rendered in parallel. deploy.sh sets SITE_BUILD_CONCURRENCY=2 on the VPS to keep it responsive.
+  build: { inlineStylesheets: 'auto', concurrency: Number(process.env.SITE_BUILD_CONCURRENCY) || 8 },
   compressHTML: true,
 });

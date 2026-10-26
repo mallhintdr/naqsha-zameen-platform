@@ -25,3 +25,4 @@ site/node_modules/
 site/dist/
 site/.astro/
 site/*.log
+.site-built-commit
