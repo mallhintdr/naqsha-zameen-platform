@@ -30,6 +30,14 @@ export function Glyph({ x, y, size, kind }: { x: number; y: number; size: number
   const v = (h: number) => `M${x - h * 0.55},${cy + h / 2} L${x},${cy - h / 2} L${x + h * 0.55},${cy + h / 2}`;
   if (kind === 'male') return <line x1={x} y1={y} x2={x} y2={y + size} strokeWidth="2.4" strokeLinecap="round" />;
   if (kind === 'daughter') return <path d={v(size * 0.85)} fill="none" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />;
+  if (kind === 'both') {
+    return (
+      <g>
+        <path d={v(size * 0.7)} transform={`translate(0,${-size * 0.12})`} fill="none" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={leaf(size * 0.28, size * 0.17, 1)} transform={`translate(${x},${y + size * 0.86})`} fill="#fffdf6" strokeWidth="1.2" />
+      </g>
+    );
+  }
   return (
     <g>
       <path d={heart(size * 0.42)} transform={`translate(${x},${cy}) rotate(-90)`} fill="#fffdf6" strokeWidth="1.6" />
@@ -93,9 +101,9 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
             // (children are then grouped by mother) or when the father is not in the tree.
             const wivesOfFather = father ? c.unions.filter((u) => u.partners.includes(father)).length : 0;
             const drops = (father ? (mother && wivesOfFather > 1 ? [father, mother] : [father]) : [mother]).filter(Boolean) as string[];
-            const parentBottom = (id: string) => top(id) + sym + (kindOf(id) === 'wife' || kindOf(id) === 'both' ? 44 : 60); // below the name, status and share
+            const parentBottom = (id: string) => top(id) + sym + (kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 76 : 60); // below the name, status and share
             // A wife's line starts from the outer side of her heart, so it never runs into a child's line.
-            const dropX = (id: string) => (kindOf(id) === 'wife' || kindOf(id) === 'both' ? cx(id) + tipDir(id) * 24 : cx(id));
+            const dropX = (id: string) => (kindOf(id) === 'wife' ? cx(id) + tipDir(id) * 22 : cx(id));
             const all = [...xs, ...drops.map(dropX)];
             return (
               <g key={`f-${fi}`} strokeDasharray={!father ? '4 3' : undefined}>
@@ -111,12 +119,14 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
             const na = nodes.get(a), nb = nodes.get(b);
             if (!na || !nb || na.gen !== nb.gen) return null;
             const [x1, x2] = [cx(a), cx(b)].sort((m, n) => m - n);
+            // Leave room for the symbol: heart edge, Λ edge or the stroke.
+            const off = (id: string) => (kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 28 : 6);
             const y = top(a) + sym / 2;
             const div = u.type !== 'marriage' || c.persons.some((p) => u.partners.includes(p.id) && p.flags.divorced && p.flags.divorced !== 'revocable-in-iddat');
             const mx = (x1 + x2) / 2;
             return (
               <g key={u.id}>
-                <line x1={x1 + (cx(a) === x1 && kindOf(a).match(/wife|both/) || cx(b) === x1 && kindOf(b).match(/wife|both/) ? 52 : 6)} y1={y} x2={x2 - (cx(a) === x2 && kindOf(a).match(/wife|both/) || cx(b) === x2 && kindOf(b).match(/wife|both/) ? 52 : 6)} y2={y} />
+                <line x1={x1 + off(cx(a) === x1 ? a : b)} y1={y} x2={x2 - off(cx(a) === x2 ? a : b)} y2={y} />
                 {div && <><line x1={mx - 5} y1={y + 6} x2={mx - 1} y2={y - 6} /><line x1={mx + 1} y1={y + 6} x2={mx + 5} y2={y - 6} /></>}
               </g>
             );
@@ -141,19 +151,23 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
               <rect x={n.x + P + 2} y={n.y + P - 20} width={NODE_W - 4} height={sym + 72} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#0ea5e9' : 'none'} strokeDasharray="3 3" />
               {(() => {
                 const k = kindOf(p.id);
-                const inHeart = k === 'wife' || k === 'both';
-                const nameY = inHeart ? y + sym / 2 + 5 : y + sym + (hasUrdu(nm) ? 22 : 16);
-                const below = inHeart ? y + sym + 24 : y + sym + (hasUrdu(nm) ? 42 : 30);
+                const inHeart = k === 'wife';
+                const extra = k === 'both' ? 16 : 0; // room for the small heart under the Λ
+                const nameY = inHeart ? y + sym / 2 + 5 : y + sym + extra + (hasUrdu(nm) ? 22 : 16);
+                const below = inHeart ? y + sym + 24 : y + sym + extra + (hasUrdu(nm) ? 42 : 30);
                 return (
                   <>
                     {inHeart ? (
                       <g stroke={INK}>
                         {/* Big sideways heart with the name written inside, like the patwari's sketch */}
-                        <path d={leaf(52, 26, tipDir(p.id))} transform={`translate(${x},${y + sym / 2})`} fill="#fffdf6" strokeWidth="1.4" />
-                        {k === 'both' && <path d={`M${x - 46},${y + sym / 2 + 8} L${x - 40},${y + sym / 2 - 6} L${x - 34},${y + sym / 2 + 8}`} fill="none" strokeWidth="1.6" />}
+                        <path d={leaf(44, 26, tipDir(p.id))} transform={`translate(${x},${y + sym / 2})`} fill="#fffdf6" strokeWidth="1.4" />
                       </g>
-                    ) : k === 'daughter' ? (
-                      <path d={`M${x - 26},${y + sym + 2} L${x},${y - 2} L${x + 26},${y + sym + 2}`} fill="none" stroke={INK} strokeWidth="1.6" strokeLinejoin="round" />
+                    ) : k === 'daughter' || k === 'both' ? (
+                      <g stroke={INK}>
+                        {/* Daughter: a large Λ. A daughter who is also a wife: the same Λ with a small heart under it. */}
+                        <path d={`M${x - 26},${y + sym + 2} L${x},${y - 2} L${x + 26},${y + sym + 2}`} fill="none" strokeWidth="1.6" strokeLinejoin="round" />
+                        {k === 'both' && <path d={leaf(13, 8, tipDir(p.id))} transform={`translate(${x},${y + sym + 11})`} fill="#fffdf6" strokeWidth="1.2" />}
+                      </g>
                     ) : (
                       <line x1={x} y1={y} x2={x} y2={y + sym} stroke={INK} strokeWidth="1.6" />
                     )}
@@ -173,7 +187,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
         })}
       </svg>
       {sel && menu && (
-        <div className="absolute z-20" style={{ left: Math.max(4, Math.min(sel.x + P + NODE_W / 2 - 100, width + P * 2 - 210)), top: sel.y + P + sym + 58 }}>
+        <div className="absolute z-20" style={{ left: Math.max(4, sel.x + P + NODE_W / 2 - 150), top: sel.y + P + sym + 62 }}>
           {menu}
         </div>
       )}

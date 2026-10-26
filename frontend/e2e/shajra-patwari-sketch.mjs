@@ -28,8 +28,9 @@ console.log('shares:', (await page.locator('#shajra-results tbody').innerText())
 // menu: Add relative opens sideways
 await page.locator('svg.shajra-tree g[role=button]').nth(3).click();
 await page.locator('[role=menu] button', { hasText: 'Add relative' }).click();
-const menu = await page.locator('[role=menu]').first().boundingBox(), sub = await page.locator('[role=group][aria-label="Add relative"]').boundingBox();
-console.log('submenu sideways:', sub.x >= menu.x + menu.width - 2);
+const node = await page.locator('svg.shajra-tree g[role=button]').nth(3).boundingBox();
+const bar = await page.locator('[role=menu]').first().boundingBox(), rel = await page.locator('[role=group][aria-label="Add relative"]').boundingBox();
+console.log('menu below the person:', bar.y > node.y + 20, '| relatives in one or two rows:', rel.height < 80);
 await page.keyboard.press('Escape');
 // print sheet + PDF
 await page.emulateMedia({ media: 'print' });

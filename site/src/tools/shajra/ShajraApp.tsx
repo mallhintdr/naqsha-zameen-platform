@@ -99,41 +99,45 @@ const ADD: { kind: AddKind; label: string; ur: string }[] = [
   { kind: 'son', label: 'Son', ur: 'بیٹا' }, { kind: 'daughter', label: 'Daughter', ur: 'بیٹی' }, { kind: 'brother', label: 'Brother', ur: 'بھائی' }, { kind: 'sister', label: 'Sister', ur: 'بہن' },
 ];
 
-/** Menu shown when a person is tapped: Edit, Add relative (list), Delete. Keyboard: arrows, Escape. */
+/** Action bar shown just below a tapped person: Edit · Add relative · Delete, all in one row;
+ *  the relative choices open as a second horizontal row (no scrolling). Keyboard: arrows, Escape. */
 function PersonMenu({ p, isDeceased, addOpen, setAddOpen, onEdit, onAdd, onDelete, onClose }: {
   p: Person; isDeceased: boolean; addOpen: boolean; setAddOpen: (v: boolean) => void;
   onEdit: () => void; onAdd: (k: AddKind) => void; onDelete: () => void; onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => { ref.current?.querySelector<HTMLButtonElement>('button[role=menuitem]')?.focus(); }, [addOpen]);
+  useEffect(() => {
+    const sel = addOpen ? '[data-rel] button' : 'button[role=menuitem]';
+    ref.current?.querySelector<HTMLButtonElement>(sel)?.focus();
+  }, [addOpen]);
   const onKey = (e: import('react').KeyboardEvent) => {
-    if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
-    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    if (e.key === 'Escape') { e.preventDefault(); if (addOpen) setAddOpen(false); else onClose(); return; }
+    const fwd = e.key === 'ArrowRight' || e.key === 'ArrowDown', back = e.key === 'ArrowLeft' || e.key === 'ArrowUp';
+    if (!fwd && !back) return;
     e.preventDefault();
     const items = [...(ref.current?.querySelectorAll<HTMLButtonElement>('button[role=menuitem]') ?? [])];
     const i = items.indexOf(document.activeElement as HTMLButtonElement);
-    items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+    items[(i + (fwd ? 1 : -1) + items.length) % items.length]?.focus();
   };
-  const item = 'flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100 focus:bg-sky-50 focus:outline-none';
+  const act = 'inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 focus:border-sky-500 focus:bg-sky-50 focus:outline-none';
   return (
-    <div ref={ref} role="menu" aria-label={`Actions for ${p.name || 'this person'}`} onKeyDown={onKey}
-      className="relative w-[200px] rounded-xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-xl">
-      <div className="flex items-center justify-between px-2 pb-1 text-xs font-semibold text-slate-500">
-        <span className="truncate">{p.name || 'Unnamed'}</span>
-        <button aria-label="Close menu" className="rounded px-1 text-base leading-none hover:bg-slate-100" onClick={onClose}>×</button>
+    <div ref={ref} role="menu" aria-orientation="horizontal" aria-label={`Actions for ${p.name || 'this person'}`} onKeyDown={onKey}
+      className="w-max max-w-[min(520px,92vw)] rounded-xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-xl">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <button role="menuitem" className={act} onClick={onEdit}>✏️ Edit</button>
+        <button role="menuitem" className={`${act} ${addOpen ? '!border-sky-500 !bg-sky-50' : ''}`} aria-expanded={addOpen} onClick={() => setAddOpen(!addOpen)}>➕ Add relative</button>
+        {!isDeceased && <button role="menuitem" className={`${act} !text-red-700`} onClick={onDelete}>🗑️ Delete</button>}
+        <button aria-label="Close" className="ml-auto rounded px-1.5 text-base leading-none text-slate-500 hover:bg-slate-100" onClick={onClose}>×</button>
       </div>
-      <button role="menuitem" className={item} onClick={onEdit}>✏️ Edit details</button>
-      <button role="menuitem" className={item} aria-expanded={addOpen} onClick={() => setAddOpen(!addOpen)}>➕ Add relative <span aria-hidden="true">{addOpen ? '▾' : '▸'}</span></button>
       {addOpen && (
-        <div role="group" aria-label="Add relative" className="absolute left-full top-8 ml-1 w-[180px] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+        <div data-rel role="group" aria-label="Add relative" className="mt-1.5 flex flex-wrap gap-1 border-t border-slate-100 pt-1.5">
           {ADD.map((a) => (
-            <button key={a.kind} role="menuitem" className={item} onClick={() => onAdd(a.kind)}>
-              {a.label} <span className="urdu text-slate-500" lang="ur">{a.ur}</span>
+            <button key={a.kind} role="menuitem" className={`${act} !px-2 !py-1`} onClick={() => onAdd(a.kind)}>
+              {a.label} <span className="urdu text-[11px] font-normal text-slate-500" lang="ur">{a.ur}</span>
             </button>
           ))}
         </div>
       )}
-      {!isDeceased && <button role="menuitem" className={`${item} text-red-700`} onClick={onDelete}>🗑️ Delete</button>}
     </div>
   );
 }
