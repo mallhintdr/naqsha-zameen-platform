@@ -128,10 +128,10 @@ const notifyAdmins = async ({ type = 'info', title, message, action, replyTo, de
  * Hide the action button of every notification for a request once it is decided
  * (approved / rejected / renewed / cancelled). kind: 'renewal' | 'assignment'.
  */
-const completeActions = async (kind, ref) => {
+const completeActions = async (kind, ref, outcome) => {
     try {
         if (!kind || !ref) return;
-        await Notification.updateMany({ 'action.kind': kind, 'action.ref': String(ref), actionDone: { $ne: true } }, { $set: { actionDone: true } });
+        await Notification.updateMany({ 'action.kind': kind, 'action.ref': String(ref), actionDone: { $ne: true } }, { $set: { actionDone: true, ...(outcome ? { outcome } : {}) } });
     } catch (err) {
         logger.error('completeActions error:', { error: err.message });
     }

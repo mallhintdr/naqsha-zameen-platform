@@ -40,6 +40,8 @@ export interface AppNotification {
   read: boolean;
   action?: { label: string; url: string; kind?: string; ref?: string };
   actionDone?: boolean;
+  /** What answered the request, e.g. { label: 'Renewed', at, plan }. */
+  outcome?: { label: string; at: string; plan?: string };
   replyTo?: string;
   details?: any;
 }

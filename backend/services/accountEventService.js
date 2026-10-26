@@ -29,7 +29,11 @@ async function recordEvent(fields, req, { session, throwOnDuplicate = false } = 
         // A renewal / activation answers the customer's request: hide the
         // "Open Renewal" button on the provider's notification.
         if (['RENEWED', 'ACTIVATED'].includes(doc.type) && doc.userId) {
-            require('../utils/notificationUtils').completeActions('renewal', doc.userId).catch(() => {});
+            require('../utils/notificationUtils').completeActions('renewal', doc.userId, {
+                label: doc.type === 'RENEWED' ? 'Renewed' : 'Activated',
+                at: new Date(),
+                plan: doc.plan || undefined,
+            }).catch(() => {});
         }
         return created;
     } catch (err) {

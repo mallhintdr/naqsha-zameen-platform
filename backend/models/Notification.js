@@ -21,6 +21,8 @@ const notificationSchema = new mongoose.Schema({
         ref: String         // userId (renewal) or request id (assignment)
     },
     actionDone: { type: Boolean, default: false },
+    // What answered the request, e.g. { label: 'Renewed', at, plan } (shown instead of the buttons).
+    outcome: { type: mongoose.Schema.Types.Mixed, default: undefined },
     // Customer this notification is about: the admin / sub-admin can reply to them.
     replyTo: { type: String, default: null },
     lastReply: { at: Date, message: String },

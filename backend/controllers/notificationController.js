@@ -49,7 +49,8 @@ exports.getNotifications = async (req, res) => {
             action: n.action && n.action.url ? n.action : undefined,
             replyTo: n.replyTo || undefined,
             details: n.details || undefined,
-            actionDone: !!n.actionDone
+            actionDone: !!n.actionDone,
+            outcome: n.outcome || undefined
         }));
         res.json({ notifications });
     } catch (error) {

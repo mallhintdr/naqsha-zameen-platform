@@ -193,7 +193,10 @@ export default function NotificationPanel({ onClose, onProfile }: { onClose: () 
                   <div className="flex flex-wrap items-center justify-end gap-1.5">
                     {notif.action?.url &&
                       (notif.actionDone ? (
-                        <span className="mt-1 inline-flex items-center gap-1 text-[0.7rem] font-semibold text-[#16a34a]"><Check size={11} />Done</span>
+                        <span className="mt-1 inline-flex items-center gap-1 text-[0.7rem] font-semibold text-[#16a34a]">
+                          <Check size={11} />
+                          {notif.outcome ? `${notif.outcome.label} on ${fmtDateTime(notif.outcome.at)}${notif.outcome.plan ? ` as ${notif.outcome.plan}` : ''}` : 'Done'}
+                        </span>
                       ) : (
                         <button
                           type="button"
@@ -203,7 +206,8 @@ export default function NotificationPanel({ onClose, onProfile }: { onClose: () 
                           <ExternalLink size={11} />{notif.action.label || 'Open'}
                         </button>
                       ))}
-                    {notif.replyTo && ['admin', 'subadmin'].includes(user?.userType || '') && (
+                    {/* Once a renewal request is answered there is nothing to reply to. */}
+                    {notif.replyTo && !(notif.actionDone && notif.action?.kind === 'renewal') && ['admin', 'subadmin'].includes(user?.userType || '') && (
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); markNotificationAsRead(nid); onClose(); setReplyFor(notif); }}
