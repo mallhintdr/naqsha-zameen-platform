@@ -108,7 +108,9 @@ function PersonMenu({ p, isDeceased, addOpen, setAddOpen, onEdit, onAdd, onDelet
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const sel = addOpen ? '[data-rel] button' : 'button[role=menuitem]';
-    ref.current?.querySelector<HTMLButtonElement>(sel)?.focus();
+    ref.current?.querySelector<HTMLButtonElement>(sel)?.focus({ preventScroll: true });
+    // Bring the whole action bar into view inside the chart frame.
+    ref.current?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
   }, [addOpen]);
   const onKey = (e: import('react').KeyboardEvent) => {
     if (e.key === 'Escape') { e.preventDefault(); if (addOpen) setAddOpen(false); else onClose(); return; }
@@ -131,11 +133,15 @@ function PersonMenu({ p, isDeceased, addOpen, setAddOpen, onEdit, onAdd, onDelet
       </div>
       {addOpen && (
         <div data-rel role="group" aria-label="Add relative" className="mt-1.5 flex flex-wrap gap-1 border-t border-slate-100 pt-1.5">
-          {ADD.map((a) => (
+          {ADD.map((a) => {
+            // A man gets a wife, a woman a husband.
+            const [label, ur] = a.kind === 'spouse' ? (p.gender === 'M' ? ['Wife', 'بیوی'] : ['Husband', 'شوہر']) : [a.label, a.ur];
+            return (
             <button key={a.kind} role="menuitem" className={`${act} !px-2 !py-1`} onClick={() => onAdd(a.kind)}>
-              {a.label} <span className="urdu text-[11px] font-normal text-slate-500" lang="ur">{a.ur}</span>
+              {label} <span className="urdu text-[11px] font-normal text-slate-500" lang="ur">{ur}</span>
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -390,7 +396,7 @@ export default function ShajraApp() {
           </div>
           <ShajraTitle c={c} />
           <p className="no-print mb-2 text-xs text-slate-500">Tap any person for Edit, Add relative or Delete. Start with the deceased (underlined, متوفی).</p>
-          <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-50" style={{ maxHeight: '70vh' }}>
+          <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-50" style={{ maxHeight: '81vh' }}>
             <Tree c={c} results={byId} selected={selected} onSelect={(id) => { setSelected(id); setMenuFor(id); setAddOpen(false); }}
               menu={menuFor && sel && sel.id === menuFor ? (
                 <PersonMenu p={sel} isDeceased={sel.id === c.deceasedId} addOpen={addOpen} setAddOpen={setAddOpen}

@@ -75,6 +75,12 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
     fam.kids.push(p.id);
     families.set(key, fam);
   }
+  /** A man who married into the family (no parents in the tree): drawn as his name only. */
+  const isInLaw = (id: string) => {
+    const p = c.persons.find((x) => x.id === id)!;
+    return p.gender === 'M' && id !== c.deceasedId && !fatherOf(c, id) && !motherOf(c, id) && c.unions.some((u) => u.partners.includes(id))
+      && !c.parents.some((l) => l.fatherId === id); // a man with children in the tree keeps his stroke
+  };
   /** +1: heart points right (wife on the husband's right), -1: points left. */
   const tipDir = (id: string): 1 | -1 => {
     const h = c.unions.filter((u) => u.partners.includes(id)).map((u) => u.partners.find((x) => x !== id)!).find((x) => nodes.get(x));
@@ -89,8 +95,8 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
 
   const sel = selected ? nodes.get(selected) : null;
   return (
-    <div className="relative" style={printMode ? { width: '100%' } : { width: width + P * 2, minHeight: height + P * 2 }}>
-      <svg width={printMode ? '100%' : width + P * 2} height={printMode ? undefined : height + P * 2} viewBox={`0 0 ${width + P * 2} ${height + P * 2}`} role="group" aria-label="Family tree (shajra nasab)" className={printMode ? 'shajra-tree-print block' : 'shajra-tree block'} style={{ background: '#fffdf6' }}>
+    <div className="relative" style={printMode ? { width: '100%' } : { width: width + P * 2, minHeight: height + P * 2 + 210 /* room for the action bar under the lowest row */ }}>
+      <svg width={printMode ? '100%' : width + P * 2} height={printMode ? undefined : height + P * 2 + 70} viewBox={`0 0 ${width + P * 2} ${height + P * 2 + 70}`} role="group" aria-label="Family tree (shajra nasab)" className={printMode ? 'shajra-tree-print block' : 'shajra-tree block'} style={{ background: '#fffdf6' }}>
         {/* Lines of descent: parent stroke -> bar over the children -> each child */}
         <g stroke={INK} strokeWidth="1.3" fill="none">
           {[...families.values()].map(({ father, mother, kids }, fi) => {
@@ -101,7 +107,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
             // (children are then grouped by mother) or when the father is not in the tree.
             const wivesOfFather = father ? c.unions.filter((u) => u.partners.includes(father)).length : 0;
             const drops = (father ? (mother && wivesOfFather > 1 ? [father, mother] : [father]) : [mother]).filter(Boolean) as string[];
-            const parentBottom = (id: string) => top(id) + sym + (kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 76 : 60); // below the name, status and share
+            const parentBottom = (id: string) => top(id) + sym + (id === c.deceasedId ? 22 : kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 96 : 60); // just below the parent's last line of text
             // A wife's line starts from the outer side of her heart, so it never runs into a child's line.
             const dropX = (id: string) => (kindOf(id) === 'wife' ? cx(id) + tipDir(id) * 22 : cx(id));
             const all = [...xs, ...drops.map(dropX)];
@@ -120,7 +126,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
             if (!na || !nb || na.gen !== nb.gen) return null;
             const [x1, x2] = [cx(a), cx(b)].sort((m, n) => m - n);
             // Leave room for the symbol: heart edge, Λ edge or the stroke.
-            const off = (id: string) => (kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 28 : 6);
+            const off = (id: string) => (kindOf(id) === 'wife' ? 48 : kindOf(id) === 'both' ? 18 : isInLaw(id) ? 44 : 6);
             const y = top(a) + sym / 2;
             const div = u.type !== 'marriage' || c.persons.some((p) => u.partners.includes(p.id) && p.flags.divorced && p.flags.divorced !== 'revocable-in-iddat');
             const mx = (x1 + x2) / 2;
@@ -148,32 +154,30 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(p.id); } }}>
               <title>{`${nm} · ${en}${ur ? ` · ${ur}` : ''}`}</title>
               {isD && <rect x={n.x + P + 4} y={n.y + P - 16} width={NODE_W - 8} height={sym + 62} rx="4" fill="none" stroke={INK} strokeWidth="1.2" strokeDasharray="2 3" />}
-              <rect x={n.x + P + 2} y={n.y + P - 20} width={NODE_W - 4} height={sym + 72} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#0ea5e9' : 'none'} strokeDasharray="3 3" />
+              <rect x={n.x + P + 2} y={n.y + P - 20} width={NODE_W - 4} height={sym + (kindOf(p.id) === 'both' ? 120 : 72)} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#0ea5e9' : 'none'} strokeDasharray="3 3" />
               {(() => {
                 const k = kindOf(p.id);
-                const inHeart = k === 'wife';
-                const extra = k === 'both' ? 16 : 0; // room for the small heart under the Λ
-                const nameY = inHeart ? y + sym / 2 + 5 : y + sym + extra + (hasUrdu(nm) ? 22 : 16);
-                const below = inHeart ? y + sym + 24 : y + sym + extra + (hasUrdu(nm) ? 42 : 30);
+                const inLaw = isInLaw(p.id);
+                const dir = tipDir(p.id);
+                // Wife: name inside the heart. Daughter who is also a wife: large Λ, heart below it with the name inside.
+                const heartCy = k === 'wife' ? y + sym / 2 : y + sym + 30;
+                const inHeart = k === 'wife' || k === 'both';
+                const nameX = inHeart ? x - dir * 6 : x; // centre of the heart's round body
+                const nameY = inHeart ? heartCy + 5 : inLaw ? y + sym / 2 + 4 : y + sym + (hasUrdu(nm) ? 22 : 16);
+                const below = k === 'wife' ? y + sym + 24 : k === 'both' ? heartCy + 46 : inLaw ? y + sym / 2 + 22 : y + sym + (hasUrdu(nm) ? 42 : 30);
                 return (
                   <>
-                    {inHeart ? (
-                      <g stroke={INK}>
-                        {/* Big sideways heart with the name written inside, like the patwari's sketch */}
-                        <path d={leaf(44, 26, tipDir(p.id))} transform={`translate(${x},${y + sym / 2})`} fill="#fffdf6" strokeWidth="1.4" />
-                      </g>
-                    ) : k === 'daughter' || k === 'both' ? (
-                      <g stroke={INK}>
-                        {/* Daughter: a large Λ. A daughter who is also a wife: the same Λ with a small heart under it. */}
-                        <path d={`M${x - 26},${y + sym + 2} L${x},${y - 2} L${x + 26},${y + sym + 2}`} fill="none" strokeWidth="1.6" strokeLinejoin="round" />
-                        {k === 'both' && <path d={leaf(13, 8, tipDir(p.id))} transform={`translate(${x},${y + sym + 11})`} fill="#fffdf6" strokeWidth="1.2" />}
-                      </g>
-                    ) : (
-                      <line x1={x} y1={y} x2={x} y2={y + sym} stroke={INK} strokeWidth="1.6" />
+                    {inHeart && (
+                      <path d={leaf(48, 27, dir)} transform={`translate(${x},${heartCy})`} fill="#fffdf6" stroke={INK} strokeWidth="1.4" />
                     )}
+                    {(k === 'daughter' || k === 'both') && (
+                      <path d={`M${x - 26},${y + sym + 2} L${x},${y - 2} L${x + 26},${y + sym + 2}`} fill="none" stroke={INK} strokeWidth="1.6" strokeLinejoin="round" />
+                    )}
+                    {/* A son of the family is a short stroke; a husband who married into the family is just his name. */}
+                    {k === 'male' && !inLaw && <line x1={x} y1={y} x2={x} y2={y + sym} stroke={INK} strokeWidth="1.6" />}
                     {p.flags.pregnant && <path d={`M${x + 30},${y + sym} l6,-10 l6,10 z`} fill="none" stroke="#b45309" strokeDasharray="2 2" />}
-                    <text x={x} y={nameY} textAnchor="middle" fontSize={hasUrdu(nm) ? 13 : 11.5} fontWeight={isD ? 800 : 600} fill={INK}
-                      fontFamily={hasUrdu(nm) ? URDU_FONT : undefined}>{nm.slice(0, inHeart ? 16 : 22)}</text>
+                    <text x={nameX} y={nameY} textAnchor="middle" fontSize={hasUrdu(nm) ? 13 : 11.5} fontWeight={isD ? 800 : 600} fill={INK}
+                      fontFamily={hasUrdu(nm) ? URDU_FONT : undefined}>{nm.slice(0, inHeart ? 18 : 22)}</text>
                     {/* Status in red, as the patwari writes it */}
                     <text x={isD ? x - 8 : x} y={isD ? y + 6 : below} textAnchor={isD ? 'end' : 'middle'} fontSize="10.5" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">{statusOf(p.id)}</text>
                     {!isD && shareTxt && (
@@ -187,7 +191,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
         })}
       </svg>
       {sel && menu && (
-        <div className="absolute z-20" style={{ left: Math.max(4, sel.x + P + NODE_W / 2 - 150), top: sel.y + P + sym + 62 }}>
+        <div className="absolute z-20" style={{ left: Math.max(4, sel.x + P + NODE_W / 2 - 150), top: sel.y + P + sym + (kindOf(sel.id) === 'both' ? 110 : 62) }}>
           {menu}
         </div>
       )}

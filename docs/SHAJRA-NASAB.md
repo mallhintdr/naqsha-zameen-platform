@@ -96,6 +96,14 @@ A public tool on the website, at **https://naqsha-zameen.com/tools/shajra-nasab/
   - It waits only for the page to signal "ready" and for the fonts to load, not for the whole network to go quiet.
   - A local render of the sketch case took about 0.8 s.
 
+**Layout fixes (27 Oct 2026):**
+- **Lines:** descent lines start right under the parent's name, so the deceased's line is connected.
+- **Hearts:** the wife's heart is larger, with the name centred in its round part.
+- **Daughter who is also a wife:** a large Λ with a heart below it holding her name.
+- **A husband who married into the family** (no parents in the tree): only his name, with no stroke. He is placed after his wife, outside her brothers and sisters.
+- **Frame:** the chart frame is taller and leaves room below the tree. The action bar scrolls itself fully into view.
+- **Add relative:** offers **Wife** for a man and **Husband** for a woman.
+
 **Chart symbols (revenue-record style, updated 26 Oct 2026):**
 - **People:** male = short vertical branch line; daughter (or sister) = inverted V (Λ); wife or widow of a relation = heart turned 90° anticlockwise; a woman who is both a daughter of the family and a wife = the inverted V inside the heart.
 - **Marks:** diagonal slash = died; dashed box = the deceased; dotted triangle = pregnant.

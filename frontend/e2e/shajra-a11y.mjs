@@ -19,7 +19,7 @@ const add = async (who, rel) => {
   await page.locator('[role=menu] button', { hasText: 'Add relative' }).click();
   await page.locator('[role=menu] button[role=menuitem]', { hasText: new RegExp(`^${rel}`) }).click();
 };
-await add(0, 'Spouse'); await add(0, 'Son');
+await add(0, 'Wife'); await add(0, 'Son');
 await page.waitForTimeout(300);
 
 // Accessibility of the tool area

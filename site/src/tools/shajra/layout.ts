@@ -6,7 +6,7 @@ import { childrenOf, fatherOf, motherOf, spousesOf } from './model.ts';
 export const NODE_W = 132;
 export const NODE_H = 92;
 export const GAP_X = 18;
-export const ROW_H = 165;
+export const ROW_H = 185;
 
 export interface Placed { id: string; x: number; y: number; gen: number }
 
@@ -48,9 +48,11 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
       placed.push(id);
       // Patwari style: first wife on the left of her husband, second on the right, alternating.
       const sp = spousesOf(c, id).filter((s) => gen.get(s) === r && !placed.includes(s) && !(fatherOf(c, s) || motherOf(c, s)));
+      // A daughter's (or any woman's) husband goes after her, outside her brothers and sisters.
+      const female = c.persons.find((p) => p.id === id)?.gender === 'F';
       sp.forEach((s, i) => {
         const at = placed.indexOf(id);
-        if (i % 2 === 0) placed.splice(at, 0, s); else placed.splice(at + 1 + Math.floor(i / 2), 0, s);
+        if (!female && i % 2 === 0) placed.splice(at, 0, s); else placed.splice(at + 1 + (female ? i : Math.floor(i / 2)), 0, s);
       });
     };
     for (const id of inRow) push(id);
