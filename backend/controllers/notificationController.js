@@ -13,7 +13,33 @@ exports.getNotifications = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(60)
             .lean();
-        const notifications = notifs.map(n => ({
+        // Public sign-ups: notifications created by older code (or the old .pk server) have no
+        // details. Fill in name, tehsil, mouzas, plan and dates from the user, and fold the
+        // "registered" notification into the "activated" one so each sign-up shows once.
+        const REG = 'New Public Registration', ACT = 'Public User Activated';
+        const uidOf = (n) => String(n.message || '').split(' ')[0];
+        const signUps = notifs.filter((n) => (n.title === REG || n.title === ACT) && !(n.details && n.details.tehsil));
+        if (signUps.length) {
+            const User = require('../models/User');
+            const { accountDetails } = require('../utils/notificationUtils');
+            const ids = [...new Set(signUps.map(uidOf).filter(Boolean))];
+            const users = await User.find({ userId: { $in: ids } }).select('userId userName mobileNumber tehsilAccess activeTehsil subscriptionType startDate createdAt').lean();
+            const byId = new Map(users.map((u) => [u.userId, u]));
+            for (const n of signUps) {
+                const u = byId.get(uidOf(n));
+                if (u) n.details = { ...accountDetails(u), ...(n.title === ACT ? { activatedAt: n.createdAt } : {}) };
+            }
+        }
+        const activated = new Set(notifs.filter((n) => n.title === ACT).map((n) => (n.details && n.details.userId) || uidOf(n)));
+        for (const n of notifs) {
+            if (n.title === ACT && n.details && !n.details.createdAt) {
+                const reg = notifs.find((r) => r.title === REG && ((r.details && r.details.userId) || uidOf(r)) === ((n.details && n.details.userId) || uidOf(n)));
+                if (reg) n.details.createdAt = reg.createdAt;
+            }
+            if (n.title === ACT && n.details) n.message = n.message.replace(' activated their account.', ' registered and activated their account.');
+        }
+        const visible = notifs.filter((n) => !(n.title === REG && activated.has((n.details && n.details.userId) || uidOf(n))));
+        const notifications = visible.map(n => ({
             id: n._id.toString(),
             type: n.type,
             title: n.title,

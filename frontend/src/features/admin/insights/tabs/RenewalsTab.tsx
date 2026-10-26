@@ -61,7 +61,7 @@ function RenewalsTab({
       </div>
 
       <ResponsiveContainer width="100%" height={300}>
-        <ComposedChart data={data} margin={{ top: 15, right: 5, left: -25, bottom: isSmall ? 12 : 5 }}>
+        <ComposedChart data={data} margin={{ top: 28, right: 5, left: -25, bottom: isSmall ? 12 : 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey={isDaily ? 'date' : 'label'}
@@ -92,7 +92,7 @@ function RenewalsTab({
                 const text = `${BUCKET_WORD[opt.granularity] || ''} Avg: Rs. ${formatNumber(average)}`;
                 const w = text.length * 6 + 12;
                 const x = viewBox.x + (viewBox.width - w) / 2;
-                const y = viewBox.y - 20 < 2 ? viewBox.y + 4 : viewBox.y - 20;
+                const y = 2; // centre top of the chart (above the plot area), not on the line
                 return (
                   <g>
                     <rect x={x} y={y} width={w} height={17} rx={8} fill="#ffffff" fillOpacity={0.92} stroke={AVG_COLOR} strokeWidth={1} />
