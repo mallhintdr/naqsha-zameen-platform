@@ -1,4 +1,4 @@
-import { House, RefreshCw } from 'lucide-react';
+import { ChartColumn, House, RefreshCw, UserCog, UserPen } from 'lucide-react';
 import * as RTabs from '@radix-ui/react-tabs';
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from './cn';
@@ -156,5 +156,27 @@ export function RefreshIconButton({ onClick, loading }: { onClick: () => void; l
     <button type="button" className="icon-btn" title="Refresh" aria-label="Refresh" onClick={onClick} disabled={loading}>
       <RefreshCw size={16} className={loading ? 'animate-spin' : undefined} />
     </button>
+  );
+}
+
+/**
+ * Quick links between admin pages (top right): Home, Insights, Users, Sub-admins.
+ * The page you are on is left out.
+ */
+export function AdminNavIcons({ current, navigate }: { current?: 'stats' | 'users' | 'subadmins'; navigate: (to: string) => void }) {
+  const items = [
+    { key: 'home', to: '/', label: 'Home (map)', Icon: House },
+    { key: 'stats', to: '/stats', label: 'Insights', Icon: ChartColumn },
+    { key: 'users', to: '/users', label: 'Edit users (User Management)', Icon: UserPen },
+    { key: 'subadmins', to: '/admin/subadmins', label: 'Sub-admins', Icon: UserCog },
+  ].filter((i) => i.key !== current);
+  return (
+    <>
+      {items.map(({ key, to, label, Icon }) => (
+        <button key={key} type="button" className="icon-btn" title={label} aria-label={label} onClick={() => navigate(to)}>
+          <Icon size={17} />
+        </button>
+      ))}
+    </>
   );
 }

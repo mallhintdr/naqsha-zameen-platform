@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router';
 import { Cog, Inbox, Tags, Trophy, UserCog } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, PieChart, Pie, Cell } from 'recharts';
-import { Alert, Button, HomeIconButton, Spinner, StatTile, cn, type Tone } from '@/shared/ui';
+import { Alert, Button, AdminNavIcons, Spinner, StatTile, cn, type Tone } from '@/shared/ui';
 import { api, errText, rs, SUBADMIN_STATUS } from '@/features/subadmin/subAdminApi';
 import { COLORS, Panel } from '@/features/admin/insights/statsUtils';
 import { RequestsTable, StatusBadge, axisTick, tabTitle } from './shared';
@@ -333,7 +333,7 @@ export default function AdminSubAdminConsolePage() {
     <div className="page stats-page">
       <div className="mb-2 flex items-start justify-between gap-2">
         <h2 className="page-title m-0">Sub-admins</h2>
-        <div className="page-icons"><HomeIconButton onClick={() => navigate('/')} /></div>
+        <div className="page-icons"><AdminNavIcons navigate={navigate} current="subadmins" /></div>
       </div>
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">

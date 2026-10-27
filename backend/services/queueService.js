@@ -77,6 +77,8 @@ const initQueue = () => {
             } else if (job.name === 'flushHeartbeats') {
                 const { flushHeartbeats } = require('../controllers/profileController');
                 await flushHeartbeats();
+            } else if (job.name === 'multiDeviceWarnings') {
+                await require('./multiDeviceWarnings').runMultiDeviceWarnings();
             } else if (job.name.startsWith('subadmin:')) {
                 const jobs = require('./subAdminJobs');
                 const fn = { 'subadmin:closeBills': jobs.closeBills, 'subadmin:dailyEmails': jobs.dailyEmails, 'subadmin:reminders': jobs.reminders, 'subadmin:creditChecks': jobs.creditChecks }[job.name];
@@ -106,6 +108,7 @@ const initQueue = () => {
 
         // Sub-admin billing (Asia/Karachi times). Each job is idempotent.
         tasksQueue.add('subadmin:closeBills', {}, { repeat: { pattern: '0 0 * * *', tz: 'Asia/Karachi' } });
+        tasksQueue.add('multiDeviceWarnings', {}, { repeat: { pattern: '0 11 * * *', tz: 'Asia/Karachi' } });
         tasksQueue.add('subadmin:dailyEmails', {}, { repeat: { pattern: '10 0 * * *', tz: 'Asia/Karachi' } });
         tasksQueue.add('subadmin:reminders', {}, { repeat: { pattern: '0 10 * * *', tz: 'Asia/Karachi' } });
         tasksQueue.add('subadmin:creditChecks', {}, { repeat: { pattern: '5 * * * *', tz: 'Asia/Karachi' } });

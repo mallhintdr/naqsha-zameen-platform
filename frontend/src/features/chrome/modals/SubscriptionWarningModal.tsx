@@ -153,6 +153,13 @@ export default function SubscriptionWarningModal({ show, onHide, warningContent 
             <span>{warningContent.message}</span>
           </div>
 
+          {(u.ipMisuse?.count30 || 0) >= 4 && (
+            <div role="alert" className="rounded-md border border-[#f5c2c7] bg-[#f8d7da] px-2 py-1.5 text-[0.78rem] leading-[1.35] text-[#842029]">
+              <b>Used on {u.ipMisuse.count30} devices in 30 days.</b> Using one account on multiple devices is against the Terms of Service and the account can be blocked.
+              Additional devices are available for an additional payment per device.
+            </div>
+          )}
+
           {type === 'expiring-soon' && Number.isFinite(days) && (
             <div className="flex justify-center">
               <span

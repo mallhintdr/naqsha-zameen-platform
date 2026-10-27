@@ -5,7 +5,7 @@ import { BarChart3, Globe, LogIn, MapPinned, Network, RefreshCw, TriangleAlert, 
 import { api, errText, isCancel } from '@/shared/api/client';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { UserLocationModal } from '@/features/users/LocationComponents';
-import { Alert, Badge, HomeIconButton, Modal, RefreshIconButton, Spinner, Tabs } from '@/shared/ui';
+import { Alert, Badge, AdminNavIcons, Modal, RefreshIconButton, Spinner, Tabs } from '@/shared/ui';
 import { bucketRenewalsByGranularity, formatDateTime, getIPGeolocation, getRenewalViewConfig } from './statsUtils';
 
 const OverviewTab = lazy(() => import('./tabs/OverviewTab'));
@@ -319,7 +319,7 @@ export default function InsightsPage() {
         </div>
         <div className="page-icons">
           <RefreshIconButton onClick={() => setRefreshKey((k) => k + 1)} loading={loading} />
-          <HomeIconButton onClick={() => navigate('/')} />
+          <AdminNavIcons navigate={navigate} current="stats" />
         </div>
       </div>
 

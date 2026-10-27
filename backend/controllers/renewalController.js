@@ -33,6 +33,11 @@ exports.createRenewalToken = async (req, res) => {
 
         // Tell the provider (the customer's sub-admin, or the admin) with an action
         // button that opens the request; the WhatsApp message is still sent by the app.
+        // Multi-device use: warn the customer, and show the device count to the provider.
+        let devices = 0;
+        try { devices = (await require('../services/deviceTracker').usageForOne(user.toObject ? user.toObject() : user))?.count30 || 0; } catch { /* optional */ }
+        const { MULTI_DEVICE_LIMIT, multiDeviceMessage } = require('../services/multiDeviceWarnings');
+        const multiDevice = devices >= MULTI_DEVICE_LIMIT;
         // If the customer taps again, the open notification is pointed at the new link
         // instead of sending another one (it is hidden once the customer is renewed).
         try {
@@ -48,7 +53,7 @@ exports.createRenewalToken = async (req, res) => {
                 const snap = await require('../services/customerSnapshot').customerSnapshot(user.userId);
                 const title = `${requestType} · ${user.userId}`;
                 const message = `${user.subscriptionType || 'Plan'}${snap?.daysLeft ? ` · ${snap.daysLeft}d left` : ' · expired'}`;
-                const details = { kind: 'renewal', plan: snap?.plan, currentMouzas: snap?.mouzaCount || 0, lastFeePaid: snap?.lastFeePaid || 0, daysLeft: snap?.daysLeft || 0, endDate: snap?.endDate };
+                const details = { kind: 'renewal', plan: snap?.plan, currentMouzas: snap?.mouzaCount || 0, lastFeePaid: snap?.lastFeePaid || 0, daysLeft: snap?.daysLeft || 0, endDate: snap?.endDate, ...(devices ? { devices30: devices } : {}) };
                 if (user.managedBy) sendNotification(user.managedBy, { type: 'subscription', title, message, action, replyTo: user.userId, details }).catch(() => {});
                 else notifyAdmins({ type: 'subscription', title, message, action, replyTo: user.userId, details }).catch(() => {});
             }
@@ -56,7 +61,7 @@ exports.createRenewalToken = async (req, res) => {
             logger.warn('Renewal request notification failed', { error: e.message, userId: user.userId });
         }
 
-        res.json({ token, deepLink, requestType, expiresAt, payFirst, message: payFirstMessage });
+        res.json({ token, deepLink, requestType, expiresAt, payFirst, message: payFirstMessage, devices30: devices, multiDevice, multiDeviceMessage: multiDevice ? multiDeviceMessage(devices) : undefined });
     } catch (err) {
         logger.error('createRenewalToken error:', { error: err.message, stack: err.stack, userId: req.params.userId });
         res.status(500).json({ message: 'Failed to create renewal token' });

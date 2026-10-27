@@ -569,6 +569,8 @@ const startServer = async () => {
       // Scheduled tasks. JOBS_ENABLED=false (parallel test copy sharing the production
       // database) runs none of them, so nothing is purged, billed or emailed twice.
       logger.info(`Background jobs: ${JOBS_ENABLED ? 'ON' : 'OFF'} (pid ${process.pid}, pm2 instance ${process.env.NODE_APP_INSTANCE ?? '-'})`);
+      // Daily multi-device warnings on a copy without background jobs (MULTI_DEVICE_WARNINGS=on).
+      if (!JOBS_ENABLED) require('./services/multiDeviceWarnings').startMultiDeviceTimer();
       if (JOBS_ENABLED) {
         // Run initial DB hygiene
         const { runCleanupTasks } = require('./utils/dbHygiene');

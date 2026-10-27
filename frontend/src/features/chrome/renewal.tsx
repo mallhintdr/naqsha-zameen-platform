@@ -19,11 +19,15 @@ export async function sendRenewalRequest(user: any): Promise<void> {
 
   let deepLink = '';
   let payFirst = false;
+  let devices = 0;
   try {
     const { data } = await api.post(`/api/users/${user.userId}/renewal-token`, {});
     deepLink = data?.deepLink || '';
     payFirst = !!data?.payFirst;
     if (payFirst && data?.message) await dialogs.alert(data.message);
+    devices = Number(data?.devices30) || 0;
+    // Using the account on several devices is against the terms: tell the customer before renewing.
+    if (data?.multiDevice && data?.multiDeviceMessage) await dialogs.alert(data.multiDeviceMessage);
   } catch (e) {
     console.warn('Could not generate deep link:', e);
   }
@@ -36,7 +40,8 @@ export async function sendRenewalRequest(user: any): Promise<void> {
     `*User ID:* ${user.userId}\n` +
     `*Tehsil:* ${tehsil}\n` +
     `*No of Mouza:* ${mouzaCount}\n` +
-    `*Subscription:* ${subType}\n\n` +
+    `*Subscription:* ${subType}\n` +
+    (devices >= 4 ? `*Devices used (30 days):* ${devices}\n` : '') + '\n' +
     `Please pay the subscription fee and share the payment receipt screenshot here to subscribe to the services.` +
     adminSection;
 

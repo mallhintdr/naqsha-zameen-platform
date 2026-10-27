@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent,
 import { useNavigate } from 'react-router';
 import { Eye, EyeOff, MousePointer, Receipt, ShieldHalf, UserCircle, X } from 'lucide-react';
 import { api } from '@/shared/api/client';
-import { Badge, Spinner, toast, cn, HomeIconButton } from '@/shared/ui';
+import { Badge, Spinner, toast, cn, AdminNavIcons } from '@/shared/ui';
 import { fetchConsolidatedTehsils, fetchMauzas } from '@/shared/lib/mouzaApi';
 import { formatPhoneNumber, uniqSort } from '@/shared/lib/formUtils';
 import { getCurrentDate, subscriptionOptions } from '@/shared/lib/userUtils';
@@ -311,7 +311,7 @@ export default function AdminRegistrationPage() {
 
       <div className="mb-6 flex items-center justify-between gap-2 border-b border-[#dee2e6] pb-2">
         <h3 className="m-0 text-[1.5rem] font-bold text-[#0A2540] max-sm:text-[1.25rem]">Admin User Registration</h3>
-        <div className="page-icons"><HomeIconButton onClick={() => navigate('/')} /></div>
+        <div className="page-icons"><AdminNavIcons navigate={navigate} /></div>
       </div>
 
       <form onSubmit={handleSubmit}>

@@ -44,6 +44,7 @@ function NotifDetails({ d }: { d: any }) {
     d.daysLeft !== undefined ? ['Days left', d.daysLeft] : null,
     d.endDate ? ['Ends', fmtDate(d.endDate)] : null,
     d.mobile ? ['Mobile', d.mobile] : null,
+    d.devices30 ? ['Devices (30 days)', d.devices30, d.devices30 >= 4 ? '#b91c1c' : undefined] : null,
     d.createdAt ? ['Created', fmtDateTime(d.createdAt)] : null,
     d.activatedAt ? ['Activated', fmtDateTime(d.activatedAt), '#166534'] : null,
     d.note ? ['Note', d.note] : null,
