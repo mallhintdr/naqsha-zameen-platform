@@ -4,6 +4,7 @@ import { Bell, ChevronDown, ChevronUp, CircleCheck, KeyRound, ShieldAlert } from
 import { Modal, Spinner } from '@/shared/ui';
 import { api } from '@/shared/api/client';
 import { ChromeButton, profileHeader } from './shared';
+import WaText from '../WaText';
 
 /* ---------------- ErrorModal ---------------- */
 export function ErrorModal({ show, onHide, errorModal }: { show: boolean; onHide: () => void; errorModal: any }) {
@@ -214,7 +215,7 @@ export function RealtimeNotificationModal({ show, onHide, realtimeNotification }
       <div className="mb-3 flex justify-center text-[#38ef7d]">
         <CircleCheck size={48} />
       </div>
-      <h6 className="font-semibold text-[#2c3e50]">{realtimeNotification?.message || 'Your account has been updated successfully.'}</h6>
+      <h6 className="font-normal text-[#2c3e50]" style={{ whiteSpace: 'pre-wrap' }}><WaText text={realtimeNotification?.message || 'Your account has been updated successfully.'} /></h6>
       <p className="mt-2 text-[0.75rem] text-[#6c757d]">Changes take effect immediately.</p>
     </Modal>
   );

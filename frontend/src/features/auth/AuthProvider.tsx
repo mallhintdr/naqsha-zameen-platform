@@ -43,6 +43,8 @@ export interface AppNotification {
   /** What answered the request, e.g. { label: 'Renewed', at, plan }. */
   outcome?: { label: string; at: string; plan?: string };
   replyTo?: string;
+  /** When the admin / sub-admin replied to the customer from this notification. */
+  repliedAt?: string;
   details?: any;
 }
 export interface ModalError {
@@ -143,6 +145,7 @@ interface AuthValue {
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   fetchUserProfile: () => Promise<User | null>;
   markNotificationAsRead: (id: string) => Promise<void>;
+  markNotificationReplied: (id: string) => void;
   markAllNotificationsAsRead: () => Promise<void>;
   clearNotifications: () => Promise<void>;
 }
@@ -242,7 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setNotifications((prev) => {
           const ids = new Set(prev.map((n) => n.id || n._id));
           const hasNew = data.notifications.some((n: any) => !ids.has(n.id || n._id));
-          const stateKey = (l: any[]) => l.map((n) => `${n.id || n._id}:${n.actionDone ? 1 : 0}:${n.read ? 1 : 0}`).join(',');
+          const stateKey = (l: any[]) => l.map((n) => `${n.id || n._id}:${n.actionDone ? 1 : 0}:${n.read ? 1 : 0}:${n.repliedAt || ''}`).join(',');
           if (!hasNew && prev.length === data.notifications.length && stateKey(prev) === stateKey(data.notifications)) return prev;
           return data.notifications;
         });
@@ -498,6 +501,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNotifications((p) => p.map((n) => (n.id === id ? { ...n, read: true } : n)));
     } catch {}
   }, []);
+  const markNotificationReplied = useCallback((id: string) => {
+    const at = new Date().toISOString();
+    setNotifications((p) => p.map((n) => ((n.id || n._id) === id ? { ...n, read: true, repliedAt: at } : n)));
+  }, []);
   const markAllNotificationsAsRead = useCallback(async () => {
     try {
       await api.post('/api/notifications/read-all', {});
@@ -538,10 +545,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       changePassword,
       fetchUserProfile,
       markNotificationAsRead,
+      markNotificationReplied,
       markAllNotificationsAsRead,
       clearNotifications,
     }),
-    [user, loading, error, modalError, warning, needsEmail, ipMisuse, notifications, realtimeNotification, login, logout, switchAccount, loginAs, clearAppData, setActiveTehsil, changePassword, fetchUserProfile, markNotificationAsRead, markAllNotificationsAsRead, clearNotifications],
+    [user, loading, error, modalError, warning, needsEmail, ipMisuse, notifications, realtimeNotification, login, logout, switchAccount, loginAs, clearAppData, setActiveTehsil, changePassword, fetchUserProfile, markNotificationAsRead, markNotificationReplied, markAllNotificationsAsRead, clearNotifications],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

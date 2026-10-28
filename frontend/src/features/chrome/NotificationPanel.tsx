@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { fmtDate, fmtDateTime, rs } from '@/shared/lib/format';
+import WaText from './WaText';
 import { useChromeStore } from './chromeStore';
 
 const NOTIF_FILTERS: [string, string][] = [
@@ -177,7 +178,7 @@ export default function NotificationPanel({ onClose, onProfile }: { onClose: () 
                       className="m-0 min-w-0 flex-1 break-words text-[0.78rem] leading-[1.3] text-[#4a4a4a]"
                       style={open ? { whiteSpace: 'pre-wrap' } : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
                     >
-                      {notif.message}
+                      <WaText text={notif.message} />
                     </p>
                     {hasMore && (
                       <button
@@ -207,8 +208,13 @@ export default function NotificationPanel({ onClose, onProfile }: { onClose: () 
                           <ExternalLink size={11} />{notif.action.label || 'Open'}
                         </button>
                       ))}
-                    {/* Once a renewal request is answered there is nothing to reply to. */}
-                    {notif.replyTo && !(notif.actionDone && notif.action?.kind === 'renewal') && ['admin', 'subadmin'].includes(user?.userType || '') && (
+                    {/* Once replied to (or a renewal request is answered) there is nothing to reply to. */}
+                    {notif.replyTo && notif.repliedAt && ['admin', 'subadmin'].includes(user?.userType || '') && (
+                      <span className="mt-1 inline-flex items-center gap-1 text-[0.7rem] font-semibold text-[#16a34a]">
+                        <CheckCheck size={11} />Replied on {fmtDateTime(notif.repliedAt)}
+                      </span>
+                    )}
+                    {notif.replyTo && !notif.repliedAt && !(notif.actionDone && notif.action?.kind === 'renewal') && ['admin', 'subadmin'].includes(user?.userType || '') && (
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); markNotificationAsRead(nid); onClose(); setReplyFor(notif); }}

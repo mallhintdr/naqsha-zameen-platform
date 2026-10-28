@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Reply, Send } from 'lucide-react';
 import { api } from '@/shared/api/client';
 import { Modal, Spinner } from '@/shared/ui';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { ChromeButton, profileHeader } from './shared';
 
 const BORDER = '1px solid #64748b';
@@ -46,6 +47,33 @@ function templates(info: any, amount: string) {
   ].map((t) => ({ ...t, text: wrap(c, t.body, info.signOff) }));
 }
 
+/** Copies the WhatsApp text (stars kept so WhatsApp shows bold). Falls back to a hidden textarea
+ *  when the Clipboard API is blocked (older phones, focus lost). */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* fall through */
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 export default function ReplyModal({ notif, onHide }: { notif: any; onHide: () => void }) {
   const [info, setInfo] = useState<any>(null);
   const [amount, setAmount] = useState('');
@@ -54,6 +82,7 @@ export default function ReplyModal({ notif, onHide }: { notif: any; onHide: () =
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const { markNotificationReplied } = useAuth();
 
   useEffect(() => {
     if (!notif) return;
@@ -82,17 +111,14 @@ export default function ReplyModal({ notif, onHide }: { notif: any; onHide: () =
   const send = async () => {
     setBusy(true);
     setError(null);
-    let copied = false;
+    // Copy first, while the click still counts as a user action.
+    const copied = await copyText(text);
     try {
-      await navigator.clipboard.writeText(text);
-      copied = true;
-    } catch {
-      /* clipboard blocked */
-    }
-    try {
-      const { data } = await api.post(`/api/notifications/${notif.id || notif._id}/reply`, { message: text });
-      setDone(`${data.message} ${copied ? 'The message is copied for WhatsApp.' : 'Copy the message above for WhatsApp.'}`);
-      setTimeout(onHide, 1800);
+      const id = notif.id || notif._id;
+      const { data } = await api.post(`/api/notifications/${id}/reply`, { message: text });
+      markNotificationReplied(id);
+      setDone(`${data.message} ${copied ? 'The message is copied: paste it in WhatsApp.' : 'Copying was blocked: select the message above and copy it for WhatsApp.'}`);
+      if (copied) setTimeout(onHide, 1800);
     } catch (e: any) {
       setError(e?.response?.data?.message || e.message);
     } finally {

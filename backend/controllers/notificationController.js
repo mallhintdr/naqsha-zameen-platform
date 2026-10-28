@@ -50,7 +50,8 @@ exports.getNotifications = async (req, res) => {
             replyTo: n.replyTo || undefined,
             details: n.details || undefined,
             actionDone: !!n.actionDone,
-            outcome: n.outcome || undefined
+            outcome: n.outcome || undefined,
+            repliedAt: (n.lastReply && n.lastReply.at) || undefined
         }));
         res.json({ notifications });
     } catch (error) {
@@ -169,7 +170,7 @@ exports.replyToNotification = async (req, res) => {
         if (req.user.userType === 'subadmin') {
             notifyAdmins({ type: 'info', title: `[${req.user.userId}] messaged a customer`, message: `To ${customer.userId}: ${message.slice(0, 200)}` }).catch(() => {});
         }
-        res.json({ message: `Message sent to ${customer.userName || customer.userId}.` });
+        res.json({ message: `Message sent to ${customer.userName || customer.userId}.`, repliedAt: new Date() });
     } catch (error) {
         logger.error('replyToNotification error:', { error: error.message });
         res.status(500).json({ message: 'Failed to send the message' });
