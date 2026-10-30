@@ -120,9 +120,12 @@ export function deriveRelations(c: Case): Map<string, Relation> {
       continue;
     }
 
-    // Agnatic descendants and agnatic collaterals (through males only)
+    // Agnatic descendants and agnatic collaterals (through males only). The deceased's own child is
+    // a son / daughter whether the deceased is the father or the mother; below that the line runs
+    // through males (son's son, son's daughter...).
     const line = agnaticLine(g, p.id);
-    const k = line.indexOf(D);
+    let k = line.indexOf(D);
+    if (k < 0) { const j = line.findIndex((x) => g.mother(x) === D); if (j >= 0) k = j + 1; }
     if (k >= 1) {
       const key = k === 1 ? (p.gender === 'M' ? 'son' : 'daughter') : `${'sons-'.repeat(k - 1)}${p.gender === 'M' ? 'son' : 'daughter'}`;
       out.set(p.id, { ...base, key, kind: 'agnatic-descendant', level: k });

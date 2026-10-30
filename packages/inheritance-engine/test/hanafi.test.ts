@@ -266,3 +266,30 @@ test("MFLO s.4, policy 'whole': only daughters take the parent's whole share", (
   const r = compute(b.build());
   assert.deepEqual([share(r, s1), share(r, gd)], ['1/2', '1/2']);
 });
+
+// A woman's children are her sons and daughters too (not distant kindred through a female).
+test('female deceased: husband, son, daughter', () => {
+  const b = new CaseBuilder('sunni-hanafi', { gender: 'F' });
+  const h = b.spouse(), s = b.child('M', {}, h), d = b.child('F', {}, h);
+  const r = compute(b.build());
+  assert.deepEqual([share(r, h), share(r, s), share(r, d)], ['1/4', '1/2', '1/4']);
+});
+
+test("female deceased, MFLO s.4: a predeceased daughter's son takes her share", () => {
+  const b = new CaseBuilder('sunni-hanafi', { gender: 'F' });
+  const h = b.spouse(), s = b.child('M', {}, h);
+  const d = b.child('F', { alive: false, dateOfDeath: '2020-01-01' }, h);
+  const gs = b.childOf(d, 'M');
+  const r = compute(b.build());
+  assert.deepEqual([share(r, h), share(r, s), share(r, gs)], ['1/4', '1/2', '1/4']);
+  assert.equal(status(r, gs), 'substituted-s4');
+});
+
+test("female deceased without s.4: her son's son is an agnatic heir", () => {
+  const b = new CaseBuilder('sunni-hanafi', { gender: 'F' }, '2026-01-01', { applyMFLOs4: false });
+  const h = b.spouse();
+  const s = b.child('M', { alive: false, dateOfDeath: '2020-01-01' }, h);
+  const ss = b.childOf(s, 'M');
+  const r = compute(b.build());
+  assert.deepEqual([share(r, h), share(r, ss)], ['1/4', '3/4']);
+});
