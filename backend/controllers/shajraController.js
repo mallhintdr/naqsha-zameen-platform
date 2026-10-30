@@ -84,8 +84,14 @@ if (process.env.SHAJRA_PDF_WARMUP !== 'false' && process.env.NODE_ENV !== 'test'
 
 // Only what the print view needs: page, its scripts / styles, the API and the Urdu font.
 const BLOCK = /\.(png|jpe?g|webp|avif|gif|svg|mp4|ico)(\?|$)|googletagmanager|google-analytics|googlesyndication|doubleclick|\/api\/visit\.gif/i;
+const MAX_CONCURRENT_PDF = Number(process.env.SHAJRA_MAX_CONCURRENT_PDF) || 2;
+let activePdfRenders = 0;
 
 exports.pdf = async (req, res) => {
+    if (activePdfRenders >= MAX_CONCURRENT_PDF) {
+        return res.status(429).json({ message: 'PDF generator is busy. Please try again in a few seconds or use Print / Save PDF.' });
+    }
+    activePdfRenders++;
     let page;
     try {
         const { text, policyVersion } = await validateCase(req.body?.case);
@@ -109,6 +115,7 @@ exports.pdf = async (req, res) => {
         logger.error('shajra pdf failed', { error: e.message });
         res.status(500).json({ message: 'Could not create the PDF. Please use Print / Save PDF instead.' });
     } finally {
+        activePdfRenders--;
         if (page) page.close().catch(() => {});
     }
 };

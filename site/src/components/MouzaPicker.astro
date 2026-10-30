@@ -6,16 +6,16 @@ import { SITE } from '../site';
 interface Props { tehsil?: string }
 const { tehsil = '' } = Astro.props;
 ---
-<form class="mouza-picker card mx-auto mt-10 max-w-3xl text-left" data-dashboard={SITE.dashboardUrl} data-tehsil={tehsil} autocomplete="off">
+<form class="mouza-picker card mx-auto mt-8 max-w-3xl text-left" data-dashboard={SITE.dashboardUrl} data-tehsil={tehsil} autocomplete="off">
   <div class="grid gap-4 sm:grid-cols-2">
     <div class="relative">
       <label class="mb-1.5 block text-sm font-semibold text-slate-200" for="mp-tehsil">Tehsil</label>
-      <input id="mp-tehsil" class="mp-input" placeholder="Type to search tehsil…" value={tehsil} role="combobox" aria-expanded="false" aria-controls="mp-tehsil-list" />
+      <input id="mp-tehsil" class="mp-input" placeholder="Type to search tehsil…" value={tehsil} role="combobox" aria-expanded="false" aria-controls="mp-tehsil-list" aria-autocomplete="list" />
       <ul id="mp-tehsil-list" class="mp-list" role="listbox" hidden></ul>
     </div>
     <div class="relative">
       <label class="mb-1.5 block text-sm font-semibold text-slate-200" for="mp-mouza">Mouza / Chak</label>
-      <input id="mp-mouza" class="mp-input" placeholder="Choose a tehsil first" disabled role="combobox" aria-expanded="false" aria-controls="mp-mouza-list" />
+      <input id="mp-mouza" class="mp-input" placeholder="Choose a tehsil first" disabled role="combobox" aria-expanded="false" aria-controls="mp-mouza-list" aria-autocomplete="list" />
       <ul id="mp-mouza-list" class="mp-list" role="listbox" hidden></ul>
     </div>
   </div>
@@ -30,10 +30,11 @@ const { tehsil = '' } = Astro.props;
   .mp-input { width: 100%; border-radius: 0.75rem; border: 1px solid rgb(255 255 255 / 0.15); background: rgb(255 255 255 / 0.06); padding: 0.7rem 0.9rem; color: #fff; font-size: 1rem; outline: none; }
   .mp-input:focus { border-color: rgb(103 232 249 / 0.6); }
   .mp-input:disabled { opacity: 0.5; }
-  .mp-list { position: absolute; z-index: 40; left: 0; right: 0; top: 100%; margin-top: 4px; max-height: min(400px, 60vh); overflow-y: auto; border-radius: 0.75rem; border: 1px solid rgb(255 255 255 / 0.12); background: #0b1230; padding: 4px; box-shadow: 0 20px 40px rgb(0 0 0 / 0.5); }
-  .mp-list li { padding: 0.5rem 0.75rem; border-radius: 0.5rem; color: #e2e8f0; cursor: pointer; }
-  .mp-list li:hover { background: rgb(103 232 249 / 0.15); color: #fff; }
-  .mp-list .mp-empty { color: #94a3b8; cursor: default; }
+  .mp-list { position: absolute; z-index: 40; left: 0; right: 0; top: 100%; margin-top: 4px; max-height: min(360px, 55vh); overflow-y: auto; border-radius: 0.75rem; border: 1px solid rgb(255 255 255 / 0.12); background: #0b1230; padding: 4px; box-shadow: 0 20px 40px rgb(0 0 0 / 0.5); }
+  .mp-list li[role='option'] { padding: 0.5rem 0.75rem; border-radius: 0.5rem; color: #e2e8f0; cursor: pointer; }
+  .mp-list li[role='option']:hover,
+  .mp-list li[role='option'].mp-active { background: rgb(103 232 249 / 0.18); color: #fff; }
+  .mp-list .mp-empty { padding: 0.5rem 0.75rem; color: #94a3b8; font-size: 0.875rem; cursor: default; }
 </style>
 
 <script>
@@ -78,7 +79,8 @@ const { tehsil = '' } = Astro.props;
 
     const render = (list: HTMLUListElement, input: HTMLInputElement, items: string[], pick: (i: number) => void) => {
       const q = norm(input.value);
-      const hits = items.map((n, i) => [n, i] as const).filter(([n]) => !q || norm(n).includes(q)).slice(0, 200);
+      const allHits = items.map((n, i) => [n, i] as const).filter(([n]) => !q || norm(n).includes(q));
+      const hits = allHits.slice(0, 200);
       list.innerHTML = '';
       if (!hits.length) {
         const li = document.createElement('li');
@@ -86,12 +88,19 @@ const { tehsil = '' } = Astro.props;
         li.textContent = 'No match';
         list.appendChild(li);
       }
-      for (const [n, i] of hits) {
+      hits.forEach(([n, i], idx) => {
         const li = document.createElement('li');
         li.setAttribute('role', 'option');
+        if (idx === 0) li.classList.add('mp-active');
         li.textContent = n;
-        li.addEventListener('mousedown', (e) => { e.preventDefault(); pick(i); });
+        li.addEventListener('pointerdown', (e) => { e.preventDefault(); pick(i); });
         list.appendChild(li);
+      });
+      if (allHits.length > 200) {
+        const more = document.createElement('li');
+        more.className = 'mp-empty';
+        more.textContent = `Showing first 200 of ${allHits.length} — type to filter…`;
+        list.appendChild(more);
       }
       list.hidden = false;
       input.setAttribute('aria-expanded', 'true');
@@ -117,25 +126,47 @@ const { tehsil = '' } = Astro.props;
       render(tList, tIn, d.map((t) => t[0]), (i) => { chooseTehsil(d[i]); close(tList, tIn); mIn.focus(); showMouzas(); });
     };
 
-    tIn.addEventListener('focus', showTehsils);
+    tIn.addEventListener('focus', () => { close(mList, mIn); showTehsils(); });
     tIn.addEventListener('input', () => { if (tehsil && tIn.value !== tehsil[0]) chooseTehsil(null); showTehsils(); });
-    tIn.addEventListener('blur', () => setTimeout(() => close(tList, tIn), 150));
-    mIn.addEventListener('focus', showMouzas);
+    mIn.addEventListener('focus', () => { close(tList, tIn); showMouzas(); });
     mIn.addEventListener('input', () => { if (mouza && mIn.value !== mouza[0]) { mouza = null; update(); } showMouzas(); });
-    mIn.addEventListener('blur', () => setTimeout(() => close(mList, mIn), 150));
-    // Enter picks the first match; Escape closes the list.
+
+    // Close lists when clicking/tapping outside the picker (prevents premature close while touch-scrolling on mobile)
+    document.addEventListener('pointerdown', (e) => {
+      const target = e.target as Node | null;
+      if (!target || !form.contains(target)) {
+        close(tList, tIn);
+        close(mList, mIn);
+      }
+    });
+
+    // ArrowUp / ArrowDown navigation, Enter picks active option, Escape closes list.
     for (const [input, list] of [[tIn, tList], [mIn, mList]] as const) {
       input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
+        const opts = [...list.querySelectorAll<HTMLLIElement>('li[role=option]')];
+        if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && opts.length) {
           e.preventDefault();
-          list.querySelector('li[role=option]')?.dispatchEvent(new MouseEvent('mousedown'));
+          const cur = opts.findIndex((el) => el.classList.contains('mp-active'));
+          if (cur >= 0) opts[cur].classList.remove('mp-active');
+          const next = e.key === 'ArrowDown' ? (cur + 1) % opts.length : (cur - 1 + opts.length) % opts.length;
+          opts[next].classList.add('mp-active');
+          opts[next].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          (list.querySelector<HTMLLIElement>('li.mp-active') || opts[0])?.dispatchEvent(new PointerEvent('pointerdown'));
+        } else if (e.key === 'Escape') {
+          close(list, input);
         }
-        if (e.key === 'Escape') close(list, input);
       });
     }
-    // Tehsil pages pre-select their tehsil.
+
+    // Tehsil pages pre-select their tehsil, or ?q= query pre-fills search.
+    const urlQ = new URLSearchParams(window.location.search).get('q');
     if (form.dataset.tehsil) {
       load().then((d) => { const t = d.find((x) => x[0] === form.dataset.tehsil); if (t) chooseTehsil(t); });
+    } else if (urlQ) {
+      tIn.value = urlQ;
+      showTehsils();
     }
   }
 </script>

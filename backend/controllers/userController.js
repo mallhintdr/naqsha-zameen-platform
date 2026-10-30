@@ -990,7 +990,7 @@ exports.getBlockedUsers = async (req, res) => {
         const prefix = 'rl:login:';
         const redisClient = getRedisClient();
         if (redisClient && isRedisReady()) {
-            const keys = await redisClient.keys(`${prefix}*`);
+            const keys = []; let _c = '0'; do { const [nc, b] = await redisClient.scan(_c, 'MATCH', `${prefix}*`, 'COUNT', 100); _c = nc; if (b && b.length) keys.push(...b); } while (_c !== '0');
             for (const key of keys) {
                 const hitsVal = await redisClient.get(key);
                 const hits = parseInt(hitsVal, 10) || 0;

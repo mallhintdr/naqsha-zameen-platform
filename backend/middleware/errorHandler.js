@@ -1,4 +1,5 @@
 const logger = require('../utils/logger');
+const { isAllowedOrigin } = require('../utils/allowedOrigins');
 
 /**
  * Centralized error handler middleware
@@ -32,9 +33,9 @@ const errorHandler = (err, req, res, next) => {
         errorResponse.errors = err.errors;
     }
 
-    // Ensure CORS header is always present on error responses
+    // Ensure CORS header is only set for allowed origins
     const origin = req.headers.origin;
-    if (origin) {
+    if (origin && isAllowedOrigin(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
@@ -47,10 +48,8 @@ const errorHandler = (err, req, res, next) => {
  * 404 handler for undefined routes
  */
 const notFoundHandler = (req, res) => {
-    // Ensure CORS header is always present even on 404s so the browser
-    // can read the JSON error body instead of showing a silent CORS failure.
     const origin = req.headers.origin;
-    if (origin) {
+    if (origin && isAllowedOrigin(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Credentials', 'true');
     }

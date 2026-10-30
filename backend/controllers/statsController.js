@@ -302,20 +302,14 @@ exports.getOnlineUsers = async (req, res) => {
 
             const userIds = users.map(u => u.userId);
             const Session = require('../models/Session');
-            const allSessions = await Session.find({ userId: { $in: userIds } })
-                .sort({ start: -1 })
-                .lean();
+            const groupedSessions = userIds.length > 0 ? await Session.aggregate([
+                { $match: { userId: { $in: userIds } } },
+                { $sort: { start: -1 } },
+                { $group: { _id: '$userId', sessions: { $push: '$$ROOT' } } },
+                { $project: { sessions: { $slice: ['$sessions', 5] } } }
+            ]) : [];
 
-            const userSessionsMap = new Map();
-            allSessions.forEach(s => {
-                if (!userSessionsMap.has(s.userId)) {
-                    userSessionsMap.set(s.userId, []);
-                }
-                const userSess = userSessionsMap.get(s.userId);
-                if (userSess.length < 5) {
-                    userSess.push(s);
-                }
-            });
+            const userSessionsMap = new Map(groupedSessions.map(g => [g._id, g.sessions || []]));
 
             // Multi-use risk is counted by devices (30 days), not IP addresses.
             const usage = await require('../services/deviceTracker').usageFor(users.map(u => ({ ...u, userType: u.userType || 'user' })));
@@ -480,7 +474,7 @@ exports.getUserIpHistory = async (req, res) => {
         }
  
         const Session = require('../models/Session');
-        const sessions = await Session.find({ userId }).lean();
+        const sessions = await Session.find({ userId }).sort({ start: -1 }).limit(1000).lean();
  
         const ipMap = {};
         sessions.forEach(s => {

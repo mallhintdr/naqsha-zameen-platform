@@ -322,7 +322,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Heartbeat every 60 s
   useEffect(() => {
     if (!userId) return;
-    const send = () => api.post('/api/heartbeat', getDevicePayload()).catch(() => {});
+    const send = () => { if (document.visibilityState !== 'hidden') api.post('/api/heartbeat', getDevicePayload()).catch(() => {}); };
     send();
     const id = setInterval(send, 60000);
     return () => clearInterval(id);

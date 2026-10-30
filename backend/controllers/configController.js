@@ -21,12 +21,23 @@ exports.getConfig = async (req, res) => {
     }
 };
 
+const ALLOWED_CONFIG_KEYS = new Set([
+    'limitsEnabled',
+    'mouzaInvoicesEnabled',
+    'maintenanceMode',
+    'registrationOpen',
+    'defaultTrialHours',
+]);
+
 // Update a config (Admin only)
 exports.updateConfig = async (req, res) => {
     try {
-        const updates = req.body; // e.g. { limitsEnabled: false }
+        const updates = req.body && typeof req.body === 'object' ? req.body : {}; // e.g. { limitsEnabled: false }
         
         for (const [key, value] of Object.entries(updates)) {
+            if (!ALLOWED_CONFIG_KEYS.has(key)) {
+                return res.status(400).json({ error: `Unsupported configuration key: ${key}` });
+            }
             await SystemConfig.findOneAndUpdate(
                 { key },
                 { value },

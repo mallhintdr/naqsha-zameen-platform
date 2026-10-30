@@ -2,13 +2,23 @@
 // Anonymous page-view counter: loads a 1x1 image from the dashboard API
 // (GET /api/visit.gif?p=<page>), which works from any domain without CORS.
 // The backend counts unique visitors with its own cookie; no personal data is sent.
-// Page key: "home" for /, otherwise the path joined with "-" (e.g. services-rtk-survey).
+// Page key: "home" for /, bucketed for /maps/<tehsil>/<mouza> so SiteVisit.byPage
+// does not create 21,000+ distinct keys in a single MongoDB document.
 import { SITE } from '../site';
 ---
 <script is:inline define:vars={{ endpoint: SITE.visitsEndpoint }}>
   (function () {
     if (!endpoint || navigator.webdriver) return;
-    var page = location.pathname.replace(/^\/+|\/+$/g, '').replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40) || 'home';
+    var raw = location.pathname.replace(/^\/+|\/+$/g, '');
+    var parts = raw.split('/').filter(Boolean);
+    var page;
+    if (!parts.length) {
+      page = 'home';
+    } else if (parts[0] === 'maps' && parts.length >= 3) {
+      page = ('maps-' + parts[1]).replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40);
+    } else {
+      page = raw.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40) || 'home';
+    }
     var img = new Image(1, 1);
     img.referrerPolicy = 'no-referrer-when-downgrade';
     img.src = endpoint + '?p=' + encodeURIComponent(page) + '&t=' + Date.now();

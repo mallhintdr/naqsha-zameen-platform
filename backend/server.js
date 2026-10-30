@@ -239,12 +239,11 @@ function doubleCsrfProtection(req, res, next) {
     next();
 }
 
-// Paths exempted from CSRF: public registration, login, logout, impersonation, password reset, demo-access redirect, health, push subscribe (token-based), heartbeats
+// Paths exempted from CSRF: public registration, login, logout, password reset, demo-access redirect, health, heartbeats
 const CSRF_EXEMPT_PREFIXES = [
     '/register', '/api/register',
     '/login', '/api/login',
     '/logout', '/api/logout',
-    '/admin/login-as', '/api/admin/login-as',
     '/forgot-password', '/api/forgot-password',
     '/reset-password', '/api/reset-password',
     '/demo-access/', '/health', '/heartbeat', '/api/heartbeat',
@@ -370,6 +369,7 @@ const serveCaseInsensitiveStatic = (basePath, onFile = (req, res, file) => res.s
 };
 
   const jwtLib = require('jsonwebtoken');
+  const { getCachedAuthUser } = require('./middleware/authMiddleware');
 
   // Authenticate cookie token for static/range assets with token version validation
   const verifyAuthCookie = async (req, res, next) => {
@@ -381,14 +381,15 @@ const serveCaseInsensitiveStatic = (basePath, onFile = (req, res, file) => res.s
     try {
       const decoded = jwtLib.verify(token, process.env.SECRET_KEY);
       
-      // Perform token version verification against DB
-      const user = await User.findOne({ userId: decoded.userId }).select('tokenVersion').lean();
-      if (!user || decoded.tokenVersion !== (user.tokenVersion || 0)) {
+      // Perform token version verification via cached indexed lookup
+      const user = await getCachedAuthUser(decoded.userId);
+      if (!user || (decoded.tokenVersion !== undefined && decoded.tokenVersion !== (user.tokenVersion || 0))) {
         logger.warn('Access Denied: Invalidated token version', { ip: req.ip, path: req.path, userId: decoded.userId });
         return res.status(401).json({ message: 'Session expired. Please log in again.' });
       }
 
-      req.userId = decoded.userId;
+      req.userId = user.userId;
+      req.user = user;
       next();
     } catch (err) {
       logger.warn('Access Denied: Invalid token cookie', { ip: req.ip, path: req.path });
@@ -403,8 +404,7 @@ const serveCaseInsensitiveStatic = (basePath, onFile = (req, res, file) => res.s
   const { parseVectorPath } = require('./services/vectorAccess');
   const checkTehsilAccessForStatic = async (req, res, next) => {
     try {
-      const user = await User.findOne({ userId: req.userId })
-        .select('userId userType tehsilAccess tehsil mauzaList status subscriptionType startDate').lean();
+      const user = req.user || await getCachedAuthUser(req.userId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -568,16 +568,19 @@ const startServer = async () => {
 
       // Scheduled tasks. JOBS_ENABLED=false (parallel test copy sharing the production
       // database) runs none of them, so nothing is purged, billed or emailed twice.
-      logger.info(`Background jobs: ${JOBS_ENABLED ? 'ON' : 'OFF'} (pid ${process.pid}, pm2 instance ${process.env.NODE_APP_INSTANCE ?? '-'})`);
+      // Under PM2 cluster mode, only instance '0' (or standalone non-clustered process)
+      // starts in-process interval timers to prevent duplicate notifications across workers.
+      const isPrimaryWorker = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === '0';
+      logger.info(`Background jobs: ${JOBS_ENABLED ? 'ON' : 'OFF'} (pid ${process.pid}, pm2 instance ${process.env.NODE_APP_INSTANCE ?? '-'}, primary=${isPrimaryWorker})`);
       // Daily multi-device warnings on a copy without background jobs (MULTI_DEVICE_WARNINGS=on).
-      if (!JOBS_ENABLED) require('./services/multiDeviceWarnings').startMultiDeviceTimer();
-      if (JOBS_ENABLED) {
+      if (!JOBS_ENABLED && isPrimaryWorker) require('./services/multiDeviceWarnings').startMultiDeviceTimer();
+      if (JOBS_ENABLED && isPrimaryWorker) {
         // Run initial DB hygiene
         const { runCleanupTasks } = require('./utils/dbHygiene');
         runCleanupTasks();
 
         // Public sign-ups not verified within 24 hours are deleted (record, email,
-        // device). Checked at start-up and every hour; safe to run on every instance.
+        // device). Checked at start-up and every hour on the primary worker.
         const { purgeUnverifiedPublicUsers } = require('./services/unverifiedPurge');
         const purge = () => purgeUnverifiedPublicUsers().catch(err => logger.error('Unverified sign-up purge failed', { error: err.message }));
         purge();

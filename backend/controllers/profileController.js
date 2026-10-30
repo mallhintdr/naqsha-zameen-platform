@@ -120,6 +120,8 @@ exports.updateActiveTehsil = async (req, res) => {
 
 exports.updateEmail = async (req, res) => {
     try {
+        const { userId } = req.params;
+        const { email } = req.body || {};
         let emailVal = typeof email === 'string' ? email.trim() : email;
         if (emailVal === '') emailVal = undefined;
 
@@ -156,7 +158,7 @@ exports.heartbeat = async (req, res) => {
         if (!userId && req.cookies?.authToken) {
             try {
                 const jwt = require('jsonwebtoken');
-                const decoded = jwt.decode(req.cookies.authToken);
+                const decoded = jwt.verify(req.cookies.authToken, process.env.SECRET_KEY);
                 userId = decoded?.userId;
             } catch (_) {}
         }

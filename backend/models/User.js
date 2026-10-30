@@ -2,8 +2,6 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const { calculateDatesAndStatus } = require('../utils/dateUtils');
 
-
-
 const renewalEntrySchema = new mongoose.Schema({
     date: { type: Date, required: true },
     type: { type: String, required: true },
@@ -32,8 +30,6 @@ const userTehsilSchema = new mongoose.Schema({
     tempGrants: { type: [tempGrantSchema], default: [] }
 }, { _id: false });
 
-
-
 const pushSubscriptionSchema = new mongoose.Schema({
     endpoint: { type: String, required: true },
     keys: {
@@ -58,7 +54,7 @@ const userSchema = new mongoose.Schema({
         sparse: true,
         trim: true,
         lowercase: true,
-        match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
+        match: [/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, 'Please fill a valid email address']
     },
     tehsilAccess: { type: [userTehsilSchema], default: [] },
     activeTehsil: { type: String, default: '' },
@@ -125,7 +121,6 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Add indexes for performance
-// userSchema.index({ userId: 1 }); // Removed duplicate index (userId is already unique)
 userSchema.index({ userName: 1 });
 userSchema.index({ deviceId: 1 });
 userSchema.index({ status: 1 });
@@ -140,10 +135,6 @@ userSchema.index({ userName: 'text', userId: 'text' });
 userSchema.index({ managedBy: 1, status: 1 });
 userSchema.index({ 'activation.tokenHash': 1 }, { sparse: true });
 userSchema.index({ 'pendingEmail.tokenHash': 1 }, { sparse: true });
-
-
-
-
 
 // Common passwords to reject
 const COMMON_PASSWORDS = [
@@ -197,9 +188,6 @@ userSchema.pre('save', async function (next) {
             this.endDate = endDate;
             this.daysRemaining = daysRemaining;
             
-            // Only update status if it's not currently 'Pending' or 'PendingVerification'
-            // UNLESS an administrator has modified the subscription details on an existing user.
-            // For NEW users, we respect the 'Pending'/'PendingVerification' status if it was explicitly set.
             // Statuses a save must not overwrite unless the plan or start date changes
             // (a renewal of a suspended customer lifts the suspension).
             const HOLD_STATUSES = ['Pending', 'PendingVerification', 'AwaitingActivation', 'Suspended'];
@@ -212,7 +200,6 @@ userSchema.pre('save', async function (next) {
                 this.status = status;
             }
         }
-
 
         if (this.warnings && this.warnings.length > 30) {
             this.warnings = this.warnings.slice(-30);
@@ -228,6 +215,20 @@ userSchema.pre('save', async function (next) {
     } catch (error) {
         next(error);
     }
+});
+
+userSchema.post('save', function (doc) {
+    try {
+        const { invalidateAuthUser } = require('../middleware/authMiddleware');
+        if (doc && doc.userId) invalidateAuthUser(doc.userId);
+    } catch (_) {}
+});
+
+userSchema.post('findOneAndUpdate', function (doc) {
+    try {
+        const { invalidateAuthUser } = require('../middleware/authMiddleware');
+        if (doc && doc.userId) invalidateAuthUser(doc.userId);
+    } catch (_) {}
 });
 
 const User = mongoose.model('User', userSchema);

@@ -70,6 +70,11 @@ const siteLd = {
   name: SITE.brand,
   inLanguage: ['en', 'ur'],
   publisher: { '@id': `${SITE.url}/#organization` },
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${SITE.url}/maps/?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
 };
 const jsonLd = [orgLd, siteLd, breadcrumbLd, ...schema].filter(Boolean);
 ---
@@ -77,6 +82,7 @@ const jsonLd = [orgLd, siteLd, breadcrumbLd, ...schema].filter(Boolean);
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
@@ -202,8 +208,7 @@ const jsonLd = [orgLd, siteLd, breadcrumbLd, ...schema].filter(Boolean);
           <h2 class="text-sm font-semibold uppercase tracking-widest text-white">Services</h2>
           <ul class="mt-4 space-y-2 text-sm">
             {SERVICES.map((s) => <li><a class="text-slate-400 hover:text-cyan-300" href={`/services/${s.slug}/`}>{s.title}</a></li>)}
-            <li><a class="text-slate-400 hover:text-cyan-300" href="/dashboard/">Naqsha Zameen Dashboard</a></li>
-            <li><a class="text-slate-400 hover:text-cyan-300" href="/maps/">Mouza Maps by Tehsil</a></li>
+            <li><a class="text-slate-400 hover:text-cyan-300" href="/maps/">Mouza Maps &amp; Dashboard</a></li>
           </ul>
           <h2 class="mt-8 text-sm font-semibold uppercase tracking-widest text-white">Revenue Matters</h2>
           <ul class="mt-4 space-y-2 text-sm">

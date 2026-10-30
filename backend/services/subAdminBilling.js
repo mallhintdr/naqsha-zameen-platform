@@ -52,18 +52,8 @@ async function announceLine(subAdminId, { amount, userId, label }) {
     });
 }
 
-/**
- * Settles payments against bills oldest-first and returns the full position.
- * Pure calculation over the ledger; nothing is stored here.
- */
-async function computePosition(subAdmin, now = new Date()) {
-    const subAdminId = subAdmin.userId;
-    const [bills, payments, today] = await Promise.all([
-        SubAdminBill.find({ subAdminId }).sort({ day: 1 }).lean(),
-        SubAdminPayment.aggregate([{ $match: { subAdminId } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
-        todayTotal(subAdminId, now)
-    ]);
-    let available = payments[0]?.total || 0;
+function computePositionFromData(bills, paidTotal, today, now) {
+    let available = paidTotal || 0;
     // Bills with a negative total (net credits) add to what's available.
     for (const b of bills) if (b.total < 0) available += -b.total;
 
@@ -82,12 +72,11 @@ async function computePosition(subAdmin, now = new Date()) {
         }
     }
     const billedTotal = bills.reduce((a, b) => a + b.total, 0);
-    const paidTotal = payments[0]?.total || 0;
     return {
         billedTotal,
-        paidTotal,
-        balance: billedTotal - paidTotal + today.total,   // incl. today's open lines
-        closedBalance: billedTotal - paidTotal,
+        paidTotal: paidTotal || 0,
+        balance: billedTotal - (paidTotal || 0) + today.total,   // incl. today's open lines
+        closedBalance: billedTotal - (paidTotal || 0),
         advanceCredit: Math.max(0, available),
         overdue,
         dueNotOverdue,
@@ -95,6 +84,59 @@ async function computePosition(subAdmin, now = new Date()) {
         oldestUnpaid: oldestUnpaid ? { day: oldestUnpaid.day, dueAt: oldestUnpaid.dueAt } : null,
         allocations
     };
+}
+
+/**
+ * Settles payments against bills oldest-first and returns the full position.
+ * Pure calculation over the ledger; nothing is stored here.
+ */
+async function computePosition(subAdmin, now = new Date()) {
+    const subAdminId = subAdmin.userId;
+    const [bills, payments, today] = await Promise.all([
+        SubAdminBill.find({ subAdminId }).sort({ day: 1 }).lean(),
+        SubAdminPayment.aggregate([{ $match: { subAdminId } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+        todayTotal(subAdminId, now)
+    ]);
+    return computePositionFromData(bills, payments[0]?.total || 0, today, now);
+}
+
+/**
+ * Batched version of computePosition for an array of sub-admins (3 queries total instead of 3*N).
+ */
+async function computePositionsBulk(subAdmins, now = new Date()) {
+    const ids = subAdmins.map(s => s.userId);
+    if (ids.length === 0) return {};
+    const day = pkDay(now);
+    const [allBills, allPayments, allToday] = await Promise.all([
+        SubAdminBill.find({ subAdminId: { $in: ids } }).sort({ day: 1 }).lean(),
+        SubAdminPayment.aggregate([
+            { $match: { subAdminId: { $in: ids } } },
+            { $group: { _id: '$subAdminId', total: { $sum: '$amount' } } }
+        ]),
+        AccountEvent.aggregate([
+            { $match: { ownerAtEvent: { $in: ids }, billable: true, billDay: day } },
+            { $group: { _id: '$ownerAtEvent', total: { $sum: '$platformPrice' }, count: { $sum: 1 } } }
+        ])
+    ]);
+
+    const billsBySub = new Map();
+    for (const b of allBills) {
+        if (!billsBySub.has(b.subAdminId)) billsBySub.set(b.subAdminId, []);
+        billsBySub.get(b.subAdminId).push(b);
+    }
+    const paidBySub = new Map(allPayments.map(p => [p._id, p.total || 0]));
+    const todayBySub = new Map(allToday.map(t => [t._id, { day, total: t.total || 0, count: t.count || 0 }]));
+
+    const result = {};
+    for (const id of ids) {
+        result[id] = computePositionFromData(
+            billsBySub.get(id) || [],
+            paidBySub.get(id) || 0,
+            todayBySub.get(id) || { day, total: 0, count: 0 },
+            now
+        );
+    }
+    return result;
 }
 
 /** Writes each bill's paidAmount/status from a fresh allocation. */
@@ -247,6 +289,6 @@ async function billLines(subAdminId, day) {
 }
 
 module.exports = {
-    pkDay, pkDayStart, todayTotal, announceLine, computePosition, refreshBillStatuses,
+    pkDay, pkDayStart, todayTotal, announceLine, computePosition, computePositionsBulk, refreshBillStatuses,
     checkCredit, closeBillsForDay, billLines, recomputeBill
 };

@@ -70,12 +70,22 @@ function transformGeoJsonWithTurf(geojsonData, topLeft, topRight, bottomRight, b
     return geojsonData;
 }
 
-const estateGeojsonCache = new Map(); // filePath -> parsed FeatureCollection
+const ESTATE_CACHE_MAX = 30;
+const estateGeojsonCache = new Map(); // filePath -> parsed FeatureCollection (bounded LRU)
 // Estate files replaced on disk: cleared on every instance with the data scan.
 require('../utils/cacheBus').register('geo', () => estateGeojsonCache.clear());
 function loadEstateGeojson(filePath) {
-    if (estateGeojsonCache.has(filePath)) return estateGeojsonCache.get(filePath);
+    if (estateGeojsonCache.has(filePath)) {
+        const val = estateGeojsonCache.get(filePath);
+        estateGeojsonCache.delete(filePath);
+        estateGeojsonCache.set(filePath, val);
+        return val;
+    }
     const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (estateGeojsonCache.size >= ESTATE_CACHE_MAX) {
+        const oldest = estateGeojsonCache.keys().next().value;
+        if (oldest !== undefined) estateGeojsonCache.delete(oldest);
+    }
     estateGeojsonCache.set(filePath, data);
     return data;
 }

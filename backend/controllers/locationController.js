@@ -21,7 +21,7 @@ exports.getUserLocations = async (req, res) => {
             userId: user.userId,
             'location.latitude': { $ne: null },
             'location.longitude': { $ne: null }
-        }).sort({ start: -1 }).lean();
+        }).sort({ start: -1 }).limit(1000).lean();
 
         const locations = sessions.map(s => ({
             timestamp: s.start,
@@ -44,9 +44,8 @@ exports.getUserLocations = async (req, res) => {
 
 /**
  * GET /location-heatmap?subscriptionType=&country=&limit=1000
- * Returns heatmap data points (lat, lng, intensity) for all user sessions.
- * Used by GlobalHeatmapModal.
- * PERF-02: Uses MongoDB aggregation instead of loading all sessions into memory.
+ * Returns heatmap data points (lat, lng, intensity) for user sessions.
+ * PERF-02: Bounds recent session scan before $lookup to avoid full-collection joins.
  */
 exports.getLocationHeatmap = async (req, res) => {
     try {
@@ -56,6 +55,7 @@ exports.getLocationHeatmap = async (req, res) => {
             limit = 1000,
         } = req.query;
 
+        const maxPoints = Math.min(Number(limit) || 1000, 5000);
         const matchStage = {
             'location.latitude': { $ne: null },
             'location.longitude': { $ne: null }
@@ -64,6 +64,8 @@ exports.getLocationHeatmap = async (req, res) => {
 
         const pipeline = [
             { $match: matchStage },
+            { $sort: { start: -1 } },
+            { $limit: maxPoints * 3 },
             {
                 $lookup: {
                     from: 'users',
@@ -90,7 +92,7 @@ exports.getLocationHeatmap = async (req, res) => {
                     country: '$location.country',
                 }
             },
-            { $limit: Math.min(Number(limit) || 1000, 5000) }
+            { $limit: maxPoints }
         ];
 
         const points = await Session.aggregate(pipeline);

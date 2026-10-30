@@ -10,6 +10,40 @@ const _IS_PROD_AUTH = process.env.NODE_ENV === 'production' ||
 const COOKIE_SECURE = _IS_PROD_AUTH || COOKIE_SAMESITE === 'none';
 const { COOKIE_DOMAIN } = require('../utils/siteConfig');
 
+// Short-lived in-memory cache (15s TTL, max 2000 users) for lean auth lookups so bursts
+// of tile/range/API requests don't hit MongoDB on every HTTP request.
+const AUTH_CACHE_TTL_MS = 15000;
+const AUTH_CACHE_MAX = 2000;
+const authUserCache = new Map();
+
+const invalidateAuthUser = (userId) => {
+    if (!userId) return;
+    authUserCache.delete(String(userId).toLowerCase());
+};
+
+const getCachedAuthUser = async (userId) => {
+    const key = String(userId || '').toLowerCase();
+    if (!key) return null;
+    const now = Date.now();
+    const hit = authUserCache.get(key);
+    if (hit && hit.expiresAt > now) {
+        return hit.user;
+    }
+    const user = await User.findOne({ userIdLower: key })
+        .select('userId userType tokenVersion tehsilAccess activeTehsil status subscriptionType startDate endDate')
+        .lean();
+    if (user) {
+        if (authUserCache.size >= AUTH_CACHE_MAX) {
+            const oldestKey = authUserCache.keys().next().value;
+            if (oldestKey !== undefined) authUserCache.delete(oldestKey);
+        }
+        authUserCache.set(key, { user, expiresAt: now + AUTH_CACHE_TTL_MS });
+    } else {
+        authUserCache.delete(key);
+    }
+    return user;
+};
+
 const isAuthenticated = async (req, res, next) => {
     // Extract all candidate authToken cookies from both req.cookies and raw header
     // to handle collisions where a stale host-only cookie shadows the valid domain cookie.
@@ -32,11 +66,8 @@ const isAuthenticated = async (req, res, next) => {
     for (const token of candidateTokens) {
         try {
             const decoded = jwt.verify(token, SECRET_KEY);
-            // SCALE-01: indexed exact match on userIdLower instead of a case-insensitive
-            // $regex query, which cannot use the userId index and forces a COLLSCAN.
-            const user = await User.findOne({ userIdLower: String(decoded.userId || '').toLowerCase() })
-                .select('userId userType tokenVersion tehsilAccess activeTehsil status subscriptionType startDate endDate')
-                .lean();
+            // SCALE-01: indexed exact match on userIdLower with short-TTL cache
+            const user = await getCachedAuthUser(decoded.userId);
 
             if (user && (decoded.tokenVersion === undefined || decoded.tokenVersion === (user.tokenVersion || 0))) {
                 authenticatedUser = user;
@@ -263,8 +294,8 @@ const maybeAuthenticated = async (req, res, next) => {
     jwt.verify(token, SECRET_KEY, async (err, decoded) => {
         if (err) return next();
         try {
-            const user = await User.findOne({ userId: decoded.userId }).select('userType userId').lean();
-            if (user) {
+            const user = await getCachedAuthUser(decoded.userId);
+            if (user && (decoded.tokenVersion === undefined || decoded.tokenVersion === (user.tokenVersion || 0))) {
                 req.user = user;
                 req.userId = user.userId;
             }
@@ -275,4 +306,4 @@ const maybeAuthenticated = async (req, res, next) => {
     });
 };
 
-module.exports = { hasAccess, isAuthenticated, isAuthenticatedLight, maybeAuthenticated, isSubscribed, isSubscribedOrLimitedZoom, isAdmin, isSelfOrAdmin, isSelfAdminOrOwner, isAdminOrOwner, isSubAdmin, requireSubAdminWritable };
+module.exports = { hasAccess, isAuthenticated, isAuthenticatedLight, maybeAuthenticated, isSubscribed, isSubscribedOrLimitedZoom, isAdmin, isSelfOrAdmin, isSelfAdminOrOwner, isAdminOrOwner, isSubAdmin, requireSubAdminWritable, getCachedAuthUser, invalidateAuthUser };

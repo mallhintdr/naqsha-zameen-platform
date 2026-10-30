@@ -1,10 +1,11 @@
 // Port of components/Admin/LandAllotmentTool.js (/admin/land-allotments). Map uses plain Leaflet.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { FileDown, MapPinned, X } from 'lucide-react';
 import { api } from '@/shared/api/client';
-import { Alert, Badge, Spinner } from '@/shared/ui';
+import { AdminNavIcons, Alert, Badge, Spinner } from '@/shared/ui';
 import './LandAllotmentPage.css';
 
 const URDU_RE = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
@@ -71,6 +72,7 @@ function AllotmentMap({ geometry, murabbaNo }: { geometry: any; murabbaNo: any }
 }
 
 export default function LandAllotmentPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [debouncedFilters, setDebouncedFilters] = useState(EMPTY_FILTERS);
   const debounceTimer = useRef<any>(null);
@@ -186,10 +188,10 @@ export default function LandAllotmentPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1400px] px-3 py-6 max-sm:px-1">
-      <h4 className="mb-3 flex items-center gap-2 text-xl font-medium text-teal-ink">
+      <div className="mb-3 flex items-center justify-between gap-2"><h4 className="m-0 flex items-center gap-2 text-xl font-medium text-teal-ink">
         <MapPinned className="text-[#198754]" size={22} />
         Cholistan AKAR Alottment
-      </h4>
+      </h4><div className="page-icons"><AdminNavIcons navigate={navigate} /></div></div>
       <p className="mb-4 text-[0.9rem] text-ink-2">
         Browse all allotment records below — filter by any column, click a row to preview its allotted killa(s) on the map and export a
         KMZ file for use in Google Earth.

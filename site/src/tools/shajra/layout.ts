@@ -99,7 +99,8 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
     let end = -Infinity;
     for (const g of groups) {
       const [f, m] = g.key.split('|');
-      const ps = [f, m].map((id) => (id ? nodes.get(id) : undefined)).filter((p) => p && p.gen === r - 1) as Placed[];
+      const wivesOfF = f ? c.unions.filter((u) => u.partners.includes(f)).length : 0;
+      const ps = (f && wivesOfF <= 1 ? [f] : [f, m]).map((id) => (id ? nodes.get(id) : undefined)).filter((p) => p && p.gen === r - 1) as Placed[];
       const want = ps.length ? ps.reduce((a, p) => a + p.x, 0) / ps.length - ((g.items.length - 1) * step) / 2 : g.items[0].x;
       let x = Math.max(want, end + step);
       for (const n of g.items) { n.x = x; x += step; }

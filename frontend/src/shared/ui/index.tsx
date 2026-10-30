@@ -1,4 +1,4 @@
-import { ChartColumn, House, RefreshCw, UserCog, UserPen } from 'lucide-react';
+import { ChartColumn, House, RefreshCw, UserCog, UserPen, UserPlus } from 'lucide-react';
 import * as RTabs from '@radix-ui/react-tabs';
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from './cn';
@@ -149,32 +149,37 @@ export const Empty = ({ children }: { children: ReactNode }) => <div className="
 
 /* ---------------- Icon-only page actions (Home / Refresh) ---------------- */
 export function HomeIconButton({ onClick }: { onClick: () => void }) {
-  return <button type="button" className="icon-btn" title="Home" aria-label="Home" onClick={onClick}><House size={17} /></button>;
+  return (
+    <button type="button" className="icon-btn icon-btn-home" title="Home" aria-label="Home" onClick={onClick}>
+      <House size={17} strokeWidth={2.25} />
+    </button>
+  );
 }
 export function RefreshIconButton({ onClick, loading }: { onClick: () => void; loading?: boolean }) {
   return (
-    <button type="button" className="icon-btn" title="Refresh" aria-label="Refresh" onClick={onClick} disabled={loading}>
-      <RefreshCw size={16} className={loading ? 'animate-spin' : undefined} />
+    <button type="button" className="icon-btn icon-btn-refresh" title="Refresh" aria-label="Refresh" onClick={onClick} disabled={loading}>
+      <RefreshCw size={16} strokeWidth={2.25} className={loading ? 'animate-spin' : undefined} />
     </button>
   );
 }
 
 /**
- * Quick links between admin pages (top right): Home, Insights, Users, Sub-admins.
+ * Quick links between admin pages (top right): Home, Register User, Insights, Edit Users, Sub-admins.
  * The page you are on is left out.
  */
-export function AdminNavIcons({ current, navigate }: { current?: 'stats' | 'users' | 'subadmins'; navigate: (to: string) => void }) {
+export function AdminNavIcons({ current, navigate }: { current?: 'register' | 'stats' | 'users' | 'subadmins'; navigate: (to: string) => void }) {
   const items = [
-    { key: 'home', to: '/', label: 'Home (map)', Icon: House },
-    { key: 'stats', to: '/stats', label: 'Insights', Icon: ChartColumn },
-    { key: 'users', to: '/users', label: 'Edit users (User Management)', Icon: UserPen },
-    { key: 'subadmins', to: '/admin/subadmins', label: 'Sub-admins', Icon: UserCog },
+    { key: 'home', to: '/', label: 'Home (map)', Icon: House, cls: 'icon-btn-home' },
+    { key: 'register', to: '/admin/register', label: 'Register User', Icon: UserPlus, cls: 'icon-btn-register' },
+    { key: 'stats', to: '/stats', label: 'Insights', Icon: ChartColumn, cls: 'icon-btn-stats' },
+    { key: 'users', to: '/users', label: 'Edit users (User Management)', Icon: UserPen, cls: 'icon-btn-users' },
+    { key: 'subadmins', to: '/admin/subadmins', label: 'Sub-admins', Icon: UserCog, cls: 'icon-btn-subadmins' },
   ].filter((i) => i.key !== current);
   return (
     <>
-      {items.map(({ key, to, label, Icon }) => (
-        <button key={key} type="button" className="icon-btn" title={label} aria-label={label} onClick={() => navigate(to)}>
-          <Icon size={17} />
+      {items.map(({ key, to, label, Icon, cls }) => (
+        <button key={key} type="button" className={cn('icon-btn', cls)} title={label} aria-label={label} onClick={() => navigate(to)}>
+          <Icon size={17} strokeWidth={2.25} />
         </button>
       ))}
     </>

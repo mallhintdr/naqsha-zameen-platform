@@ -6,7 +6,7 @@ import { mapTehsilOf } from '@/features/map/useMapTehsil';
  * - IP-misuse modal (> 3 devices) has priority over the subscription warning modal
  * - map selection reset on user change or when leaving "/"
  */
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { Component, type ErrorInfo, lazy, type ReactNode, Suspense, useEffect, useRef } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useAppStore } from './store';
@@ -18,6 +18,39 @@ import GlobalModals from '@/features/chrome/GlobalModals';
 import SubscriptionWarningBanner from '@/features/chrome/SubscriptionWarningBanner';
 import PreviewBanner from '@/features/chrome/PreviewBanner';
 import { useBrowseDeepLink } from '@/features/map/useBrowseDeepLink';
+
+class RouteErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('RouteErrorBoundary caught error:', error, info);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+          <div className="card max-w-md p-6">
+            <h2 className="text-lg font-bold text-white">Something went wrong loading this view</h2>
+            <p className="mt-2 text-sm text-slate-300">
+              A newer version of the dashboard may have been deployed or a temporary error occurred.
+            </p>
+            <div className="mt-4 flex justify-center gap-3">
+              <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>
+                Reload page
+              </button>
+              <button type="button" className="btn" onClick={() => this.setState({ error: null })}>
+                Try again
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const MapPage = lazy(() => import('@/features/map/MapPage'));
 const MapOverlays = lazy(() => import('@/features/map/MapOverlays'));
@@ -104,6 +137,7 @@ export default function App() {
       )}
 
       <main className={isMap ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden' : 'flex flex-1 flex-col'}>
+        <RouteErrorBoundary>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
             <Route path="/" element={<MapPage />} />
@@ -131,6 +165,7 @@ export default function App() {
           {/* Go-To / Shift modals and saved-layer modals live with the map feature */}
           <MapOverlays />
         </Suspense>
+        </RouteErrorBoundary>
       </main>
 
       <GlobalModals onAuthPage={onAuthPage} />

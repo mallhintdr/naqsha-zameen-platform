@@ -52,13 +52,13 @@ const AdminToolbar = ({ user }) => {
         <span className="admin-toolbar-tooltip">Register User</span>
       </button>
       <button 
-        className="admin-toolbar-btn btn-public-users" 
-        onClick={() => navigate('/users?tab=publicRegistration')}
-        title="Publicly Registered Users"
-        aria-label="Publicly Registered Users"
+        className="admin-toolbar-btn btn-manage" 
+        onClick={() => navigate('/users')}
+        title="Edit Users (User Management)"
+        aria-label="Edit Users (User Management)"
       >
-        <FaUsers className="admin-toolbar-icon" />
-        <span className="admin-toolbar-tooltip">Public Users</span>
+        <FaUserEdit className="admin-toolbar-icon" />
+        <span className="admin-toolbar-tooltip">Edit Users</span>
       </button>
       <button 
         className="admin-toolbar-btn btn-insights" 

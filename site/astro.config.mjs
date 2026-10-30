@@ -12,7 +12,7 @@ export default defineConfig({
   integrations: [
     react({ include: ['**/tools/**'] }),
     sitemap({
-      filter: (page) => !page.includes('/404'),
+      filter: (page) => !page.includes('/404') && !page.endsWith('/dashboard/'),
       entryLimit: 10000, // several sitemap files under sitemap-index.xml
       serialize: (item) => {
         const path = new URL(item.url).pathname;
@@ -22,7 +22,11 @@ export default defineConfig({
         else if (path.startsWith('/services/')) priority = 0.9;
         else if (path === '/maps/') { priority = 0.9; changefreq = 'weekly'; }
         else if (path.startsWith('/maps/')) priority = depth === 2 ? 0.8 : 0.6;
-        return { ...item, lastmod: new Date().toISOString(), priority, changefreq };
+        // Only emit lastmod on primary marketing pages so 21k+ static /maps/ pages don't churn crawl budget on every build
+        const includeLastmod = path === '/' || path === '/maps/' || !path.startsWith('/maps/');
+        return includeLastmod
+          ? { ...item, lastmod: new Date().toISOString(), priority, changefreq }
+          : { ...item, priority, changefreq };
       },
     }),
   ],

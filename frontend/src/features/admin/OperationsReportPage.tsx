@@ -1,12 +1,14 @@
 // Port of components/Admin/OperationsReportTool.js (/admin/operations-report). PDF is emailed by the backend.
 import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router';
 import { FileText, MailOpen } from 'lucide-react';
 import { api } from '@/shared/api/client';
-import { Alert, Spinner } from '@/shared/ui';
+import { AdminNavIcons, Alert, Spinner } from '@/shared/ui';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 export default function OperationsReportPage() {
+  const navigate = useNavigate();
   const [startDate, setStartDate] = useState(todayStr());
   const [endDate, setEndDate] = useState(todayStr());
   const [generating, setGenerating] = useState(false);
@@ -38,10 +40,13 @@ export default function OperationsReportPage() {
 
   return (
     <div className="mx-auto w-full max-w-[700px] px-3 py-6">
-      <h4 className="mb-3 flex items-center gap-2 text-xl font-medium text-teal-ink">
-        <FileText className="text-[#dc3545]" size={22} />
-        Operations Report
-      </h4>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h4 className="m-0 flex items-center gap-2 text-xl font-medium text-teal-ink">
+          <FileText className="text-[#dc3545]" size={22} />
+          Operations Report
+        </h4>
+        <div className="page-icons"><AdminNavIcons navigate={navigate} /></div>
+      </div>
       <p className="mb-4 text-[0.9rem] text-ink-2">
         Generate a branded PDF operations report (registrations, renewals, expirations, revenue, subscription health) for any date
         range and email it to yourself.

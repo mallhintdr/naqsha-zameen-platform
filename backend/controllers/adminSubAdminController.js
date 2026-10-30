@@ -148,9 +148,10 @@ exports.list = async (req, res) => {
         ]);
         const byId = (arr, key = '_id') => Object.fromEntries(arr.map(x => [x[key], x]));
         const u = byId(users, 'userId'), c = byId(customerStats), b = byId(billedMonth), lp = byId(lastPays), sm = byId(salesMonth);
+        const positionsBySub = await billing.computePositionsBulk(subs, now);
         const rows = [];
         for (const s of subs) {
-            const pos = await billing.computePosition(s, now);
+            const pos = positionsBySub[s.userId] || await billing.computePosition(s, now);
             rows.push({
                 userId: s.userId,
                 userName: u[s.userId]?.userName,

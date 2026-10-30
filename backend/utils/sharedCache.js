@@ -66,13 +66,18 @@ function createSharedCache(namespace, ttlSeconds) {
             }
         },
 
-        /** Clears this namespace for ALL instances. */
+        /** Clears this namespace for ALL instances using non-blocking SCAN. */
         async flushAll() {
             const redis = getRedisClient();
             if (redis && isRedisReady()) {
                 try {
-                    const keys = await redis.keys(fullKey('*'));
-                    if (keys.length) await redis.del(keys);
+                    const pattern = fullKey('*');
+                    let cursor = '0';
+                    do {
+                        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+                        cursor = nextCursor;
+                        if (keys && keys.length) await redis.del(...keys);
+                    } while (cursor !== '0');
                 } catch (err) {
                     logger.warn(`sharedCache(${namespace}): Redis flush failed`, { error: err.message });
                 }

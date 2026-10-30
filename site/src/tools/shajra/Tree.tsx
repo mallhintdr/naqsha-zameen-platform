@@ -16,7 +16,6 @@ const URDU_FONT = "'Noto Nastaliq Urdu', serif";
 
 type Kind = 'male' | 'daughter' | 'wife' | 'both';
 
-/** Heart (tip down) centred on 0,0, about 2*r wide. */
 /** Sideways heart (leaf) for a wife: rounded body, small notch, point facing away from the husband. */
 const leaf = (w: number, h: number, dir: 1 | -1) => {
   const X = (v: number) => v * dir;
@@ -27,21 +26,20 @@ const heart = (r: number) => `M0,${r} C${-r * 1.5},${-r * 0.1} ${-r * 0.9},${-r 
 
 export function Glyph({ x, y, size, kind }: { x: number; y: number; size: number; kind: Kind }) {
   const cy = y + size / 2;
-  const v = (h: number) => `M${x - h * 0.55},${cy + h / 2} L${x},${cy - h / 2} L${x + h * 0.55},${cy + h / 2}`;
+  const v = (h: number, cx = x, midY = cy) => `M${cx - h * 0.55},${midY + h / 2} L${cx},${midY - h / 2} L${cx + h * 0.55},${midY + h / 2}`;
   if (kind === 'male') return <line x1={x} y1={y} x2={x} y2={y + size} strokeWidth="2.4" strokeLinecap="round" />;
   if (kind === 'daughter') return <path d={v(size * 0.85)} fill="none" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />;
   if (kind === 'both') {
     return (
       <g>
-        <path d={v(size * 0.7)} transform={`translate(0,${-size * 0.12})`} fill="none" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
-        <path d={leaf(size * 0.28, size * 0.17, 1)} transform={`translate(${x},${y + size * 0.86})`} fill="#fffdf6" strokeWidth="1.2" />
+        <path d={v(size * 0.46, x - size * 0.06, y + size * 0.2)} fill="none" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={leaf(size * 0.36, size * 0.22, 1)} transform={`translate(${x},${y + size * 0.72})`} fill="#fffdf6" strokeWidth="1.3" />
       </g>
     );
   }
   return (
     <g>
       <path d={heart(size * 0.42)} transform={`translate(${x},${cy}) rotate(-90)`} fill="#fffdf6" strokeWidth="1.6" />
-      {kind === 'both' && <path d={v(size * 0.4)} fill="none" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />}
     </g>
   );
 }
@@ -86,6 +84,11 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
     const h = c.unions.filter((u) => u.partners.includes(id)).map((u) => u.partners.find((x) => x !== id)!).find((x) => nodes.get(x));
     return h && cx(h) > cx(id) ? -1 : 1;
   };
+  /** Horizontal X of the inverted-V apex for a child (shifted slightly over the heart body when kind === 'both'). */
+  const childAnchorX = (id: string) => (kindOf(id) === 'both' ? cx(id) - tipDir(id) * 4 : cx(id));
+  /** Vertical Y where the parent descent line meets the child's glyph top. */
+  const childAnchorY = (id: string) => (kindOf(id) === 'both' ? top(id) - 10 : id === c.deceasedId ? top(id) - 6 : top(id));
+
   const statusOf = (id: string) => {
     const p = c.persons.find((x) => x.id === id)!;
     if (id === c.deceasedId) return 'حال متوفی';
@@ -101,13 +104,14 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
         <g stroke={INK} strokeWidth="1.3" fill="none">
           {[...families.values()].map(({ father, mother, kids }, fi) => {
             const ky = Math.min(...kids.map((k) => top(k)));
-            const bar = ky - 16 - (fi % 3) * 14; // each couple's bar on its own level
-            const xs = kids.map(cx);
+            const bar = ky - 18 - (fi % 3) * 14; // each couple's bar on its own level
+            const xs = kids.map(childAnchorX);
             // Draw the mother's branch only when the father has more than one wife in the tree
             // (children are then grouped by mother) or when the father is not in the tree.
             const wivesOfFather = father ? c.unions.filter((u) => u.partners.includes(father)).length : 0;
             const drops = (father ? (mother && wivesOfFather > 1 ? [father, mother] : [father]) : [mother]).filter(Boolean) as string[];
-            const parentBottom = (id: string) => top(id) + sym + (id === c.deceasedId ? 22 : kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 96 : 60); // just below the parent's last line of text
+            const parentBottom = (id: string) =>
+              top(id) + sym + (id === c.deceasedId ? 26 : kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 56 : 60); // just below the parent's last line of text
             // A wife's line starts from the outer side of her heart, so it never runs into a child's line.
             const dropX = (id: string) => (kindOf(id) === 'wife' ? cx(id) + tipDir(id) * 22 : cx(id));
             const all = [...xs, ...drops.map(dropX)];
@@ -115,7 +119,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
               <g key={`f-${fi}`} strokeDasharray={!father ? '4 3' : undefined}>
                 {drops.map((d) => <line key={d} x1={dropX(d)} y1={parentBottom(d) - (dropX(d) !== cx(d) ? 22 : 0)} x2={dropX(d)} y2={bar} />)}
                 <line x1={Math.min(...all)} y1={bar} x2={Math.max(...all)} y2={bar} />
-                {kids.map((k) => <line key={k} x1={cx(k)} y1={bar} x2={cx(k)} y2={top(k)} />)}
+                {kids.map((k) => <line key={k} x1={childAnchorX(k)} y1={bar} x2={childAnchorX(k)} y2={childAnchorY(k)} />)}
               </g>
             );
           })}
@@ -124,15 +128,19 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
             const [a, b] = u.partners;
             const na = nodes.get(a), nb = nodes.get(b);
             if (!na || !nb || na.gen !== nb.gen) return null;
-            const [x1, x2] = [cx(a), cx(b)].sort((m, n) => m - n);
-            // Leave room for the symbol: heart edge, Λ edge or the stroke.
-            const off = (id: string) => (kindOf(id) === 'wife' ? 48 : kindOf(id) === 'both' ? 18 : isInLaw(id) ? 44 : 6);
-            const y = top(a) + sym / 2;
+            const leftId = cx(a) <= cx(b) ? a : b;
+            const rightId = leftId === a ? b : a;
+            const x1 = cx(leftId), x2 = cx(rightId);
+            // Leave room for the symbol: heart edge, Λ edge, deceased box or stroke.
+            const off = (id: string) =>
+              kindOf(id) === 'wife' ? 48 : kindOf(id) === 'both' ? 45 : isInLaw(id) ? 44 : id === c.deceasedId ? 44 : 6;
+            const hasBoth = kindOf(a) === 'both' || kindOf(b) === 'both';
+            const y = top(a) + (hasBoth ? 25 : sym / 2);
             const div = u.type !== 'marriage' || c.persons.some((p) => u.partners.includes(p.id) && p.flags.divorced && p.flags.divorced !== 'revocable-in-iddat');
             const mx = (x1 + x2) / 2;
             return (
               <g key={u.id}>
-                <line x1={x1 + off(cx(a) === x1 ? a : b)} y1={y} x2={x2 - off(cx(a) === x2 ? a : b)} y2={y} />
+                <line x1={x1 + off(leftId)} y1={y} x2={x2 - off(rightId)} y2={y} />
                 {div && <><line x1={mx - 5} y1={y + 6} x2={mx - 1} y2={y - 6} /><line x1={mx + 1} y1={y + 6} x2={mx + 5} y2={y - 6} /></>}
               </g>
             );
@@ -145,33 +153,48 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
           const r = results.get(p.id);
           const x = cx(p.id), y = top(p.id);
           const isD = p.id === c.deceasedId;
+          const k = kindOf(p.id);
           const [en, ur] = relLabel(r?.relationKey ?? (isD ? 'deceased' : ''));
           const nm = (p.name || 'Unnamed').slice(0, 22);
           const shareTxt = isD ? 'متوفی' : r ? (r.fraction.n > 0n ? toString(r.fraction) : '—') : '';
+          // Compact dotted box around the deceased
+          const dBoxW = k === 'wife' || k === 'both' ? 98 : 84;
+          const dBoxY = k === 'both' ? y - 14 : y - 6;
+          const dBoxH = k === 'both' ? sym + 52 : sym + 32;
           return (
             <g key={p.id} className={printMode ? undefined : 'cursor-pointer'} onClick={printMode ? undefined : () => onSelect(p.id)} tabIndex={printMode ? undefined : 0} role={printMode ? undefined : 'button'} aria-haspopup={printMode ? undefined : 'menu'}
               aria-label={`${nm}, ${en}${r && !isD ? `, share ${shareTxt}` : ''}`}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(p.id); } }}>
               <title>{`${nm} · ${en}${ur ? ` · ${ur}` : ''}`}</title>
-              {isD && <rect x={n.x + P + 4} y={n.y + P - 16} width={NODE_W - 8} height={sym + 62} rx="4" fill="none" stroke={INK} strokeWidth="1.2" strokeDasharray="2 3" />}
-              <rect x={n.x + P + 2} y={n.y + P - 20} width={NODE_W - 4} height={sym + (kindOf(p.id) === 'both' ? 120 : 72)} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#0ea5e9' : 'none'} strokeDasharray="3 3" />
+              {isD && <rect x={x - dBoxW / 2} y={dBoxY} width={dBoxW} height={dBoxH} rx="4" fill="none" stroke={INK} strokeWidth="1.15" strokeDasharray="2 2.5" />}
+              <rect x={n.x + P + 2} y={n.y + P - 20} width={NODE_W - 4} height={sym + (k === 'both' ? 96 : 72)} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#0ea5e9' : 'none'} strokeDasharray="3 3" />
               {(() => {
-                const k = kindOf(p.id);
                 const inLaw = isInLaw(p.id);
                 const dir = tipDir(p.id);
-                // Wife: name inside the heart. Daughter who is also a wife: large Λ, heart below it with the name inside.
-                const heartCy = k === 'wife' ? y + sym / 2 : y + sym + 30;
+                const spouseOfBoth = inLaw && c.unions.some((u) => u.partners.includes(p.id) && u.partners.some((o) => o !== p.id && kindOf(o) === 'both'));
+                // Wife: name inside the heart. Daughter who is also a wife ('both'): smaller Λ slightly above, heart tucked beneath it.
+                const heartCy = k === 'wife' ? y + sym / 2 : y + 25;
                 const inHeart = k === 'wife' || k === 'both';
                 const nameX = inHeart ? x - dir * 6 : x; // centre of the heart's round body
-                const nameY = inHeart ? heartCy + 5 : inLaw ? y + sym / 2 + 4 : y + sym + (hasUrdu(nm) ? 22 : 16);
-                const below = k === 'wife' ? y + sym + 24 : k === 'both' ? heartCy + 46 : inLaw ? y + sym / 2 + 22 : y + sym + (hasUrdu(nm) ? 42 : 30);
+                const inLawY = spouseOfBoth ? y + 29 : y + sym / 2 + 4;
+                const nameY = inHeart ? heartCy + 5 : inLaw ? inLawY : y + sym + (hasUrdu(nm) ? 20 : 15);
+                const below = k === 'wife' ? y + sym + 24 : k === 'both' ? heartCy + 36 : inLaw ? inLawY + 18 : y + sym + (hasUrdu(nm) ? 40 : 29);
+                const vx = childAnchorX(p.id);
                 return (
                   <>
-                    {inHeart && (
+                    {k === 'wife' && (
                       <path d={leaf(48, 27, dir)} transform={`translate(${x},${heartCy})`} fill="#fffdf6" stroke={INK} strokeWidth="1.4" />
                     )}
-                    {(k === 'daughter' || k === 'both') && (
-                      <path d={`M${x - 26},${y + sym + 2} L${x},${y - 2} L${x + 26},${y + sym + 2}`} fill="none" stroke={INK} strokeWidth="1.6" strokeLinejoin="round" />
+                    {k === 'both' && (
+                      <>
+                        {/* Smaller inverted V shifted slightly upward & over the heart body */}
+                        <path d={`M${vx - 14},${y + 3} L${vx},${y - 10} L${vx + 14},${y + 3}`} fill="none" stroke={INK} strokeWidth="1.55" strokeLinejoin="round" strokeLinecap="round" />
+                        {/* Wife heart accommodated neatly below the smaller inverted V */}
+                        <path d={leaf(45, 22, dir)} transform={`translate(${x},${heartCy})`} fill="#fffdf6" stroke={INK} strokeWidth="1.4" />
+                      </>
+                    )}
+                    {k === 'daughter' && (
+                      <path d={`M${x - 22},${y + sym} L${x},${y - 2} L${x + 22},${y + sym}`} fill="none" stroke={INK} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
                     )}
                     {/* A son of the family is a short stroke; a husband who married into the family is just his name. */}
                     {k === 'male' && !inLaw && <line x1={x} y1={y} x2={x} y2={y + sym} stroke={INK} strokeWidth="1.6" />}
@@ -179,7 +202,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
                     <text x={nameX} y={nameY} textAnchor="middle" fontSize={hasUrdu(nm) ? 13 : 11.5} fontWeight={isD ? 800 : 600} fill={INK}
                       fontFamily={hasUrdu(nm) ? URDU_FONT : undefined}>{nm.slice(0, inHeart ? 18 : 22)}</text>
                     {/* Status in red, as the patwari writes it */}
-                    <text x={isD ? x - 8 : x} y={isD ? y + 6 : below} textAnchor={isD ? 'end' : 'middle'} fontSize="10.5" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">{statusOf(p.id)}</text>
+                    <text x={isD ? x - 6 : x} y={isD ? y + 7 : below} textAnchor={isD ? 'end' : 'middle'} fontSize="10" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">{statusOf(p.id)}</text>
                     {!isD && shareTxt && (
                       <text x={x} y={below + 15} textAnchor="middle" fontSize="11" fontWeight="700" fill={SHARE_COLOR[r?.status ?? 'excluded']}>({shareTxt})</text>
                     )}
@@ -191,7 +214,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
         })}
       </svg>
       {sel && menu && (
-        <div className="absolute z-20" style={{ left: Math.max(4, sel.x + P + NODE_W / 2 - 150), top: sel.y + P + sym + (kindOf(sel.id) === 'both' ? 110 : 62) }}>
+        <div className="absolute z-20" style={{ left: Math.max(4, sel.x + P + NODE_W / 2 - 150), top: sel.y + P + sym + (kindOf(sel.id) === 'both' ? 90 : 62) }}>
           {menu}
         </div>
       )}

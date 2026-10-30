@@ -3,6 +3,7 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const { createAdapter } = require('@socket.io/redis-adapter');
 const { getRedisClient } = require('./redisClient');
+const { getCachedAuthUser } = require('../middleware/authMiddleware');
 const logger = require('../utils/logger');
 
 const SECRET_KEY = process.env.SECRET_KEY;
@@ -43,16 +44,23 @@ const init = (server, corsOrigin) => {
         io.adapter(createAdapter(pubClient, subClient));
     }
 
-    // Issue #4: Authenticate socket connections via JWT cookie
-    io.use((socket, next) => {
+    // Issue #4: Authenticate socket connections via JWT cookie + DB tokenVersion/userType lookup
+    io.use(async (socket, next) => {
         try {
             const cookies = parseCookies(socket.handshake.headers.cookie);
             const token = cookies.authToken;
             if (!token) return next(new Error('Authentication required'));
 
             const decoded = jwt.verify(token, SECRET_KEY);
-            socket.userId = decoded.userId;
-            socket.userType = decoded.userType;
+            const user = await getCachedAuthUser(decoded.userId);
+            if (!user || (decoded.tokenVersion !== undefined && decoded.tokenVersion !== (user.tokenVersion || 0))) {
+                return next(new Error('Session expired'));
+            }
+            if (user.status === 'Suspended') {
+                return next(new Error('Account suspended'));
+            }
+            socket.userId = user.userId;
+            socket.userType = user.userType;
             next();
         } catch (err) {
             next(new Error('Invalid or expired token'));

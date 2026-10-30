@@ -187,17 +187,11 @@ async function listMouzas(tehsil) {
             pmtilesNames.push(...pmtiles);
         }));
 
-        // 3. Merge and deduplicate
+        // 3. Merge and deduplicate (disk index sync is handled explicitly by scanHostingData, not on GET)
         const allMouzas = Array.from(new Set([...dbMouzas, ...geoNames, ...tileNames, ...pmtilesNames]))
             .filter(m => m && !m.toLowerCase().includes('-complete'))
             .sort((a, b) => a.localeCompare(b));
 
-        // 4. Sync Static Index for all linked tehsils (async, fire-and-forget)
-        if (allMouzas.length > 0) {
-            linkedTehsils.forEach(tName => {
-                syncMouzaIndex(tName, allMouzas).catch(() => {});
-            });
-        }
         return allMouzas;
     }
 }

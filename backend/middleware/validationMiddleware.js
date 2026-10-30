@@ -21,6 +21,10 @@ const escapeRegex = (str) => {
     return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
 
+// Matches User.js pre-save rules: >= 8 chars, upper, lower, digit, special char
+const PASSWORD_STRENGTH_REGEX = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?])/;
+const PASSWORD_STRENGTH_MSG = 'Password must be at least 8 characters and contain uppercase, lowercase, number, and special character';
+
 /**
  * Validation rules for user registration
  */
@@ -33,10 +37,10 @@ const registerValidation = [
         .withMessage('User ID can only contain letters, numbers, dots, underscores, and hyphens'),
 
     body('password')
-        .isLength({ min: 6 })
-        .withMessage('Password must be at least 6 characters long')
-        .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?])/)
-        .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one special character'),
+        .isLength({ min: 8 })
+        .withMessage('Password must be at least 8 characters long')
+        .matches(PASSWORD_STRENGTH_REGEX)
+        .withMessage(PASSWORD_STRENGTH_MSG),
 
     body('userName')
         .optional()
@@ -62,8 +66,6 @@ const registerValidation = [
 
     validate
 ];
-
-
 
 /**
  * Validation rules for login
@@ -94,10 +96,10 @@ const changePasswordValidation = [
         .withMessage('Old password is required'),
 
     body('newPassword')
-        .isLength({ min: 6 })
-        .withMessage('New password must be at least 6 characters long')
-        .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?])/)
-        .withMessage('New password must contain at least one uppercase letter, one lowercase letter, and one special character'),
+        .isLength({ min: 8 })
+        .withMessage('New password must be at least 8 characters long')
+        .matches(PASSWORD_STRENGTH_REGEX)
+        .withMessage(PASSWORD_STRENGTH_MSG),
 
     validate
 ];
@@ -111,10 +113,10 @@ const resetPasswordValidation = [
         .withMessage('Reset token is required'),
 
     body('password')
-        .isLength({ min: 6 })
-        .withMessage('Password must be at least 6 characters long')
-        .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?])/)
-        .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one special character'),
+        .isLength({ min: 8 })
+        .withMessage('Password must be at least 8 characters long')
+        .matches(PASSWORD_STRENGTH_REGEX)
+        .withMessage(PASSWORD_STRENGTH_MSG),
 
     validate
 ];
@@ -130,10 +132,10 @@ const updateUserValidation = [
 
     body('password')
         .optional()
-        .isLength({ min: 6 })
-        .withMessage('Password must be at least 6 characters long')
-        .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?])/)
-        .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one special character'),
+        .isLength({ min: 8 })
+        .withMessage('Password must be at least 8 characters long')
+        .matches(PASSWORD_STRENGTH_REGEX)
+        .withMessage(PASSWORD_STRENGTH_MSG),
 
     body('email')
         .optional({ checkFalsy: true })
@@ -186,7 +188,7 @@ const paginationValidation = [
 const pathParamValidation = [
     param('tehsil')
         .trim()
-        .matches(/^[\p{L}\p{N}\s_.,()+-]+$/u) // Unicode-safe regex supporting letters, numbers, spaces, and common symbols (dots, brackets, hyphens)
+        .matches(/^[\p{L}\p{N}\s_.,()+-]+$/u)
         .withMessage('Invalid tehsil name')
         .isLength({ max: 100 })
         .withMessage('Tehsil name too long'),
@@ -222,11 +224,7 @@ const emailUpdateValidation = [
 
 /**
  * Cap the serialized size of a user-supplied geojson payload.
- * geojson is stored as a Mixed type, so without this an authenticated
- * user could persist arbitrarily large documents (storage/DoS risk).
  */
-// Matches the global express.json limit (server.js); the body parser is the
-// primary gate, this gives a clearer validation error before storage.
 const GEOJSON_MAX_BYTES = 1024 * 1024; // 1MB
 
 const geojsonSizeCheck = (value) => {

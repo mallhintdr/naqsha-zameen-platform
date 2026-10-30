@@ -311,7 +311,7 @@ export default function AdminRegistrationPage() {
 
       <div className="mb-6 flex items-center justify-between gap-2 border-b border-[#dee2e6] pb-2">
         <h3 className="m-0 text-[1.5rem] font-bold text-[#0A2540] max-sm:text-[1.25rem]">Admin User Registration</h3>
-        <div className="page-icons"><AdminNavIcons navigate={navigate} /></div>
+        <div className="page-icons"><AdminNavIcons navigate={navigate} current="register" /></div>
       </div>
 
       <form onSubmit={handleSubmit}>

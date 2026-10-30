@@ -39,8 +39,8 @@ router.post('/api/users/:userId(*)/devices/:deviceId/forget', isAuthenticated, i
 
 // Public — Issue #5: Rate-limited to mitigate user enumeration
 router.get('/api/public/check-userid/:userId(*)', maybeAuthenticated, apiLimiter, asyncHandler(userController.checkUserIdExists));
-// User calls this to generate a WhatsApp deep-link token (must be logged in)
-router.post('/api/users/:userId(*)/renewal-token', isAuthenticated, apiLimiter, asyncHandler(renewalController.createRenewalToken));
+// User calls this to generate a WhatsApp deep-link token (must be logged in and own the account or be admin/owning sub-admin)
+router.post('/api/users/:userId(*)/renewal-token', isAuthenticated, isSelfAdminOrOwner, apiLimiter, asyncHandler(renewalController.createRenewalToken));
 // Admin resolves the token from the deep-link URL (admin only)
 // Admin: any link. Sub-admin: only links from their own customers (checked in the controller).
 router.get('/api/admin/resolve-token/:token', isAuthenticated, asyncHandler(renewalController.resolveRenewalToken));
