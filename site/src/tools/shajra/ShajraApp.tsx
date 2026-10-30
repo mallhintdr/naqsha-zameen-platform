@@ -26,20 +26,47 @@ function ShajraTitle({ c }: { c: Case }) {
   );
 }
 
-/** What is printed / turned into the PDF: title, the chart, and a small Urdu share table at the bottom right.
- *  Wide trees switch the page to A4 landscape. */
-function PrintSheet({ c, result, results }: { c: Case; result: ComputeResult | null; results: Map<string, ShareResult> }) {
+const MM = 25.4 / 96; // one CSS pixel in mm
+
+/** How the sheet is laid out: page orientation, tree size (mm) and where the share table goes.
+ *  The tree is centred on the page right under the title, at its natural size when it fits,
+ *  smaller when it does not; the share table sits at the side when there is room, else below. */
+export function sheetPlan(c: Case, hasTable: boolean, tableRows: number) {
   const { width, height } = layout(c);
-  // The share table sits beside the tree, so a sheet with a table is printed landscape.
-  const landscape = !!result || width > 700 || width > height * 1.25;
+  const treeW = (width + 56) * MM, treeH = (height + 66) * MM; // the tree's drawing size
+  const props = c.estate.immovable.length;
+  const tableW = hasTable ? 70 + 20 * props : 0;
+  const tableH = hasTable ? (tableRows + 2) * 5.8 + 5 : 0;
+  const fixedH = 18 + 46 + 7; // title, heir and witnesses, disclaimer
+  const fit = (landscape: boolean) => {
+    const W = landscape ? 279 : 192, H = (landscape ? 192 : 279) - fixedH;
+    const side = Math.min(1.2, (W - tableW - 4) / treeW, H / treeH); // table at the side
+    const below = Math.min(1.2, W / treeW, (H - tableH - 4) / treeH); // table under the tree
+    const useSide = !hasTable || side >= below * 0.85;
+    const scale = Math.max(0.1, useSide ? side : below);
+    // Truly centred on the page when there is room for an equal margin on the other side too.
+    const centred = !hasTable || treeW * scale + 2 * (tableW + 4) <= W;
+    return { landscape, side: useSide, centred, scale, tableW };
+  };
+  const o = orientationOf(c);
+  const p = fit(false), l = fit(true);
+  const plan = o === 'portrait' ? p : o === 'landscape' ? l : l.scale > p.scale * 1.1 ? l : p;
+  return { ...plan, w: treeW * plan.scale, h: treeH * plan.scale };
+}
+
+/** What is printed / turned into the PDF: title, the chart centred under it, a small Urdu share
+ *  table at the side (or below when the tree is wide), and the heir's statement with two witnesses. */
+function PrintSheet({ c, result, results }: { c: Case; result: ComputeResult | null; results: Map<string, ShareResult> }) {
   const rows = (result?.shares ?? []).filter((s) => s.fraction.n > 0n || s.status === 'reserved');
+  const plan = sheetPlan(c, !!result, rows.length);
   const nm = (id: string) => c.persons.find((p) => p.id === id)?.name || (id === '__unborn__' ? 'حمل' : id);
   return (
     <div className="print-sheet" lang="ur">
-      <style>{`@page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: 9mm; }`}</style>
+      <style>{`@page { size: A4 ${plan.landscape ? 'landscape' : 'portrait'}; margin: 9mm; }`}</style>
       <ShajraTitle c={c} />
-      <div className="print-body">
-      <div className="print-tree"><Tree c={c} results={results} selected={null} onSelect={() => {}} printMode /></div>
+      <div className={`print-body ${plan.side ? 'side' : 'below'}`} style={plan.side && result ? { gridTemplateColumns: plan.centred ? `${plan.tableW}mm minmax(0,1fr) ${plan.tableW}mm` : `minmax(0,1fr) ${plan.tableW}mm` } : undefined}
+        data-cols={plan.side && result ? (plan.centred ? 3 : 2) : 1}>
+      <div className="print-tree"><Tree c={c} results={results} selected={null} onSelect={() => {}} printMode printSize={{ w: plan.w, h: plan.h }} /></div>
       {result && (
         <div className="print-share-wrap">
           <table className="print-share urdu" dir="rtl">
@@ -66,6 +93,7 @@ function PrintSheet({ c, result, results }: { c: Case; result: ComputeResult | n
         </div>
       )}
       </div>
+      <AttestPrint c={c} />
       <p className="print-disclaimer">{DISCLAIMER_UR}</p>
     </div>
   );
@@ -76,6 +104,7 @@ import { addRelative, fromJSON, load, newCase, removePerson, save, setParentOf, 
 import { DISCLAIMER, DISCLAIMER_UR, relLabel, ruleText as ruleTextL, type Lang } from './labels.ts';
 import Estate, { areaText, areaTextUr, feetText, feetTextUr, heirLandText, kmfText, systemFor } from './Estate.tsx';
 import SideShares from './SideShares.tsx';
+import { AttestForm, AttestPrint, orientationOf, type Orientation, type WithPrint } from './Attest.tsx';
 import { layout, type WithLayout } from './layout.ts';
 import qrcode from 'qrcode-generator';
 import { SITE } from '../../site';
@@ -316,6 +345,12 @@ export default function ShajraApp() {
         <button className={btn} onClick={() => fileRef.current?.click()}>Import JSON</button>
         <button className={btn} onClick={svgExport}>Export SVG</button>
         <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
+        <label className="flex items-center gap-1 text-xs font-semibold text-slate-600">Page
+          <select className="rounded-lg border border-slate-300 bg-white px-1.5 py-1.5 text-xs text-slate-800" value={orientationOf(c)}
+            onChange={(e) => setC({ ...structuredClone(c), print: { ...(c as WithPrint).print, orientation: e.target.value as Orientation } } as WithPrint)}>
+            <option value="auto">Auto</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option>
+          </select>
+        </label>
         <button className={`${btn} !border-sky-700 !bg-sky-700 !text-white`} onClick={() => window.print()}>Print / Save PDF</button>
         <button className={btn} onClick={downloadPdf} disabled={!!busy}>{busy === 'pdf' ? 'Creating PDF…' : 'Download PDF'}</button>
         <button className={btn} onClick={saveLink} disabled={!!busy}>{busy === 'link' ? 'Saving…' : 'Save & get link'}</button>
@@ -452,6 +487,8 @@ export default function ShajraApp() {
           <SideShares c={c} setC={setC} result={result} name={name} />
         </aside>
       </div>
+
+      <AttestForm c={c} setC={setC} />
 
       {/* Step 3: results */}
       <section className="border-t border-slate-200 p-4" id="shajra-results">

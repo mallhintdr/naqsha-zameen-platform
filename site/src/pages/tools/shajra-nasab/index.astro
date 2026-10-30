@@ -14,6 +14,8 @@ const ld = {
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'PKR' },
   provider: { '@id': `${SITE.url}/#organization` },
 };
+// Changes with every website build: an old copy of this page in a browser cache reloads itself.
+const BUILD = import.meta.env.DEV ? '' : Date.now().toString(36);
 ---
 <Base
   title="Shajra Nasab & Inheritance Calculator"
@@ -32,9 +34,26 @@ const ld = {
       </p>
     </div>
   </section>
-  <section class="mx-auto mt-8 max-w-7xl px-2 sm:px-6 lg:px-8">
+  <section class="mx-auto mt-8 max-w-7xl px-2 sm:px-6 lg:px-8" id="shajra-app" data-build={BUILD}>
     <ShajraApp client:only="react" />
   </section>
+  <script is:inline>
+    // Every visitor sees the newest drawing: if the browser showed an older cached copy of this
+    // page, fetch the current one and reload once.
+    (function () {
+      if (/[?&]pdf=1/.test(location.search)) return;
+      var me = document.getElementById('shajra-app');
+      var b = me && me.getAttribute('data-build');
+      if (!b || !window.fetch) return;
+      fetch(location.pathname, { cache: 'reload' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+        var m = /id="shajra-app" data-build="([a-z0-9]+)"/.exec(t) || /data-build="([a-z0-9]+)"/.exec(t);
+        if (!m || m[1] === b) return;
+        // At most one reload a minute, so a page that keeps changing can never loop.
+        try { var last = +sessionStorage.getItem('shajra-reload') || 0; if (Date.now() - last < 60000) return; sessionStorage.setItem('shajra-reload', String(Date.now())); } catch (e) { return; }
+        location.reload();
+      }).catch(function () {});
+    })();
+  </script>
   <section class="no-print mx-auto mt-10 max-w-4xl px-4 text-sm text-slate-400 sm:px-6">
     <p>Need help with an inheritance mutation (intiqal wirasat), partition or a disputed share? Our revenue record consultants can help:
       <a class="text-cyan-300 underline" href="/services/land-consultancy/inheritance-wirasat/">Inheritance (Wirasat) matters</a>.</p>
@@ -54,13 +73,23 @@ const ld = {
     body * { visibility: hidden; }
     .print-sheet, .print-sheet * { visibility: visible; }
     .print-sheet { display: block !important; position: absolute; inset: 0 auto auto 0; width: 100%; color: #111; }
-    .print-sheet .shajra-tree-print { width: 100% !important; height: auto !important; max-height: 150mm; background: #fff !important; }
-    .print-body { display: flex; align-items: flex-start; gap: 4mm; }
-    .print-tree { flex: 1 1 auto; min-width: 0; }
-    .print-share-wrap { flex: 0 0 auto; max-width: 42%; }
+    .print-sheet .shajra-tree-print { background: #fff !important; }
+    /* The tree starts right under the title, centred on the page; the share table at the side or below. */
+    .print-body.side { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; column-gap: 4mm; }
+    .print-body.side[data-cols='3'] .print-tree { grid-column: 2; }
+    .print-body.side[data-cols='3'] .print-share-wrap { grid-column: 3; grid-row: 1; justify-self: end; }
+    .print-body.side[data-cols='2'] .print-share-wrap { grid-column: 2; grid-row: 1; justify-self: end; }
+    .print-body.below { display: flex; flex-direction: column; align-items: center; gap: 4mm; }
+    .print-tree { display: flex; justify-content: center; min-width: 0; }
+    .print-attest { width: 100%; margin-top: 4mm; border-collapse: collapse; table-layout: fixed; font-size: 10px; line-height: 1.9; break-inside: avoid; }
+    .print-attest td { text-align: center; vertical-align: top; padding: 0 3mm; }
+    .print-attest .att-note { font-size: 8.5px; color: #333; }
+    .print-attest .att-thumb { width: 26mm; height: 18mm; margin: 1mm auto; border: 1px dashed #555; font-size: 7.5px; color: #777; display: flex; align-items: flex-end; justify-content: center; }
+    .print-attest tr.att-name td { padding-top: 1mm; }
+    .print-attest tr.att-cnic td { white-space: nowrap; }
     .print-kmf-note { font-family: 'Noto Nastaliq Urdu', serif; font-size: 8px; text-align: right; margin-top: 1mm; color: #555; }
     .print-share { border-collapse: collapse; font-size: 10px; line-height: 1.9; min-width: 70mm; }
-    .print-share th, .print-share td { border: 1px solid #333; padding: 1px 6px; text-align: center; }
+    .print-share th, .print-share td { border: 1px solid #333; padding: 1px 6px; text-align: center; white-space: nowrap; }
     .print-share th { background: #f1f1f1; font-weight: 700; }
     .print-share tr.total td { font-weight: 700; }
     .print-disclaimer { font-family: 'Noto Nastaliq Urdu', serif; font-size: 8px; text-align: center; margin-top: 3mm; color: #555; }

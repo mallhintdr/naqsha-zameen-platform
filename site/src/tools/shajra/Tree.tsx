@@ -41,7 +41,7 @@ export function Glyph({ x, y, size, kind }: { x: number; y: number; size: number
   if (kind === 'both') {
     return (
       <g>
-        <path d={v(size * 0.46, x - size * 0.06, y + size * 0.2)} fill="none" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={v(size * 0.345, x, y + size * 0.22)} fill="none" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
         <path d={leaf(size * 0.36, size * 0.22, 1)} transform={`translate(${x},${y + size * 0.72})`} fill="#fffdf6" strokeWidth="1.3" />
       </g>
     );
@@ -53,8 +53,10 @@ export function Glyph({ x, y, size, kind }: { x: number; y: number; size: number
   );
 }
 
-export default function Tree({ c, results, selected, onSelect, menu, printMode }: {
+export default function Tree({ c, results, selected, onSelect, menu, printMode, printSize }: {
   c: Case; results: Map<string, ShareResult>; selected: string | null; onSelect: (id: string) => void; menu?: ReactNode; printMode?: boolean;
+  /** Print: drawn size in mm (the sheet works it out so the tree fits the page). */
+  printSize?: { w: number; h: number };
 }) {
   const { nodes, width, height } = useMemo(() => layout(c), [c]);
   const P = 28;
@@ -93,10 +95,33 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
     const h = c.unions.filter((u) => u.partners.includes(id)).map((u) => u.partners.find((x) => x !== id)!).find((x) => nodes.get(x));
     return h && cx(h) > cx(id) ? -1 : 1;
   };
-  /** Horizontal X of the inverted-V apex for a child (shifted slightly over the heart body when kind === 'both'). */
-  const childAnchorX = (id: string) => (kindOf(id) === 'both' ? cx(id) - tipDir(id) * 4 : cx(id));
-  /** Vertical Y where the parent descent line meets the child's glyph top. */
-  const childAnchorY = (id: string) => (kindOf(id) === 'both' ? top(id) - 10 : id === c.deceasedId ? top(id) - 6 : top(id));
+  /** X where the line from the parents meets a child: always the child's centre, so stems are straight. */
+  const childAnchorX = (id: string) => cx(id);
+  /** Y where the parent descent line meets the child's glyph top. */
+  const childAnchorY = (id: string) => (kindOf(id) === 'both' ? top(id) - 11 : id === c.deceasedId ? top(id) - 6 : top(id));
+
+  // Every family's bar (the line the sons and daughters hang from) sits at the same height in a row;
+  // a second level is used only where two families' bars would run into each other.
+  const famList = [...families.values()];
+  const barLevel = new Map<number, number>();
+  {
+    const span = (f: (typeof famList)[number]) => {
+      const xs = [...f.kids.map((k) => cx(k)), ...[f.father, f.mother].filter(Boolean).map((p) => cx(p!))];
+      return [Math.min(...xs) - 20, Math.max(...xs) + 20];
+    };
+    const byRow = new Map<number, number[]>();
+    famList.forEach((f, i) => { const ky = Math.min(...f.kids.map((k) => top(k))); byRow.set(ky, [...(byRow.get(ky) ?? []), i]); });
+    for (const ids of byRow.values()) {
+      const ends: number[] = []; // right end of the last bar on each level
+      ids.sort((a, b) => span(famList[a])[0] - span(famList[b])[0]);
+      for (const i of ids) {
+        const [l, r] = span(famList[i]);
+        let lv = ends.findIndex((e) => e < l);
+        if (lv < 0) { lv = ends.length; ends.push(r); } else ends[lv] = r;
+        barLevel.set(i, lv);
+      }
+    }
+  }
 
   const statusOf = (id: string) => {
     const p = c.persons.find((x) => x.id === id)!;
@@ -107,14 +132,14 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
 
   const sel = selected ? nodes.get(selected) : null;
   return (
-    <div className="relative" style={printMode ? { width: '100%' } : { width: width + P * 2, minHeight: height + P * 2 + 210 /* room for the action bar under the lowest row */ }}>
-      <svg width={printMode ? '100%' : width + P * 2} height={printMode ? undefined : height + P * 2 + 70} viewBox={`0 0 ${width + P * 2} ${height + P * 2 + 70}`} role="group" aria-label="Family tree (shajra nasab)" className={printMode ? 'shajra-tree-print block' : 'shajra-tree block'} style={{ background: '#fffdf6' }}>
+    <div className={printMode ? 'relative' : 'relative mx-auto'} style={printMode ? { width: printSize ? `${printSize.w}mm` : '100%', margin: '0 auto' } : { width: width + P * 2, minHeight: height + P * 2 + 210 /* room for the action bar under the lowest row */ }}>
+      <svg width={printMode ? (printSize ? `${printSize.w}mm` : '100%') : width + P * 2} height={printMode ? (printSize ? `${printSize.h}mm` : undefined) : height + P * 2 + 70} viewBox={`0 0 ${width + P * 2} ${height + P * 2 + (printMode ? 10 : 70)}`} role="group" aria-label="Family tree (shajra nasab)" className={printMode ? 'shajra-tree-print block' : 'shajra-tree block'} style={{ background: '#fffdf6' }}>
         {/* Lines of descent: parent stroke -> bar over the children -> each child */}
         <g stroke={INK} strokeWidth="1.3" fill="none">
-          {[...families.values()].map(({ father, mother, kids }, fi) => {
+          {famList.map(({ father, mother, kids }, fi) => {
             const ky = Math.min(...kids.map((k) => top(k)));
-            // Each couple's bar on its own level, clear of the row below (the deceased's box and the marriage lines).
-            const bar = ky - 26 - (fi % 3) * 14;
+            // Bar clear of the row below (the deceased's box and the marriage lines).
+            const bar = ky - 26 - (barLevel.get(fi) ?? 0) * 14;
             const xs = kids.map(childAnchorX);
             // Draw the mother's branch only when the father has more than one wife in the tree
             // (children are then grouped by mother) or when the father is not in the tree.
@@ -122,12 +147,16 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
             const drops = (father ? (mother && wivesOfFather > 1 ? [father, mother] : [father]) : [mother]).filter(Boolean) as string[];
             const parentBottom = (id: string) =>
               top(id) + sym + (id === c.deceasedId ? 26 : kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 56 : 60); // just below the parent's last line of text
-            // A wife's line starts from the outer side of her heart, so it never runs into a child's line.
-            const dropX = (id: string) => (kindOf(id) === 'wife' ? cx(id) + tipDir(id) * 18 : cx(id));
+            // A wife's line: straight down from under her name when her children are right below her;
+            // otherwise from the outer side of her heart, so it never runs into a child's line.
+            const midKids = (Math.min(...xs) + Math.max(...xs)) / 2;
+            const straight = (id: string) => Math.abs(midKids - cx(id)) < 30;
+            const dropX = (id: string) => (kindOf(id) === 'wife' && !straight(id) ? cx(id) + tipDir(id) * 18 : cx(id));
+            const dropY = (id: string) => (kindOf(id) === 'wife' ? (straight(id) ? top(id) + sym + 54 : parentBottom(id) - 22) : parentBottom(id));
             const all = [...xs, ...drops.map(dropX)];
             return (
               <g key={`f-${fi}`} strokeDasharray={!father ? '4 3' : undefined}>
-                {drops.map((d) => <line key={d} x1={dropX(d)} y1={parentBottom(d) - (dropX(d) !== cx(d) ? 22 : 0)} x2={dropX(d)} y2={bar} />)}
+                {drops.map((d) => <line key={d} x1={dropX(d)} y1={dropY(d)} x2={dropX(d)} y2={bar} />)}
                 <line x1={Math.min(...all)} y1={bar} x2={Math.max(...all)} y2={bar} />
                 {kids.map((k) => <line key={k} x1={childAnchorX(k)} y1={bar} x2={childAnchorX(k)} y2={childAnchorY(k)} />)}
               </g>
@@ -199,8 +228,8 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode }
                     )}
                     {k === 'both' && (
                       <>
-                        {/* Smaller inverted V shifted slightly upward & over the heart body */}
-                        <path d={`M${vx - 14},${y + 3} L${vx},${y - 10} L${vx + 14},${y + 3}`} fill="none" stroke={INK} strokeWidth="1.55" strokeLinejoin="round" strokeLinecap="round" />
+                        {/* Inverted V (a quarter smaller than a daughter's) above the heart */}
+                        <path d={`M${vx - 10.5},${y - 1} L${vx},${y - 10.75} L${vx + 10.5},${y - 1}`} fill="none" stroke={INK} strokeWidth="1.55" strokeLinejoin="round" strokeLinecap="round" />
                         {/* Wife heart accommodated neatly below the smaller inverted V */}
                         <path d={leaf(36, 28, dir)} transform={`translate(${x},${heartCy})`} fill="#fffdf6" stroke={INK} strokeWidth="1.4" />
                       </>

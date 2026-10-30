@@ -32,6 +32,8 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
   const rows = [...new Set(gen.values())].sort((a, b) => a - b);
   const nodes = new Map<string, Placed>();
   const order = (id: string) => c.persons.findIndex((p) => p.id === id);
+  // Sons before daughters among brothers and sisters.
+  const gRank = (id: string) => (c.persons.find((p) => p.id === id)?.gender === 'F' ? 1 : 0);
 
   for (const r of rows) {
     const inRow = c.persons.map((p) => p.id).filter((id) => gen.get(id) === r);
@@ -43,12 +45,15 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
       // Ancestor rows: place by the child below that is already known later; use insertion order.
       return 1e6 + order(id);
     };
-    inRow.sort((a, b) => key(a) - key(b) || order(a) - order(b));
+    inRow.sort((a, b) => key(a) - key(b) || gRank(a) - gRank(b) || order(a) - order(b));
     // The deceased first among the brothers and sisters, so a spouse can sit outside them.
     const sibOf = (a: string, b: string) => {
       const fa = fatherOf(c, a), ma = motherOf(c, a);
       return a !== b && ((!!fa && fa === fatherOf(c, b)) || (!!ma && ma === motherOf(c, b)));
     };
+    // A spouse sits beside her / his partner, unless she / he has own brothers and sisters in this row
+    // (a marriage within the family keeps the spouse with her / his own siblings).
+    const besidePartner = (s: string) => !(fatherOf(c, s) || motherOf(c, s)) || !inRow.some((x) => sibOf(x, s));
     const di = inRow.indexOf(c.deceasedId);
     if (di > 0) {
       const first = inRow.findIndex((id) => sibOf(id, c.deceasedId));
@@ -58,7 +63,7 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
     const push = (id: string) => {
       if (placed.includes(id)) return;
       placed.push(id);
-      const sp = spousesOf(c, id).filter((s) => gen.get(s) === r && !placed.includes(s) && !(fatherOf(c, s) || motherOf(c, s)));
+      const sp = spousesOf(c, id).filter((s) => gen.get(s) === r && !placed.includes(s) && besidePartner(s));
       if (!sp.length) return;
       const female = c.persons.find((p) => p.id === id)?.gender === 'F';
       const sibsInRow = inRow.filter((x) => sibOf(x, id));
@@ -77,7 +82,10 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
         if (!female && i % 2 === 0) placed.splice(at, 0, s); else placed.splice(at + 1 + (female ? i : Math.floor(i / 2)), 0, s);
       });
     };
-    for (const id of inRow) push(id);
+    // A spouse who goes beside a partner waits for that partner (who is placed with her / his siblings).
+    const waits = (id: string) => besidePartner(id) && spousesOf(c, id).some((s) => inRow.includes(s) && !besidePartner(s));
+    for (const id of inRow) if (!waits(id)) push(id);
+    for (const id of inRow) push(id); // anyone still left
     // Manual order (Move left / right): people the user moved keep their saved position.
     const rank = (c as WithLayout).layoutRank;
     if (rank && placed.some((id) => id in rank)) {
@@ -88,23 +96,58 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
     placed.forEach((id, i) => nodes.set(id, { id, x: i * (NODE_W + GAP_X), y: 0, gen: r }));
   }
 
-  // 2. Ancestor rows: centre each parent couple above their children (bottom-up), then
-  //    shift rows so nothing overlaps.
+  // 2. Ancestor rows, bottom-up: a father stands straight above his children (above the middle of
+  //    them when there are several) with his wife / wives beside him on whichever side is free, so
+  //    every stem is a straight line. When a family must move right to make room, the rows below it
+  //    move with it, so its stem stays straight.
+  const step = NODE_W + GAP_X;
+  const female = (id: string) => c.persons.find((p) => p.id === id)?.gender === 'F';
+  const kidsBelow = (id: string, r: number) =>
+    childrenOf(c, id).map((k) => nodes.get(k)).filter((k): k is Placed => !!k && k.gen === r + 1);
   for (const r of [...rows].reverse()) {
     if (r >= 0) continue;
     const inRow = [...nodes.values()].filter((n) => n.gen === r).sort((a, b) => a.x - b.x);
+    const inRowIds = new Set(inRow.map((n) => n.id));
+    // Group = a man (or a woman without a husband in this row) + the spouses beside him.
+    const used = new Set<string>();
+    const groups: { anchor: Placed; left: Placed[]; right: Placed[]; sortX: number }[] = [];
     for (const n of inRow) {
-      const kids = childrenOf(c, n.id).map((k) => nodes.get(k)).filter((k) => k && k.gen === r + 1) as Placed[];
-      if (kids.length) {
-        const mid = kids.reduce((a, k) => a + k.x, 0) / kids.length;
-        const partner = spousesOf(c, n.id).map((s) => nodes.get(s)).find((s) => s && s.gen === r);
-        n.x = partner ? mid - (n.x < partner.x ? (NODE_W + GAP_X) / 2 : -(NODE_W + GAP_X) / 2) : mid;
-      }
+      if (used.has(n.id)) continue;
+      const partners = spousesOf(c, n.id).filter((s) => inRowIds.has(s) && !used.has(s)).map((s) => nodes.get(s)!);
+      if (female(n.id) && partners.some((p) => !female(p.id))) continue; // her husband takes her
+      used.add(n.id);
+      partners.forEach((p) => used.add(p.id));
+      groups.push({ anchor: n, left: partners.filter((p) => p.x < n.x), right: partners.filter((p) => p.x >= n.x), sortX: n.x });
     }
-    inRow.sort((a, b) => a.x - b.x);
-    for (let i = 1; i < inRow.length; i++) {
-      const min = inRow[i - 1].x + NODE_W + GAP_X;
-      if (inRow[i].x < min) inRow[i].x = min;
+    const kidsOf = (g: (typeof groups)[number]) => [...new Set([g.anchor, ...g.left, ...g.right].flatMap((p) => kidsBelow(p.id, r)))];
+    for (const g of groups) {
+      const k = kidsOf(g);
+      if (k.length) g.sortX = (Math.min(...k.map((x) => x.x)) + Math.max(...k.map((x) => x.x))) / 2;
+    }
+    groups.sort((a, b) => a.sortX - b.sortX);
+    let free = -Infinity;
+    for (const g of groups) {
+      const kids = kidsOf(g);
+      const own = kidsBelow(g.anchor.id, r);
+      const ref = own.length ? own : kids;
+      const want = ref.length ? (Math.min(...ref.map((x) => x.x)) + Math.max(...ref.map((x) => x.x))) / 2 : Math.max(free, g.anchor.x);
+      const wives = [...g.left, ...g.right];
+      // Wives on the left as before if there is room; else as many as fit on the left, the rest on the right.
+      let L = g.left.length;
+      if (free > want - L * step) {
+        L = 0;
+        for (let t = wives.length; t > 0; t--) if (free <= want - t * step) { L = t; break; }
+      }
+      const ax = Math.max(want, free + L * step);
+      const delta = ax - want;
+      wives.slice(0, L).forEach((w, i) => { w.x = ax - (L - i) * step; });
+      g.anchor.x = ax;
+      wives.slice(L).forEach((w, i) => { w.x = ax + (i + 1) * step; });
+      free = ax + (wives.length - L + 1) * step;
+      if (delta > 0.5 && kids.length) {
+        const from = Math.min(...kids.map((x) => x.x)) - 1;
+        for (const m of nodes.values()) if (m.gen > r && m.gen <= 0 && m.x >= from) m.x += delta;
+      }
     }
   }
 

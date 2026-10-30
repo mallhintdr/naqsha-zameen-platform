@@ -99,6 +99,7 @@ exports.pdf = async (req, res) => {
         await ShajraCase.create({ _id: id, data: text, policyVersion });
         const b = await browser();
         page = await b.newPage();
+        await page.setCacheEnabled(false); // always print the newest version of the page
         await page.setRequestInterception(true);
         page.on('request', (r) => (BLOCK.test(r.url()) || ['image', 'media'].includes(r.resourceType()) ? r.abort() : r.continue()));
         await page.emulateMediaType('print');
