@@ -49,6 +49,14 @@ export interface PolicyToggles {
   grandfatherExcludesSiblings: boolean;
   shiaChildlessWidowLandRule: 'classical' | 'equal';
   applyMFLOs4: boolean;
+  /**
+   * MFLO s.4 when the predeceased child left only daughters:
+   *  'daughters-share' (default): they take as daughters would from their parent (1/2, or 2/3 for two
+   *    or more) of the parent's share; the rest goes to the parent's own next heirs (brothers and
+   *    sisters, then nephews, grandfather...), not to the parent's spouse or mother.
+   *  'whole': they take the parent's whole share.
+   */
+  mfloS4OnlyDaughters?: 'daughters-share' | 'whole';
   hinduDaughterOrder: 'benares' | 'bombay';
   /** Hindu: separate (self-acquired) property or coparcenary (joint family) interest. */
   hinduProperty?: 'separate' | 'coparcenary';
@@ -111,6 +119,7 @@ export const DEFAULT_POLICY: PolicyToggles = {
   grandfatherExcludesSiblings: true,
   shiaChildlessWidowLandRule: 'classical',
   applyMFLOs4: true,
+  mfloS4OnlyDaughters: 'daughters-share',
   hinduDaughterOrder: 'benares',
   policyVersion: '2026.10-draft',
 };

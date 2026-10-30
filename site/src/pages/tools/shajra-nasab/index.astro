@@ -55,7 +55,10 @@ const ld = {
     .print-sheet, .print-sheet * { visibility: visible; }
     .print-sheet { display: block !important; position: absolute; inset: 0 auto auto 0; width: 100%; color: #111; }
     .print-sheet .shajra-tree-print { width: 100% !important; height: auto !important; max-height: 150mm; background: #fff !important; }
-    .print-share-wrap { display: flex; justify-content: flex-end; margin-top: 4mm; }
+    .print-body { display: flex; align-items: flex-start; gap: 4mm; }
+    .print-tree { flex: 1 1 auto; min-width: 0; }
+    .print-share-wrap { flex: 0 0 auto; max-width: 42%; }
+    .print-kmf-note { font-family: 'Noto Nastaliq Urdu', serif; font-size: 8px; text-align: right; margin-top: 1mm; color: #555; }
     .print-share { border-collapse: collapse; font-size: 10px; line-height: 1.9; min-width: 70mm; }
     .print-share th, .print-share td { border: 1px solid #333; padding: 1px 6px; text-align: center; }
     .print-share th { background: #f1f1f1; font-weight: 700; }

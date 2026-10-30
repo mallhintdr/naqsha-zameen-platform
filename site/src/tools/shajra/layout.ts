@@ -10,6 +10,9 @@ export const ROW_H = 185;
 
 export interface Placed { id: string; x: number; y: number; gen: number }
 
+/** Manual left / right order set by the user (person id -> position in the row). Saved with the case. */
+export type WithLayout = Case & { layoutRank?: Record<string, number> };
+
 export function layout(c: Case): { nodes: Map<string, Placed>; width: number; height: number } {
   // 1. generation of each person (BFS from the deceased).
   const gen = new Map<string, number>([[c.deceasedId, 0]]);
@@ -41,21 +44,46 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
       return 1e6 + order(id);
     };
     inRow.sort((a, b) => key(a) - key(b) || order(a) - order(b));
-    // Put the deceased's row with the deceased after its siblings, spouses right after partners.
+    // The deceased first among the brothers and sisters, so a spouse can sit outside them.
+    const sibOf = (a: string, b: string) => {
+      const fa = fatherOf(c, a), ma = motherOf(c, a);
+      return a !== b && ((!!fa && fa === fatherOf(c, b)) || (!!ma && ma === motherOf(c, b)));
+    };
+    const di = inRow.indexOf(c.deceasedId);
+    if (di > 0) {
+      const first = inRow.findIndex((id) => sibOf(id, c.deceasedId));
+      if (first >= 0 && first < di) { inRow.splice(di, 1); inRow.splice(first, 0, c.deceasedId); }
+    }
     const placed: string[] = [];
     const push = (id: string) => {
       if (placed.includes(id)) return;
       placed.push(id);
-      // Patwari style: first wife on the left of her husband, second on the right, alternating.
       const sp = spousesOf(c, id).filter((s) => gen.get(s) === r && !placed.includes(s) && !(fatherOf(c, s) || motherOf(c, s)));
-      // A daughter's (or any woman's) husband goes after her, outside her brothers and sisters.
+      if (!sp.length) return;
       const female = c.persons.find((p) => p.id === id)?.gender === 'F';
+      const sibsInRow = inRow.filter((x) => sibOf(x, id));
+      if (sibsInRow.length) {
+        // Brothers / sisters in this row: every spouse goes on the outer side, never between them.
+        // First of the siblings: spouses on the left; otherwise on the right.
+        const firstOfSibs = !placed.some((x) => x !== id && sibOf(x, id));
+        const at = placed.indexOf(id);
+        if (firstOfSibs) placed.splice(at, 0, ...sp.reverse()); else placed.splice(at + 1, 0, ...sp);
+        return;
+      }
+      // Patwari style: first wife on the left of her husband, second on the right, alternating.
+      // A woman's husband goes after her.
       sp.forEach((s, i) => {
         const at = placed.indexOf(id);
         if (!female && i % 2 === 0) placed.splice(at, 0, s); else placed.splice(at + 1 + (female ? i : Math.floor(i / 2)), 0, s);
       });
     };
     for (const id of inRow) push(id);
+    // Manual order (Move left / right): people the user moved keep their saved position.
+    const rank = (c as WithLayout).layoutRank;
+    if (rank && placed.some((id) => id in rank)) {
+      const pos = new Map(placed.map((id, i) => [id, id in rank ? rank[id] : i]));
+      placed.sort((a, b) => pos.get(a)! - pos.get(b)! || placed.indexOf(a) - placed.indexOf(b));
+    }
     // Spouses that have their own parents may be far apart; keep them in sorted position.
     placed.forEach((id, i) => nodes.set(id, { id, x: i * (NODE_W + GAP_X), y: 0, gen: r }));
   }

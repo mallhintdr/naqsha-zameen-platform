@@ -30,18 +30,20 @@ function ShajraTitle({ c }: { c: Case }) {
  *  Wide trees switch the page to A4 landscape. */
 function PrintSheet({ c, result, results }: { c: Case; result: ComputeResult | null; results: Map<string, ShareResult> }) {
   const { width, height } = layout(c);
-  const landscape = width > 700 || width > height * 1.25;
+  // The share table sits beside the tree, so a sheet with a table is printed landscape.
+  const landscape = !!result || width > 700 || width > height * 1.25;
   const rows = (result?.shares ?? []).filter((s) => s.fraction.n > 0n || s.status === 'reserved');
   const nm = (id: string) => c.persons.find((p) => p.id === id)?.name || (id === '__unborn__' ? 'حمل' : id);
   return (
     <div className="print-sheet" lang="ur">
       <style>{`@page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: 9mm; }`}</style>
       <ShajraTitle c={c} />
-      <Tree c={c} results={results} selected={null} onSelect={() => {}} printMode />
+      <div className="print-body">
+      <div className="print-tree"><Tree c={c} results={results} selected={null} onSelect={() => {}} printMode /></div>
       {result && (
         <div className="print-share-wrap">
           <table className="print-share urdu" dir="rtl">
-            <thead><tr><th>نمبر</th><th>نام وارث</th><th>رشتہ</th><th>حصہ</th><th>سہام / {String(result.base)}</th>{c.estate.immovable.map((p, i) => <th key={i}>رقبہ {p.title}</th>)}</tr></thead>
+            <thead><tr><th>نمبر</th><th>نام وارث</th><th>رشتہ</th><th>حصہ</th><th>سہام / {String(result.base)}</th>{c.estate.immovable.map((p, i) => <th key={i}>رقبہ{c.estate.immovable.length > 1 ? ` ${p.title}` : ''}{p.area.unit === 'gkanal' ? ' (ک-م-ف)' : ''}</th>)}</tr></thead>
             <tbody>
               {rows.map((s, i) => (
                 <tr key={s.personId}>
@@ -49,15 +51,21 @@ function PrintSheet({ c, result, results }: { c: Case; result: ComputeResult | n
                   <td dir="ltr">{toString(s.fraction)}</td><td dir="ltr">{String(s.sihaam)}</td>
                   {c.estate.immovable.map((p, k) => {
                     const whole = s.areaSqftRounded?.[k];
+                    if (p.area.unit === 'gkanal' && whole != null) return <td key={k} dir="ltr">{heirLandText(s, p.area.unit, k)}</td>;
                     return <td key={k}>{whole != null ? feetTextUr(whole, p.area.unit) : s.area?.[k] ? areaTextUr(s.area[k].value, p.area.unit) : ''}</td>;
                   })}
                 </tr>
               ))}
-              <tr className="total"><td colSpan={3}>میزان</td><td dir="ltr">1</td><td dir="ltr">{String(result.base)}</td>{c.estate.immovable.map((p, i) => <td key={i}>{areaTextUr(p.area.value, p.area.unit)}</td>)}</tr>
+              <tr className="total"><td colSpan={3}>میزان</td><td dir="ltr">1</td><td dir="ltr">{String(result.base)}</td>{c.estate.immovable.map((p, i) => {
+                const t = p.area.value.n * 5440n;
+                return <td key={i} dir={p.area.unit === 'gkanal' ? 'ltr' : undefined}>{p.area.unit === 'gkanal' && t % p.area.value.d === 0n ? kmfText(t / p.area.value.d) : areaTextUr(p.area.value, p.area.unit)}</td>;
+              })}</tr>
             </tbody>
           </table>
+          {c.estate.immovable.some((p) => p.area.unit === 'gkanal') && <p className="print-kmf-note">رقبہ: کنال-مرلہ-فٹ</p>}
         </div>
       )}
+      </div>
       <p className="print-disclaimer">{DISCLAIMER_UR}</p>
     </div>
   );
@@ -66,8 +74,9 @@ function PrintSheet({ c, result, results }: { c: Case; result: ComputeResult | n
 type WithOverride = Case & { manualShares?: Record<string, string> };
 import { addRelative, fromJSON, load, newCase, removePerson, save, setParentOf, toJSON, updatePerson, type AddKind } from './model.ts';
 import { DISCLAIMER, DISCLAIMER_UR, relLabel, ruleText as ruleTextL, type Lang } from './labels.ts';
-import Estate, { areaText, areaTextUr, feetText, feetTextUr, systemFor } from './Estate.tsx';
-import { layout } from './layout.ts';
+import Estate, { areaText, areaTextUr, feetText, feetTextUr, heirLandText, kmfText, systemFor } from './Estate.tsx';
+import SideShares from './SideShares.tsx';
+import { layout, type WithLayout } from './layout.ts';
 import qrcode from 'qrcode-generator';
 import { SITE } from '../../site';
 
@@ -101,9 +110,9 @@ const ADD: { kind: AddKind; label: string; ur: string }[] = [
 
 /** Action bar shown just below a tapped person: Edit · Add relative · Delete, all in one row;
  *  the relative choices open as a second horizontal row (no scrolling). Keyboard: arrows, Escape. */
-function PersonMenu({ p, isDeceased, addOpen, setAddOpen, onEdit, onAdd, onDelete, onClose }: {
+function PersonMenu({ p, isDeceased, addOpen, setAddOpen, onEdit, onAdd, onDelete, onClose, onMove }: {
   p: Person; isDeceased: boolean; addOpen: boolean; setAddOpen: (v: boolean) => void;
-  onEdit: () => void; onAdd: (k: AddKind) => void; onDelete: () => void; onClose: () => void;
+  onEdit: () => void; onAdd: (k: AddKind) => void; onDelete: () => void; onClose: () => void; onMove: (dir: -1 | 1) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -126,6 +135,8 @@ function PersonMenu({ p, isDeceased, addOpen, setAddOpen, onEdit, onAdd, onDelet
     <div ref={ref} role="menu" aria-orientation="horizontal" aria-label={`Actions for ${p.name || 'this person'}`} onKeyDown={onKey}
       className="w-max max-w-[min(520px,92vw)] rounded-xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-xl">
       <div className="flex flex-wrap items-center gap-1.5">
+        <button role="menuitem" className={act} onClick={() => onMove(-1)} title="Move left" aria-label="Move left">◀</button>
+        <button role="menuitem" className={act} onClick={() => onMove(1)} title="Move right" aria-label="Move right">▶</button>
         <button role="menuitem" className={act} onClick={onEdit}>✏️ Edit</button>
         <button role="menuitem" className={`${act} ${addOpen ? '!border-sky-500 !bg-sky-50' : ''}`} aria-expanded={addOpen} onClick={() => setAddOpen(!addOpen)}>➕ Add relative</button>
         {!isDeceased && <button role="menuitem" className={`${act} !text-red-700`} onClick={onDelete}>🗑️ Delete</button>}
@@ -254,6 +265,19 @@ export default function ShajraApp() {
   const setPlace = (pt: Partial<Place>) => setC({ ...structuredClone(c), place: { ...place(c), ...pt } } as Case);
   const add = (kind: AddKind) => { if (!sel) return; const [n, id] = addRelative(c, sel.id, kind); setC(n); setSelected(id); };
   const patch = (id: string, p: Partial<Person>) => setC(updatePerson(c, id, p));
+  /** Swaps a person with the neighbour on the left (-1) or right (+1) in the same row; the order is saved. */
+  const move = (id: string, dir: -1 | 1) => {
+    const { nodes } = layout(c);
+    const me = nodes.get(id);
+    if (!me) return;
+    const row = [...nodes.values()].filter((n) => n.gen === me.gen).sort((a, b) => a.x - b.x).map((n) => n.id);
+    const i = row.indexOf(id), j = i + dir;
+    if (j < 0 || j >= row.length) return;
+    [row[i], row[j]] = [row[j], row[i]];
+    const rank = { ...((c as WithLayout).layoutRank ?? {}) };
+    row.forEach((x, k) => { rank[x] = k; });
+    setC({ ...structuredClone(c), layoutRank: rank } as WithLayout);
+  };
 
   const exportJson = () => {
     const blob = new Blob([toJSON(rootC)], { type: 'application/json' });
@@ -372,6 +396,14 @@ export default function ShajraApp() {
           <input type="checkbox" checked={c.policy.applyMFLOs4} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, applyMFLOs4: e.target.checked } })} />
           Apply MFLO 1961 s.4 (children of a predeceased son / daughter)
         </label>
+        {c.policy.applyMFLOs4 && ['sunni-hanafi', 'sunni-shafii', 'sunni-maliki', 'sunni-hanbali', 'shia-ithna'].includes(c.lawSystem) && (
+          <label className="text-xs font-semibold text-slate-600 sm:col-span-2">s.4 when the predeceased child left only daughters
+            <select className={input} value={c.policy.mfloS4OnlyDaughters ?? 'daughters-share'} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, mfloS4OnlyDaughters: e.target.value as 'daughters-share' | 'whole' } })}>
+              <option value="daughters-share">Daughters take 1/2 (one) or 2/3 (two or more) of the parent's share; the rest to the parent's brothers / sisters or next heirs</option>
+              <option value="whole">Daughters take the parent's whole share</option>
+            </select>
+          </label>
+        )}
         <label className="flex items-center gap-2 text-xs text-slate-600 sm:col-span-2">
           <input type="checkbox" checked={c.policy.raddToSpouseWhenNoOtherHeir} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, raddToSpouseWhenNoOtherHeir: e.target.checked } })} />
           Sole spouse takes the surplus (Pakistani practice)
@@ -384,7 +416,7 @@ export default function ShajraApp() {
       <PrintSheet c={c} result={result} results={byId} />
 
       {/* Step 2: family tree + editor */}
-      <div id="shajra-print" className="grid gap-0 lg:grid-cols-[1fr_320px]">
+      <div id="shajra-print" className="grid gap-0 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0 border-slate-200 p-3 lg:border-r">
           <div className={`print-only mb-2 ${pdfMode ? '' : 'hidden'} flex items-start justify-between gap-3`}>
             <div>
@@ -403,6 +435,7 @@ export default function ShajraApp() {
                   onEdit={() => { setEditing(sel.id); setMenuFor(null); setTimeout(() => document.getElementById('shajra-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50); }}
                   onAdd={(k) => { add(k); setMenuFor(null); }}
                   onDelete={() => { if (confirm(`Delete ${sel.name || 'this person'} from the tree?`)) { setC(removePerson(c, sel.id)); setSelected('D'); setEditing(null); } setMenuFor(null); }}
+                  onMove={(d) => move(sel.id, d)}
                   onClose={() => setMenuFor(null)} />
               ) : null} />
           </div>
@@ -410,16 +443,13 @@ export default function ShajraApp() {
         </div>
 
         {/* Person editor */}
-        <aside id="shajra-editor" className="no-print border-t border-slate-200 p-4 lg:border-t-0">
+        <aside id="shajra-editor" className="no-print flex flex-col gap-3 border-t border-slate-200 p-3 lg:border-t-0">
           {sel && editing === sel.id ? <Editor c={c} p={sel} share={byId.get(sel.id)} onPatch={(p) => patch(sel.id, p)}
             onParent={(role, id) => setC(setParentOf(c, sel.id, role, id))}
             onRemove={() => { setC(removePerson(c, sel.id)); setSelected('D'); setEditing(null); }} onClose={() => setEditing(null)} /> : (
-            <div className="text-sm text-slate-600">
-              <p className="font-semibold text-slate-800">Tap a person on the shajra</p>
-              <p className="mt-1">A menu opens with <b>Edit</b>, <b>Add relative</b> (father, mother, spouse, son, daughter, brother, sister) and <b>Delete</b>.</p>
-              <p className="mt-2 text-xs text-slate-500">Keyboard: Tab to a person, Enter to open the menu, arrow keys to move, Escape to close.</p>
-            </div>
+            <p className="text-xs text-slate-600"><b className="text-slate-800">Tap a person</b> on the shajra for <b>Edit</b>, <b>Add relative</b> and <b>Delete</b>. Keyboard: Tab, Enter, arrows, Escape.</p>
           )}
+          <SideShares c={c} setC={setC} result={result} name={name} />
         </aside>
       </div>
 

@@ -92,6 +92,36 @@ function withUnborn(c: Case, gender: 'M' | 'F'): Case {
   return { ...c, persons: [...c.persons, unborn], parents: [...c.parents, { childId: '__unborn__', fatherId, motherId }] };
 }
 
+/**
+ * MFLO s.4 with only daughters: split a predeceased child P's share as P's own estate among
+ * P's daughters (the s.4 children) and P's next heirs alive at the deceased's death.
+ * P's spouse, mother, grandmothers and uterine siblings are left out: they are not "next in
+ * the family line" for the remainder. Returns fractions of P's share that add up to 1.
+ */
+function s4DaughtersSplit(c: Case, predeceasedId: string, kids: string[]): Map<string, Fraction> {
+  const cc: Case = { ...c, deceasedId: predeceasedId, estate: { ...c.estate, wills: [], immovable: [] } };
+  const rel = deriveRelations(cc);
+  const p0 = cc.persons.find((p) => p.id === predeceasedId)!;
+  const eligible: Relation[] = [];
+  for (const p of cc.persons) {
+    if (p.id === predeceasedId) continue;
+    const r = rel.get(p.id);
+    if (!r || r.kind === 'unrelated' || r.kind === 'deceased') continue;
+    if (!survived(p, c.dateOfDeath)) continue;
+    if (r.kind === 'spouse' || r.kind === 'mother' || r.kind === 'true-grandmother' || (r.kind === 'sibling' && r.blood === 'uterine')) continue;
+    if (r.kind === 'agnatic-descendant' && !kids.includes(p.id)) continue;
+    if (capacityBar(cc, p, r, p0)) continue;
+    eligible.push(r);
+  }
+  const out = ruleSet(cc)(eligible, cc).shares;
+  const split = new Map<string, Fraction>();
+  for (const [id, f] of out) if (!isZero(f)) split.set(id, f);
+  // Anything not given out (no heir at all besides the daughters) goes back to the daughters.
+  const left = sub(ONE, sum([...split.values()]));
+  if (!isZero(left)) for (const k of kids) split.set(k, add(split.get(k) ?? ZERO, div(left, frac(BigInt(kids.length)))));
+  return split;
+}
+
 export function compute(c: Case): ComputeResult {
   const notes: ExplainEntry[] = [];
   const g = buildGraph(c);
@@ -179,12 +209,29 @@ export function compute(c: Case): ComputeResult {
   }
 
   // MFLO s.4: pass each predeceased child's share to their children (2:1 male:female).
+  // Only daughters: they take 1/2 or 2/3 of it as daughters; the rest goes to the parent's next heirs.
   const s4Recipients = new Map<string, Fraction>();
+  const s4Extra = new Map<string, ExplainEntry[]>();
   for (const [childId, kids] of s4) {
     const f = final.get(childId) ?? ZERO;
     final.delete(childId);
     if (isZero(f)) continue;
     const people = kids.map((id) => g.byId.get(id)!);
+    if (people.every((p) => p.gender === 'F') && (c.policy.mfloS4OnlyDaughters ?? 'daughters-share') === 'daughters-share') {
+      const parentName = g.byId.get(childId)?.name || childId;
+      for (const [id, part] of s4DaughtersSplit(c, childId, kids)) {
+        const amount = mul(f, part);
+        final.set(id, add(final.get(id) ?? ZERO, amount));
+        if (kids.includes(id)) {
+          s4Recipients.set(id, add(s4Recipients.get(id) ?? ZERO, amount));
+          s4Extra.set(id, [...(s4Extra.get(id) ?? []), note('mflo.s4.daughters', 'mflo-1961-s4', { child: parentName, share: kids.length > 1 ? '2/3' : '1/2' })]);
+        } else {
+          s4Extra.set(id, [...(s4Extra.get(id) ?? []), note('mflo.s4.residue', 'mflo-1961-s4', { child: parentName, amount: `${amount.n}/${amount.d}` })]);
+        }
+      }
+      notes.push(note('mflo.s4.only-daughters', 'mflo-1961-s4', { child: parentName }));
+      continue;
+    }
     const w = people.reduce((a, p) => a + (p.gender === 'M' ? 2n : 1n), 0n);
     for (const p of people) {
       const part = mul(f, frac(p.gender === 'M' ? 2n : 1n, w));
@@ -213,8 +260,8 @@ export function compute(c: Case): ComputeResult {
     const f = final.get(p.id) ?? ZERO;
     if (s4.has(p.id)) { shares.push(make(p.id, r.key, ZERO, 'excluded', [note('mflo.s4.passed-down', 'mflo-1961-s4')])); continue; }
     if (missing.includes(p.id)) { shares.push(make(p.id, r.key, ZERO, 'reserved', [note('reserve.missing', 'reserve-missing')])); continue; }
-    if (s4Recipients.has(p.id)) { shares.push(make(p.id, r.key, f, 'substituted-s4', [note('mflo.s4.recipient', 'mflo-1961-s4'), ...(main.out.reasons.get(p.id) ?? [])])); continue; }
-    if (!isZero(f)) { shares.push(make(p.id, r.key, f, 'heir', [...(main.out.reasons.get(p.id) ?? [])])); continue; }
+    if (s4Recipients.has(p.id)) { shares.push(make(p.id, r.key, f, 'substituted-s4', [note('mflo.s4.recipient', 'mflo-1961-s4'), ...(s4Extra.get(p.id) ?? []), ...(main.out.reasons.get(p.id) ?? [])])); continue; }
+    if (!isZero(f)) { shares.push(make(p.id, r.key, f, 'heir', [...(main.out.reasons.get(p.id) ?? []), ...(s4Extra.get(p.id) ?? [])])); continue; }
     const why = main.bars.get(p.id) ?? main.out.excluded.get(p.id)?.[0] ?? note(r.kind === 'unrelated' ? 'not-related' : 'not-an-heir', 'general');
     shares.push(make(p.id, r.key, ZERO, 'excluded', [why]));
   }

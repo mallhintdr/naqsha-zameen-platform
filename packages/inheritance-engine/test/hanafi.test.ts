@@ -223,3 +223,46 @@ test('will: limited to one third and not to an heir', () => {
   assert.ok(r.notes.some((n) => n.ruleId === 'will.clipped-to-third'));
   assert.ok(r.notes.some((n) => n.ruleId === 'will.to-heir-needs-consent'));
 });
+
+test('MFLO s.4, only daughters: one daughter takes 1/2 of the parent share, the rest to the uncle', () => {
+  const b = new CaseBuilder();
+  const s1 = b.child('M');
+  const s2 = b.child('M', { alive: false, dateOfDeath: '2020-01-01' });
+  const gd = b.childOf(s2, 'F');
+  const r = compute(b.build());
+  assert.deepEqual([share(r, s1), share(r, gd)], ['3/4', '1/4']);
+  assert.equal(status(r, gd), 'substituted-s4');
+  assert.equal(share(r, s2), '0');
+});
+
+test('MFLO s.4, only daughters: two daughters take 2/3; uncle and aunt share the rest 2:1', () => {
+  const b = new CaseBuilder();
+  const w = b.spouse();
+  const s1 = b.child('M'), d1 = b.child('F');
+  const s2 = b.child('M', { alive: false, dateOfDeath: '2020-01-01' });
+  const g1 = b.childOf(s2, 'F'), g2 = b.childOf(s2, 'F');
+  const r = compute(b.build());
+  // Widow 1/8; 7/8 to s1 : s2 : d1 = 2:2:1 -> s2 = 7/20. Granddaughters 2/3 of it = 7/30 (7/60 each).
+  // Remaining 7/60 to s1 and d1 as s2's brother and sister (2:1): 7/90 and 7/180.
+  assert.deepEqual([share(r, w), share(r, g1), share(r, g2)], ['1/8', '7/60', '7/60']);
+  assert.equal(share(r, s1), '77/180'); // 7/20 + 7/90
+  assert.equal(share(r, d1), '77/360'); // 7/40 + 7/180
+});
+
+test('MFLO s.4, only daughters with no other next heir: they take the whole share', () => {
+  const b = new CaseBuilder();
+  const w = b.spouse();
+  const s2 = b.child('M', { alive: false, dateOfDeath: '2020-01-01' });
+  const gd = b.childOf(s2, 'F');
+  const r = compute(b.build());
+  assert.deepEqual([share(r, w), share(r, gd)], ['1/8', '7/8']);
+});
+
+test("MFLO s.4, policy 'whole': only daughters take the parent's whole share", () => {
+  const b = new CaseBuilder('sunni-hanafi', {}, '2026-01-01', { mfloS4OnlyDaughters: 'whole' });
+  const s1 = b.child('M');
+  const s2 = b.child('M', { alive: false, dateOfDeath: '2020-01-01' });
+  const gd = b.childOf(s2, 'F');
+  const r = compute(b.build());
+  assert.deepEqual([share(r, s1), share(r, gd)], ['1/2', '1/2']);
+});

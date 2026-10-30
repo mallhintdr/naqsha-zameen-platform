@@ -44,6 +44,49 @@ export function areaText(value: Fraction, unit: string) {
   return formatMixed(toMixed(value, unit as AreaUnit, sys.units));
 }
 
+/** Compact patwari style "K-M-F" (government standard: 1 kanal = 20 marla, 1 marla = 272 sq ft). */
+export function kmfText(sqft: bigint) {
+  const k = sqft / 5440n, rest = sqft % 5440n;
+  return `${k}-${rest / 272n}-${rest % 272n}`;
+}
+
+/** An heir's land in property k: compact K-M-F for the default units, otherwise the property's own units. */
+export function heirLandText(s: { areaSqftRounded?: (bigint | null)[]; area?: { value: Fraction }[] }, unit: string, k: number) {
+  const whole = s.areaSqftRounded?.[k];
+  if (unit === 'gkanal' && whole != null) return whole ? kmfText(whole) : '—';
+  if (systemFor(unit).units.includes('sqft') && whole != null) return whole ? feetText(whole, unit) : '—';
+  const v = s.area?.[k]?.value;
+  return v && v.n ? areaText(v, unit) : '—';
+}
+
+/** Quick "total land" entry for the first property (created as "Land" in Kanal – Marla – Feet). */
+export function LandQuick({ c, setC }: { c: Case; setC: (c: Case) => void }) {
+  const p = c.estate.immovable[0];
+  const unit = p?.area.unit ?? 'gkanal';
+  const sys = systemFor(unit);
+  const m = toMixed(p?.area.value ?? ZERO, unit as AreaUnit, sys.units);
+  const label = (u: string) => ({ gkanal: 'Kanal', gmarla: 'Marla', sqft: 'Feet', kanal: 'Kanal', marla: 'Marla', sarsai: 'Sarsai', acre: 'Acre', murabba: 'Murabba', ghunta: 'Ghunta', sqyd: 'Sq yd' } as Record<string, string>)[u] ?? u;
+  const set = (u: AreaUnit, v: string) => {
+    const parts: Partial<Record<AreaUnit, Fraction>> = {};
+    for (const x of m.parts) parts[x.unit] = frac(x.whole);
+    parts[u] = frac(int(v));
+    const area = { unit: sys.units[0], value: fromParts(parts, sys.units[0]) };
+    const rest = c.estate.immovable.slice(1);
+    setC({ ...structuredClone(c), estate: { ...structuredClone(c.estate), immovable: [{ ...(p ?? { title: 'Land' }), area }, ...rest] } });
+  };
+  return (
+    <div className="flex flex-wrap items-end gap-1.5">
+      <span className="w-full text-[11px] font-semibold text-slate-600">Total land{p && p.title !== 'Land' ? ` (${p.title})` : ''} <span className="urdu font-normal" lang="ur">کل رقبہ</span></span>
+      {m.parts.map((x) => (
+        <label key={x.unit} className="w-[4.2rem] text-[10px] text-slate-500">{label(x.unit)}
+          <input className="w-full rounded border border-slate-300 bg-white px-1.5 py-1 text-right text-xs text-slate-900 focus:border-sky-500 focus:outline-none"
+            inputMode="numeric" value={x.whole ? String(x.whole) : ''} placeholder="0" onChange={(e) => set(x.unit, e.target.value)} />
+        </label>
+      ))}
+    </div>
+  );
+}
+
 export default function Estate({ c, setC }: { c: Case; setC: (c: Case) => void }) {
   const e = c.estate;
   const upd = (patch: Partial<Case['estate']>) => setC({ ...structuredClone(c), estate: { ...structuredClone(e), ...patch } });
