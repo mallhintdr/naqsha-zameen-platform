@@ -20,7 +20,7 @@ function ShajraTitle({ c }: { c: Case }) {
   const pl = place(c);
   const blank = '__________';
   return (
-    <h2 className="shajra-title urdu mb-2 border-b-2 border-slate-800 pb-1 text-center font-bold text-slate-900" lang="ur" dir="rtl" style={{ fontSize: '1.5em', lineHeight: 2.1 }}>
+    <h2 className="shajra-title urdu mb-2 border-b-2 border-slate-800 pb-1 text-center font-bold text-slate-900" lang="ur" dir="rtl" style={{ fontSize: '0.75em', lineHeight: 2.1 }}>
       شجرہ نسب متوفی {d.name || blank}{d.fatherName ? ` ولد ${d.fatherName}` : ''}، حسب گفتہ وارثان، {FIQH_UR[c.lawSystem] ?? ''}، موضع {pl.mauza || blank} تحصیل {pl.tehsil || blank}
     </h2>
   );
@@ -38,7 +38,7 @@ export function sheetPlan(c: Case, hasTable: boolean, tableRows: number) {
   const tableW = hasTable ? 70 + 20 * props : 0;
   const tableH = hasTable ? (tableRows + 2) * 5.8 + 5 : 0;
   // Title, declaration (more lines on a narrow page), heir and witnesses with CNIC boxes, disclaimer.
-  const fixedH = (landscape: boolean) => 18 + (landscape ? 22 : 30) + 50 + 7;
+  const fixedH = (landscape: boolean) => 10 + (landscape ? 22 : 30) + 50 + 7;
   const fit = (landscape: boolean) => {
     const W = landscape ? 279 : 192, H = (landscape ? 192 : 279) - fixedH(landscape);
     const side = Math.min(1.2, (W - tableW - 4) / treeW, H / treeH); // table at the side
