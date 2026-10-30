@@ -27,6 +27,8 @@ function ShajraTitle({ c }: { c: Case }) {
 }
 
 const MM = 25.4 / 96; // one CSS pixel in mm
+/** Faint site address across the middle of every printed page. */
+const WATERMARK = (() => { try { return new URL(SITE.url).host.replace(/^www\./, ''); } catch { return 'naqsha-zameen.com'; } })();
 
 /** How the sheet is laid out: page orientation, tree size (mm) and where the share table goes.
  *  The tree is centred on the page right under the title, at its natural size when it fits,
@@ -63,8 +65,11 @@ function PrintSheet({ c, result: computed, results }: { c: Case; result: Compute
   const plan = sheetPlan(c, !!result, rows.length);
   const nm = (id: string) => c.persons.find((p) => p.id === id)?.name || (id === '__unborn__' ? 'حمل' : id);
   return (
-    <div className="print-sheet" lang="ur">
-      <style>{`@page { size: A4 ${plan.landscape ? 'landscape' : 'portrait'}; margin: 9mm; }`}</style>
+    // Margin 0 on the page (no browser date / title / address lines); the 9 mm margin is inside the
+    // sheet, which is exactly one A4 page, so nothing spills onto a second page.
+    <div className="print-sheet" lang="ur" style={{ width: plan.landscape ? '297mm' : '210mm', height: plan.landscape ? '209.5mm' : '296.5mm' }}>
+      <style>{`@page { size: A4 ${plan.landscape ? 'landscape' : 'portrait'}; margin: 0; }`}</style>
+      <div className="print-watermark" aria-hidden="true">{WATERMARK}</div>
       <ShajraTitle c={c} />
       <div className={`print-body ${plan.side ? 'side' : 'below'}`} style={plan.side && result ? { gridTemplateColumns: plan.centred ? `${plan.tableW}mm minmax(0,1fr) ${plan.tableW}mm` : `minmax(0,1fr) ${plan.tableW}mm` } : undefined}
         data-cols={plan.side && result ? (plan.centred ? 3 : 2) : 1}>

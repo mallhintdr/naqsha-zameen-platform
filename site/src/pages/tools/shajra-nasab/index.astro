@@ -70,10 +70,16 @@ const BUILD = import.meta.env.DEV ? '' : Date.now().toString(36);
   .shajra-title { text-decoration: underline; text-underline-offset: 6px; border: 0 !important; }
   @media print {
     body { background: #fff !important; }
+    /* Only the sheet is printed: everything else is taken out of the page (not just hidden),
+       so it cannot add blank pages; the sheet's containers lose their spacing. */
     body * { visibility: hidden; }
+    body *:not(:has(.print-sheet)):not(.print-sheet):not(.print-sheet *) { display: none !important; }
+    body *:has(.print-sheet) { margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; max-width: none !important; min-height: 0 !important; }
+    html, body { margin: 0 !important; padding: 0 !important; }
     .print-sheet, .print-sheet * { visibility: visible; }
-    .print-sheet { display: block !important; position: absolute; inset: 0 auto auto 0; width: 100%; color: #111; }
-    .print-sheet .shajra-tree-print { background: #fff !important; }
+    .print-sheet { display: block !important; position: absolute; inset: 0 auto auto 0; box-sizing: border-box; padding: 9mm; overflow: hidden; color: #111; break-after: avoid; break-inside: avoid; }
+    .print-sheet .shajra-tree-print { background: transparent !important; }
+    .print-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font: 800 64px/1 Arial, sans-serif; letter-spacing: 2px; color: #000; opacity: 0.07; white-space: nowrap; pointer-events: none; z-index: 5; }
     /* The tree starts right under the title, centred on the page; the share table at the side or below. */
     .print-body.side { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; column-gap: 4mm; }
     .print-body.side[data-cols='3'] .print-tree { grid-column: 2; }
