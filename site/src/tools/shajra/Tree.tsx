@@ -146,7 +146,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
             const wivesOfFather = father ? c.unions.filter((u) => u.partners.includes(father)).length : 0;
             const drops = (father ? (mother && wivesOfFather > 1 ? [father, mother] : [father]) : [mother]).filter(Boolean) as string[];
             const parentBottom = (id: string) =>
-              top(id) + sym + (id === c.deceasedId ? 26 : kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 56 : 60); // just below the parent's last line of text
+              top(id) + sym + (id === c.deceasedId && kindOf(id) === 'male' ? 46 : kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 56 : 60); // just below the parent's last line of text
             // A wife's line: straight down from under her name when her children are right below her;
             // otherwise from the outer side of her heart, so it never runs into a child's line.
             const midKids = (Math.min(...xs) + Math.max(...xs)) / 2;
@@ -172,7 +172,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
             const x1 = cx(leftId), x2 = cx(rightId);
             // Leave room for the symbol: heart edge, Λ edge, deceased box or stroke.
             const off = (id: string) =>
-              kindOf(id) === 'wife' ? 38 : kindOf(id) === 'both' ? 36 : isInLaw(id) ? 44 : id === c.deceasedId ? 44 : 6;
+              kindOf(id) === 'wife' ? 38 : kindOf(id) === 'both' ? 36 : isInLaw(id) ? 44 : 6;
             const hasBoth = kindOf(a) === 'both' || kindOf(b) === 'both';
             const y = top(a) + (hasBoth ? 25 : sym / 2);
             const div = u.type !== 'marriage' || c.persons.some((p) => u.partners.includes(p.id) && p.flags.divorced && p.flags.divorced !== 'revocable-in-iddat');
@@ -195,10 +195,15 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
           const k = kindOf(p.id);
           const [en, ur] = relLabel(r?.relationKey ?? (isD ? 'deceased' : ''));
           const nm = (p.name || 'Unnamed').slice(0, 22);
-          const shareTxt = isD ? 'متوفی' : r ? (r.fraction.n > 0n ? toString(r.fraction) : '—') : '';
+          // Not inheriting: written (محروم) in red, like (ز). Someone who died before the deceased
+          // already reads پہلے فوت شدہ, so nothing more is written under them.
+          const predeceased = !isD && !p.alive && !!p.dateOfDeath && p.dateOfDeath <= c.dateOfDeath;
+          const zero = !isD && !!r && r.fraction.n === 0n && r.status === 'excluded';
+          const mahroom = zero && !predeceased;
+          const shareTxt = isD || (zero && predeceased) ? '' : r ? (r.fraction.n > 0n ? toString(r.fraction) : mahroom ? 'محروم' : '—') : '';
           return (
             <g key={p.id} className={printMode ? undefined : 'cursor-pointer'} onClick={printMode ? undefined : () => onSelect(p.id)} tabIndex={printMode ? undefined : 0} role={printMode ? undefined : 'button'} aria-haspopup={printMode ? undefined : 'menu'}
-              aria-label={`${nm}, ${en}${r && !isD ? `, share ${shareTxt}` : ''}`}
+              aria-label={`${nm}, ${en}${r && !isD && shareTxt ? `, share ${shareTxt}` : ''}`}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(p.id); } }}>
               <title>{`${nm} · ${en}${ur ? ` · ${ur}` : ''}`}</title>
               <rect x={n.x + P + 2} y={n.y + P - 20} width={NODE_W - 4} height={sym + (k === 'both' ? 96 : 72)} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#7dd3fc' : 'none'} />
@@ -240,8 +245,10 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
                       {heartLines.map((t, li) => <tspan key={li} x={nameX} dy={li ? 12 : 0}>{t}</tspan>)}
                     </text>
                     {/* Status in red, as the patwari writes it */}
-                    <text x={isD ? x - 6 : x} y={isD ? y + 7 : below} textAnchor={isD ? 'end' : 'middle'} fontSize="10" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">{statusOf(p.id)}</text>
-                    {!isD && shareTxt && (
+                    {/* Status in red under the name (for the deceased: حال متوفی, centred under the name) */}
+                    <text x={x} y={below} textAnchor="middle" fontSize="10" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">{statusOf(p.id)}</text>
+                    {mahroom && <text x={x} y={below + 15} textAnchor="middle" fontSize="10" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">(محروم)</text>}
+                    {!isD && !mahroom && shareTxt && (
                       <text x={x} y={below + 15} textAnchor="middle" fontSize="11" fontWeight="700" fill={SHARE_COLOR[r?.status ?? 'excluded']}>({shareTxt})</text>
                     )}
                   </>
@@ -267,7 +274,7 @@ export function Legend() {
         <span key={k} className="flex items-center gap-1"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><g fill="none" stroke={INK}><Glyph x={9} y={2} size={14} kind={k} /></g></svg> {label}</span>
       ))}
       <span className="flex items-center gap-1"><svg width="14" height="14" aria-hidden="true"><line x1="2" y1="12" x2="12" y2="2" stroke={INK} strokeWidth="1.5" /></svg> Died</span>
-      <span><b className="text-green-700">(1/4)</b> heir · <b className="text-slate-500">(—)</b> excluded · <b className="text-amber-700">amber</b> reserved · <b className="text-blue-700">blue</b> MFLO s.4</span>
+      <span><b className="text-green-700">(1/4)</b> heir · <b className="urdu font-normal text-red-600" lang="ur">(محروم)</b> not inheriting · <b className="text-amber-700">amber</b> reserved · <b className="text-blue-700">blue</b> MFLO s.4</span>
       <span>── father line · ┄┄ mother line · ─ marriage · ─╱╱ divorce</span>
     </div>
   );
