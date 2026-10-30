@@ -123,6 +123,16 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
     }
   }
 
+  /** Divorced (irrevocable talaq, khula, or a union recorded as ended): the spouse of the deceased,
+   *  or else the wife of the couple. A revocable talaq still in iddat is not counted: she still inherits. */
+  const isDivorced = (id: string) => {
+    const p = c.persons.find((x) => x.id === id)!;
+    if (id === c.deceasedId) return false;
+    if (p.flags.divorced && p.flags.divorced !== 'revocable-in-iddat') return true;
+    return c.unions.some((u) => u.type !== 'marriage' && u.partners.includes(id)
+      && (u.partners.includes(c.deceasedId) || (p.gender === 'F' && !u.partners.includes(c.deceasedId))));
+  };
+
   const statusOf = (id: string) => {
     const p = c.persons.find((x) => x.id === id)!;
     if (id === c.deceasedId) return 'حال متوفی';
@@ -152,7 +162,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
             const midKids = (Math.min(...xs) + Math.max(...xs)) / 2;
             const straight = (id: string) => Math.abs(midKids - cx(id)) < 30;
             const dropX = (id: string) => (kindOf(id) === 'wife' && !straight(id) ? cx(id) + tipDir(id) * 18 : cx(id));
-            const dropY = (id: string) => (kindOf(id) === 'wife' ? (straight(id) ? top(id) + sym + 54 : parentBottom(id) - 22) : parentBottom(id));
+            const dropY = (id: string) => (kindOf(id) === 'wife' ? (straight(id) ? top(id) + sym + 62 : parentBottom(id) - 22) : parentBottom(id));
             const all = [...xs, ...drops.map(dropX)];
             return (
               <g key={`f-${fi}`} strokeDasharray={!father ? '4 3' : undefined}>
@@ -162,7 +172,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
               </g>
             );
           })}
-          {/* Marriage: wife attached beside the husband; divorce shown with two slashes */}
+          {/* Marriage: wife attached beside the husband (a divorced spouse is marked (مطلقہ) under the name) */}
           {c.unions.map((u) => {
             const [a, b] = u.partners;
             const na = nodes.get(a), nb = nodes.get(b);
@@ -175,12 +185,9 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
               kindOf(id) === 'wife' ? 38 : kindOf(id) === 'both' ? 36 : isInLaw(id) ? 44 : 6;
             const hasBoth = kindOf(a) === 'both' || kindOf(b) === 'both';
             const y = top(a) + (hasBoth ? 25 : sym / 2);
-            const div = u.type !== 'marriage' || c.persons.some((p) => u.partners.includes(p.id) && p.flags.divorced && p.flags.divorced !== 'revocable-in-iddat');
-            const mx = (x1 + x2) / 2;
             return (
               <g key={u.id}>
                 <line x1={x1 + off(leftId)} y1={y} x2={x2 - off(rightId)} y2={y} />
-                {div && <><line x1={mx - 5} y1={y + 6} x2={mx - 1} y2={y - 6} /><line x1={mx + 1} y1={y + 6} x2={mx + 5} y2={y - 6} /></>}
               </g>
             );
           })}
@@ -200,6 +207,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
           const predeceased = !isD && !p.alive && !!p.dateOfDeath && p.dateOfDeath <= c.dateOfDeath;
           const zero = !isD && !!r && r.fraction.n === 0n && r.status === 'excluded';
           const mahroom = zero && !predeceased;
+          const divorced = isDivorced(p.id);
           const shareTxt = isD || (zero && predeceased) ? '' : r ? (r.fraction.n > 0n ? toString(r.fraction) : mahroom ? 'محروم' : '—') : '';
           return (
             <g key={p.id} className={printMode ? undefined : 'cursor-pointer'} onClick={printMode ? undefined : () => onSelect(p.id)} tabIndex={printMode ? undefined : 0} role={printMode ? undefined : 'button'} aria-haspopup={printMode ? undefined : 'menu'}
@@ -247,9 +255,10 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
                     {/* Status in red, as the patwari writes it */}
                     {/* Status in red under the name (for the deceased: حال متوفی, centred under the name) */}
                     <text x={x} y={below} textAnchor="middle" fontSize="10" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">{statusOf(p.id)}</text>
-                    {mahroom && <text x={x} y={below + 15} textAnchor="middle" fontSize="10" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">(محروم)</text>}
+                    {/* Divorced: (مطلقہ / محروم) in red instead of slashes on the marriage line */}
+                    {(mahroom || divorced) && <text x={x} y={below + 15} textAnchor="middle" fontSize="10" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">({divorced ? (mahroom || !shareTxt ? 'مطلقہ / محروم' : 'مطلقہ') : 'محروم'})</text>}
                     {!isD && !mahroom && shareTxt && (
-                      <text x={x} y={below + 15} textAnchor="middle" fontSize="11" fontWeight="700" fill={SHARE_COLOR[r?.status ?? 'excluded']}>({shareTxt})</text>
+                      <text x={x} y={below + (divorced ? 30 : 15)} textAnchor="middle" fontSize="11" fontWeight="700" fill={SHARE_COLOR[r?.status ?? 'excluded']}>({shareTxt})</text>
                     )}
                   </>
                 );
@@ -275,7 +284,7 @@ export function Legend() {
       ))}
       <span className="flex items-center gap-1"><svg width="14" height="14" aria-hidden="true"><line x1="2" y1="12" x2="12" y2="2" stroke={INK} strokeWidth="1.5" /></svg> Died</span>
       <span><b className="text-green-700">(1/4)</b> heir · <b className="urdu font-normal text-red-600" lang="ur">(محروم)</b> not inheriting · <b className="text-amber-700">amber</b> reserved · <b className="text-blue-700">blue</b> MFLO s.4</span>
-      <span>── father line · ┄┄ mother line · ─ marriage · ─╱╱ divorce</span>
+      <span>── father line · ┄┄ mother line · ─ marriage · <span className="urdu text-red-600" lang="ur">(مطلقہ)</span> divorced</span>
     </div>
   );
 }
