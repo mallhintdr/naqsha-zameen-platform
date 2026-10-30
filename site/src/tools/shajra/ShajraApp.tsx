@@ -39,8 +39,8 @@ export function sheetPlan(c: Case, hasTable: boolean, tableRows: number) {
   const props = c.estate.immovable.length;
   const tableW = hasTable ? 70 + 20 * props : 0;
   const tableH = hasTable ? (tableRows + 2) * 5.8 + 5 : 0;
-  // Title, declaration (more lines on a narrow page), heir and witnesses with CNIC boxes, disclaimer.
-  const fixedH = (landscape: boolean) => 10 + (landscape ? 22 : 30) + 50 + 7;
+  // Title, declaration (more lines on a narrow page), heir and witnesses with CNIC boxes.
+  const fixedH = (landscape: boolean) => 10 + (landscape ? 22 : 30) + 50;
   const fit = (landscape: boolean) => {
     const W = landscape ? 279 : 192, H = (landscape ? 192 : 279) - fixedH(landscape);
     const side = Math.min(1.2, (W - tableW - 4) / treeW, H / treeH); // table at the side
@@ -101,7 +101,6 @@ function PrintSheet({ c, result: computed, results }: { c: Case; result: Compute
       )}
       </div>
       <AttestPrint c={c} />
-      <p className="print-disclaimer">{DISCLAIMER_UR}</p>
     </div>
   );
 }
