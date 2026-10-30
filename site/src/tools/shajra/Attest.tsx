@@ -62,7 +62,7 @@ export function AttestPrint({ c }: { c: Case }) {
   ];
   return (
     <div className="print-attest-wrap">
-      <p className="print-declaration urdu" dir="rtl"><b>بیان روبرو ریونیو آفیسر: </b>{DECLARATION_UR}</p>
+      <p className="print-declaration urdu" dir="rtl">{DECLARATION_UR}</p>
       <table className="print-attest urdu" dir="rtl">
         <tbody>
           <tr>{cols.map(([role, note]) => <td key={role}><b>{role}</b><div className="att-note">{note}</div></td>)}</tr>
