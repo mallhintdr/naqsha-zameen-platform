@@ -3,10 +3,11 @@
 import type { Case } from 'inheritance-engine';
 import { childrenOf, fatherOf, motherOf, spousesOf } from './model.ts';
 
-export const NODE_W = 132;
+// Spacing: 127.5 px from one person to the next in a row, 124 px from one generation to the next.
+export const NODE_W = 112;
 export const NODE_H = 92;
-export const GAP_X = 18;
-export const ROW_H = 185;
+export const GAP_X = 15.5;
+export const ROW_H = 124;
 
 export interface Placed { id: string; x: number; y: number; gen: number }
 
