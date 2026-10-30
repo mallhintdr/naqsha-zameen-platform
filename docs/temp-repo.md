@@ -2,7 +2,7 @@
 
 A record of how this app is built, for side-by-side comparison with other apps and for building a shared template. Colors are left out on purpose. Paths are relative to the repo root. "Not present" means it was searched for and not found.
 
-Snapshot: version 5.5.0, 2026-10-30. Describes the working tree, including uncommitted fixes to the backend (auth cache, background timers on the primary worker only, renewal-token check, admin socket room, error-response CORS); these are marked "fixed, not yet committed".
+Snapshot: version 5.5.0, 2026-10-30. Includes the 5.5.1 backend fixes (auth cache, background timers on the primary worker only, renewal-token check, admin socket room, error-response CORS); these are marked "fixed in 5.5.1".
 
 ---
 
@@ -478,7 +478,7 @@ A customer opening the map downloads roughly entry + MapPage + leaflet + CSS ≈
 - **Connection pool** (`server.js:519-529`): `maxPoolSize 25`, `minPoolSize 5`, global `maxTimeMS 10000`.
 
 **Slow spots.**
-- **Auth lookup per request:** `isAuthenticated` now uses a 15-second in-memory cache (max 2,000 users) on an indexed `userIdLower` lookup (`middleware/authMiddleware.js:13-32`). Fixed, not yet committed. The cache is per pm2 instance.
+- **Auth lookup per request:** `isAuthenticated` now uses a 15-second in-memory cache (max 2,000 users) on an indexed `userIdLower` lookup (`middleware/authMiddleware.js:13-32`). Fixed in 5.5.1. The cache is per pm2 instance.
 - **User list stats:** `getAllUsers` recomputes whole-collection stats on every call. Its cache is still broken: `cachedStats` is set to `null` and never assigned (`userController.js:157`), and `redisClient.setEx` (line 234) isn't an ioredis method (ioredis has `setex`).
 - **Unbounded `Session.find`** with `days=all` in `userController.js:966`. The stats version is now capped at 1,000 rows (`statsController.js:477`).
 - **N+1 loops:** `services/multiDeviceWarnings.js:42` (one `Notification.exists` per user) and `services/subAdminBilling.js:189`. The sub-admin console now uses `computePositionsBulk` (`adminSubAdminController.js:151`), falling back to one call per sub-admin only when missing.
@@ -523,7 +523,7 @@ A customer opening the map downloads roughly entry + MapPage + leaflet + CSS ≈
 | `multiDeviceWarnings` | `0 11 * * *` |
 
 - **Fallback without Redis:** an in-memory scheduler (`subAdminJobs.startFallbackScheduler`).
-- **Plain timers** in `server.js:573-600` (unverified sign-up purge, sub-admin expiry notices, multi-use warning, fallback hygiene) now run only on the primary pm2 instance (`isPrimaryWorker`, `NODE_APP_INSTANCE === '0'`). Fixed, not yet committed. With more than one server they would still run once per server.
+- **Plain timers** in `server.js:573-600` (unverified sign-up purge, sub-admin expiry notices, multi-use warning, fallback hygiene) now run only on the primary pm2 instance (`isPrimaryWorker`, `NODE_APP_INSTANCE === '0'`). Fixed in 5.5.1. With more than one server they would still run once per server.
 - **Two multi-device warning systems:** `services/multiUseWarning.js` (2+ devices, when `JOBS_ENABLED`) and `services/multiDeviceWarnings.js` (4+ devices, BullMQ job or `MULTI_DEVICE_WARNINGS=on`).
 - **Test copy:** a parallel copy runs with `JOBS_ENABLED=false` so it doesn't send real emails or bills.
 
@@ -598,9 +598,9 @@ Plus daily quotas: 40 distinct mouzas per user, 150 per sub-admin, 10 preview mo
 **Known gaps (confirmed in code).**
 - **PMTiles full download (open).** `GET /pmtiles/:tehsil/:mouza.pmtiles` (`backend/routes/geoRoutes.js:38` → `geoController.servePMTiles`, lines 590-610) calls `res.sendFile` with no Range check. It's registered before the range-only `/pmtiles` middleware, so a logged-in user with map access can download whole files.
 - **CSP (open)** still allows `'unsafe-inline'` scripts and styles (`server.js:79-80`, with a note at line 92).
-- **Renewal-token check: fixed, not yet committed.** The route now has `isSelfAdminOrOwner` (`routes/userRoutes.js:43`).
-- **Admin socket room: fixed, not yet committed.** `userType` is read from the database at connect (`services/socketService.js:63`), so admins join `admins`.
-- **Error-response CORS: fixed, not yet committed.** `errorHandler` / `notFoundHandler` only echo origins that pass `isAllowedOrigin` (`middleware/errorHandler.js:38, 52`).
+- **Renewal-token check: fixed in 5.5.1.** The route now has `isSelfAdminOrOwner` (`routes/userRoutes.js:43`).
+- **Admin socket room: fixed in 5.5.1.** `userType` is read from the database at connect (`services/socketService.js:63`), so admins join `admins`.
+- **Error-response CORS: fixed in 5.5.1.** `errorHandler` / `notFoundHandler` only echo origins that pass `isAllowedOrigin` (`middleware/errorHandler.js:38, 52`).
 
 ---
 
