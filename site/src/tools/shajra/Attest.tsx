@@ -26,7 +26,31 @@ export const formatCnic = (v: string) => {
   return [d.slice(0, 5), d.slice(5, 12), d.slice(12)].filter(Boolean).join('-');
 };
 
-/** Printed block: role, room for the thumb impression, then name / father's name and, right under it, the CNIC. */
+/** The heir's and witnesses' declaration printed above their thumb impressions: the statement and
+ *  its verification are their responsibility alone, not the officials'. */
+export const DECLARATION_UR =
+  'ہم مسمیان وارث اور گواہان، جن کے نام، ولدیت اور شناختی کارڈ نمبر ذیل میں درج ہیں، حلفاً اقرار کرتے ہیں کہ اوپر درج شجرہ نسب اور ' +
+  'وارثان کی تفصیل ہمارے علم و یقین کے مطابق درست اور مکمل ہے؛ نہ کوئی وارث چھوڑا گیا ہے اور نہ کوئی حقیقت یا دستاویز چھپائی گئی ہے۔ ' +
+  'اس شجرہ نسب کا بیان اور اس کی تصدیق، خواہ اشٹام پیپر پر ہو یا بیان حلفی کی صورت میں، مکمل طور پر ہماری ذاتی ذمہ داری ہے۔ ' +
+  'اگر کسی وارث، دستاویز یا حقیقت کا اخفا، غلط بیانی یا کوئی کمی ثابت ہو تو اس کی تمام تر فوجداری اور دیوانی ذمہ داری ہم پر ہو گی ' +
+  'اور ہمارے خلاف قانون کے مطابق کارروائی عمل میں لائی جا سکے گی۔ متعلقہ سرکاری اہلکار یا افسران اس کے کسی طور ذمہ دار نہ ہوں گے۔ ' +
+  'یہ بیان ہم نے اپنی رضامندی سے، بغیر کسی دباؤ یا لالچ کے، پڑھ کر اور سمجھ کر دیا ہے اور اس پر اپنے انگوٹھے ثبت کیے ہیں۔';
+
+/** CNIC as 13 boxes, one digit each, grouped 5-7-1. */
+function CnicBoxes({ cnic }: { cnic: string }) {
+  const d = cnic.replace(/\D/g, '').slice(0, 13).padEnd(13, ' ');
+  const box = (i: number) => <span key={i} className="cnic-box">{d[i].trim()}</span>;
+  return (
+    <span className="cnic-boxes" dir="ltr">
+      {[0, 1, 2, 3, 4].map(box)}<span className="cnic-dash">-</span>
+      {[5, 6, 7, 8, 9, 10, 11].map(box)}<span className="cnic-dash">-</span>
+      {box(12)}
+    </span>
+  );
+}
+
+/** Printed block: the declaration, then per person: role, room for the thumb impression,
+ *  name / father's name and, right under it, the CNIC in boxes. */
 export function AttestPrint({ c }: { c: Case }) {
   const a = attestOf(c);
   const blank = '________________';
@@ -36,14 +60,17 @@ export function AttestPrint({ c }: { c: Case }) {
     ['گواہ نمبر 2', 'تصدیق کی کہ بیان وارث درست ہے۔', a.witnesses[1]],
   ];
   return (
-    <table className="print-attest urdu" dir="rtl">
-      <tbody>
-        <tr>{cols.map(([role, note]) => <td key={role}><b>{role}</b><div className="att-note">{note}</div></td>)}</tr>
-        <tr>{cols.map(([role]) => <td key={role}><div className="att-thumb">نشان انگوٹھا</div></td>)}</tr>
-        <tr className="att-name">{cols.map(([role, , p]) => <td key={role}>نام: {p.name || blank} {LINK_UR[p.link ?? 'walad']} {p.fatherName || blank}</td>)}</tr>
-        <tr className="att-cnic">{cols.map(([role, , p]) => <td key={role}>شناختی کارڈ نمبر: <span dir="ltr">{p.cnic || '_____-_______-_'}</span></td>)}</tr>
-      </tbody>
-    </table>
+    <div className="print-attest-wrap">
+      <p className="print-declaration urdu" dir="rtl"><b>اقرار نامہ / بیان حلفی: </b>{DECLARATION_UR}</p>
+      <table className="print-attest urdu" dir="rtl">
+        <tbody>
+          <tr>{cols.map(([role, note]) => <td key={role}><b>{role}</b><div className="att-note">{note}</div></td>)}</tr>
+          <tr>{cols.map(([role]) => <td key={role}><div className="att-thumb">نشان انگوٹھا</div></td>)}</tr>
+          <tr className="att-name">{cols.map(([role, , p]) => <td key={role}>نام: {p.name || blank} {LINK_UR[p.link ?? 'walad']} {p.fatherName || blank}</td>)}</tr>
+          <tr className="att-cnic">{cols.map(([role, , p]) => <td key={role}><div className="att-cnic-label">شناختی کارڈ نمبر</div><CnicBoxes cnic={p.cnic} /></td>)}</tr>
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -87,7 +114,7 @@ export function AttestForm({ c, setC }: { c: Case; setC: (c: Case) => void }) {
   return (
     <section className="no-print border-t border-slate-200 p-4">
       <h2 className="text-sm font-bold text-slate-800">Heir's statement and witnesses <span className="urdu font-normal text-slate-500" lang="ur">بیان وارث و گواہان</span></h2>
-      <p className="mt-0.5 text-xs text-slate-500">Printed at the foot of the shajra with room for thumb impressions. Leave blank to fill in by hand.</p>
+      <p className="mt-0.5 text-xs text-slate-500">Printed at the foot of the shajra with their declaration (in Urdu) that the statement and its verification are their sole responsibility, room for thumb impressions and the CNIC in digit boxes. Leave blank to fill in by hand.</p>
       <div className="mt-2 grid gap-2 sm:grid-cols-3">
         {party(0, 'Heir (statement)', a.heir)}
         {party(1, 'Witness 1', a.witnesses[0])}

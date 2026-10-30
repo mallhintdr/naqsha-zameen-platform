@@ -133,7 +133,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
   const sel = selected ? nodes.get(selected) : null;
   return (
     <div className={printMode ? 'relative' : 'relative mx-auto'} style={printMode ? { width: printSize ? `${printSize.w}mm` : '100%', margin: '0 auto' } : { width: width + P * 2, minHeight: height + P * 2 + 210 /* room for the action bar under the lowest row */ }}>
-      <svg width={printMode ? (printSize ? `${printSize.w}mm` : '100%') : width + P * 2} height={printMode ? (printSize ? `${printSize.h}mm` : undefined) : height + P * 2 + 70} viewBox={`0 0 ${width + P * 2} ${height + P * 2 + (printMode ? 10 : 70)}`} role="group" aria-label="Family tree (shajra nasab)" className={printMode ? 'shajra-tree-print block' : 'shajra-tree block'} style={{ background: '#fffdf6' }}>
+      <svg width={printMode ? (printSize ? `${printSize.w}mm` : '100%') : width + P * 2} height={printMode ? (printSize ? `${printSize.h}mm` : undefined) : height + P * 2 + 70} viewBox={`0 0 ${width + P * 2} ${height + (printMode ? P + 6 : P * 2 + 70)}`} role="group" aria-label="Family tree (shajra nasab)" className={printMode ? 'shajra-tree-print block' : 'shajra-tree block'} style={{ background: '#fffdf6' }}>
         {/* Lines of descent: parent stroke -> bar over the children -> each child */}
         <g stroke={INK} strokeWidth="1.3" fill="none">
           {famList.map(({ father, mother, kids }, fi) => {

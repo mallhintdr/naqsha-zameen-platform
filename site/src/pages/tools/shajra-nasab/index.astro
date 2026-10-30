@@ -81,10 +81,16 @@ const BUILD = import.meta.env.DEV ? '' : Date.now().toString(36);
     .print-body.side[data-cols='2'] .print-share-wrap { grid-column: 2; grid-row: 1; justify-self: end; }
     .print-body.below { display: flex; flex-direction: column; align-items: center; gap: 4mm; }
     .print-tree { display: flex; justify-content: center; min-width: 0; }
-    .print-attest { width: 100%; margin-top: 4mm; border-collapse: collapse; table-layout: fixed; font-size: 10px; line-height: 1.9; break-inside: avoid; }
+    .print-attest-wrap { break-inside: avoid; margin-top: 3mm; }
+    .print-declaration { font-family: 'Noto Nastaliq Urdu', serif; font-size: 8.5px; line-height: 2.1; text-align: justify; border: 1px solid #333; padding: 1mm 3mm; margin: 0 0 1mm; }
+    .print-attest .att-cnic-label { font-size: 8px; color: #333; line-height: 1.6; }
+    .print-attest .cnic-boxes { display: inline-flex; align-items: center; gap: 0; direction: ltr; font-family: 'Noto Sans', Arial, sans-serif; }
+    .print-attest .cnic-box { display: inline-flex; width: 3.6mm; height: 4.6mm; border: 0.8px solid #222; margin-left: -0.8px; align-items: center; justify-content: center; font-size: 9px; line-height: 1; }
+    .print-attest .cnic-dash { display: inline-block; width: 2.2mm; text-align: center; font-size: 9px; line-height: 1; }
+    .print-attest { width: 100%; margin-top: 1mm; border-collapse: collapse; table-layout: fixed; font-size: 10px; line-height: 1.9; break-inside: avoid; }
     .print-attest td { text-align: center; vertical-align: top; padding: 0 3mm; }
     .print-attest .att-note { font-size: 8.5px; color: #333; }
-    .print-attest .att-thumb { width: 26mm; height: 18mm; margin: 1mm auto; border: 1px dashed #555; font-size: 7.5px; color: #777; display: flex; align-items: flex-end; justify-content: center; }
+    .print-attest .att-thumb { width: 26mm; height: 16mm; margin: 1mm auto; border: 1px dashed #555; font-size: 7.5px; color: #777; display: flex; align-items: flex-end; justify-content: center; }
     .print-attest tr.att-name td { padding-top: 1mm; }
     .print-attest tr.att-cnic td { white-space: nowrap; }
     .print-kmf-note { font-family: 'Noto Nastaliq Urdu', serif; font-size: 8px; text-align: right; margin-top: 1mm; color: #555; }

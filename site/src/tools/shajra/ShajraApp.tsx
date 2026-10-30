@@ -33,13 +33,14 @@ const MM = 25.4 / 96; // one CSS pixel in mm
  *  smaller when it does not; the share table sits at the side when there is room, else below. */
 export function sheetPlan(c: Case, hasTable: boolean, tableRows: number) {
   const { width, height } = layout(c);
-  const treeW = (width + 56) * MM, treeH = (height + 66) * MM; // the tree's drawing size
+  const treeW = (width + 56) * MM, treeH = (height + 34) * MM; // the tree's drawing size
   const props = c.estate.immovable.length;
   const tableW = hasTable ? 70 + 20 * props : 0;
   const tableH = hasTable ? (tableRows + 2) * 5.8 + 5 : 0;
-  const fixedH = 18 + 46 + 7; // title, heir and witnesses, disclaimer
+  // Title, declaration (more lines on a narrow page), heir and witnesses with CNIC boxes, disclaimer.
+  const fixedH = (landscape: boolean) => 18 + (landscape ? 22 : 30) + 50 + 7;
   const fit = (landscape: boolean) => {
-    const W = landscape ? 279 : 192, H = (landscape ? 192 : 279) - fixedH;
+    const W = landscape ? 279 : 192, H = (landscape ? 192 : 279) - fixedH(landscape);
     const side = Math.min(1.2, (W - tableW - 4) / treeW, H / treeH); // table at the side
     const below = Math.min(1.2, W / treeW, (H - tableH - 4) / treeH); // table under the tree
     const useSide = !hasTable || side >= below * 0.85;
