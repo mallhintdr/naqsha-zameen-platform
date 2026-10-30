@@ -346,26 +346,32 @@ export default function ShajraApp() {
   return (
     <div className="shajra rounded-2xl bg-white text-slate-900 shadow-2xl" data-shajra-ready={loaded && (result || error) ? '1' : '0'}>
       {/* Toolbar */}
-      <div className="no-print flex flex-wrap items-center gap-2 border-b border-slate-200 p-3">
-        <button className={btn} onClick={() => { if (confirm('Start a new case? The current one will be cleared.')) { setRootC(newCase()); setActiveId(null); setSelected('D'); } }}>New case</button>
-        <button className={btn} onClick={exportJson}>Export JSON</button>
-        <button className={btn} onClick={() => fileRef.current?.click()}>Import JSON</button>
-        <button className={btn} onClick={svgExport}>Export SVG</button>
-        <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
-        <label className="flex items-center gap-1 text-xs font-semibold text-slate-600">Page
+      <div className="no-print flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-slate-200 p-3">
+        {/* Case: new, save / open a file, share */}
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Case">
+          <button className={btn} onClick={() => { if (confirm('Start a new case? The current one will be cleared.')) { setRootC(newCase()); setActiveId(null); setSelected('D'); } }}>New case</button>
+          <button className={btn} onClick={exportJson}>Export JSON</button>
+          <button className={btn} onClick={() => fileRef.current?.click()}>Import JSON</button>
+          <button className={btn} onClick={svgExport}>Export SVG</button>
+          <button className={btn} onClick={saveLink} disabled={!!busy}>{busy === 'link' ? 'Saving…' : 'Save & get link'}</button>
+          <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
+        </div>
+        {/* Print: page settings next to the print buttons */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:border-l sm:border-slate-200 sm:pl-3" role="group" aria-label="Print">
+<label className="flex items-center gap-1 text-xs font-semibold text-slate-600">Page
           <select className="rounded-lg border border-slate-300 bg-white px-1.5 py-1.5 text-xs text-slate-800" value={orientationOf(c)}
             onChange={(e) => setC({ ...structuredClone(c), print: { ...(c as WithPrint).print, orientation: e.target.value as Orientation } } as WithPrint)}>
             <option value="auto">Auto</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option>
           </select>
         </label>
-        <label className="flex items-center gap-1 text-xs font-semibold text-slate-600" title="Print the share table with the shajra (Print / Save PDF and Download PDF)">
+<label className="flex items-center gap-1 text-xs font-semibold text-slate-600" title="Print the share table with the shajra (Print / Save PDF and Download PDF)">
           <input type="checkbox" checked={printTableOf(c)}
             onChange={(e) => setC({ ...structuredClone(c), print: { ...(c as WithPrint).print, shareTable: e.target.checked } } as WithPrint)} />
           Print share table
         </label>
-        <button className={`${btn} !border-sky-700 !bg-sky-700 !text-white`} onClick={() => window.print()}>Print / Save PDF</button>
-        <button className={btn} onClick={downloadPdf} disabled={!!busy}>{busy === 'pdf' ? 'Creating PDF…' : 'Download PDF'}</button>
-        <button className={btn} onClick={saveLink} disabled={!!busy}>{busy === 'link' ? 'Saving…' : 'Save & get link'}</button>
+          <button className={`${btn} !border-sky-700 !bg-sky-700 !text-white`} onClick={() => window.print()}>Print / Save PDF</button>
+          <button className={btn} onClick={downloadPdf} disabled={!!busy}>{busy === 'pdf' ? 'Creating PDF…' : 'Download PDF'}</button>
+        </div>
         <span className="ml-auto text-[11px] text-slate-500">Case {c.id} · saved in this browser only</span>
       </div>
 
@@ -391,25 +397,17 @@ export default function ShajraApp() {
         </div>
       )}
       {/* Step 1: deceased and law */}
-      <section className="no-print grid gap-3 border-b border-slate-200 p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <label className="text-xs font-semibold text-slate-600">Law (religion of the deceased)
-          <select className={input} value={c.lawSystem} onChange={(e) => setC({ ...structuredClone(c), lawSystem: e.target.value as LawSystem })}>
-            {LAWS.map((l) => <option key={l.value} value={l.value} disabled={!l.ready}>{l.label}</option>)}
-          </select>
-        </label>
-        <label className="text-xs font-semibold text-slate-600">Deceased name
+      <section className="no-print grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[1.25fr_0.75fr_1.4fr]">
+        {/* Deceased: who, son / daughter of, gender, date of death */}
+        <fieldset className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 grid content-start gap-2 sm:grid-cols-2">
+          <legend className="px-1 text-xs font-bold text-slate-800">Deceased <span className="urdu font-normal text-slate-500" lang="ur">متوفی</span></legend>
+          <label className="text-xs font-semibold text-slate-600">Deceased name
           <input className={input} value={deceased.name} placeholder="e.g. Muhammad Aslam" onChange={(e) => patch('D', { name: e.target.value })} />
         </label>
-        <label className="text-xs font-semibold text-slate-600">Mouza (موضع)
-          <input className={input} value={place(c).mauza} onChange={(e) => setPlace({ mauza: e.target.value })} />
-        </label>
-        <label className="text-xs font-semibold text-slate-600">Tehsil (تحصیل)
-          <input className={input} value={place(c).tehsil} onChange={(e) => setPlace({ tehsil: e.target.value })} />
-        </label>
-        <label className="text-xs font-semibold text-slate-600">Father's name (walad)
+          <label className="text-xs font-semibold text-slate-600">Father's name (walad)
           <input className={input} value={deceased.fatherName ?? ''} onChange={(e) => patch('D', { fatherName: e.target.value })} />
         </label>
-        <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:col-span-2">
           <label className="text-xs font-semibold text-slate-600">Gender
             <select className={input} value={deceased.gender} onChange={(e) => {
               // Changing the deceased's gender flips existing spouses.
@@ -424,8 +422,27 @@ export default function ShajraApp() {
             <input type="date" className={input} value={c.dateOfDeath} onChange={(e) => patch('D', { dateOfDeath: e.target.value })} />
           </label>
         </div>
-        {c.lawSystem.startsWith('hindu') && (
-          <label className="text-xs font-semibold text-slate-600 sm:col-span-2">Property type (Hindu)
+        </fieldset>
+        {/* Place: mouza and tehsil (printed in the heading) */}
+        <fieldset className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 grid content-start grid-cols-2 gap-2 lg:grid-cols-1">
+          <legend className="px-1 text-xs font-bold text-slate-800">Place <span className="urdu font-normal text-slate-500" lang="ur">مقام</span></legend>
+          <label className="text-xs font-semibold text-slate-600">Mouza (موضع)
+          <input className={input} value={place(c).mauza} onChange={(e) => setPlace({ mauza: e.target.value })} />
+        </label>
+          <label className="text-xs font-semibold text-slate-600">Tehsil (تحصیل)
+          <input className={input} value={place(c).tehsil} onChange={(e) => setPlace({ tehsil: e.target.value })} />
+        </label>
+        </fieldset>
+        {/* Law and how the shares are worked out */}
+        <fieldset className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 grid content-start gap-2">
+          <legend className="px-1 text-xs font-bold text-slate-800">Law and options <span className="urdu font-normal text-slate-500" lang="ur">قانون</span></legend>
+          <label className="text-xs font-semibold text-slate-600">Law (religion of the deceased)
+          <select className={input} value={c.lawSystem} onChange={(e) => setC({ ...structuredClone(c), lawSystem: e.target.value as LawSystem })}>
+            {LAWS.map((l) => <option key={l.value} value={l.value} disabled={!l.ready}>{l.label}</option>)}
+          </select>
+        </label>
+          {c.lawSystem.startsWith('hindu') && (
+          <label className="text-xs font-semibold text-slate-600">Property type (Hindu)
             <select className={input} value={c.policy.hinduProperty ?? 'separate'} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, hinduProperty: e.target.value as 'separate' | 'coparcenary' } })}>
               <option value="separate">Separate / self-acquired property</option><option value="coparcenary">Coparcenary (joint family) interest</option>
             </select>
@@ -433,28 +450,29 @@ export default function ShajraApp() {
           </label>
         )}
         {c.lawSystem === 'shia-ithna' && (
-          <label className="text-xs font-semibold text-slate-600 sm:col-span-2">Childless widow and land
+          <label className="text-xs font-semibold text-slate-600">Childless widow and land
             <select className={input} value={c.policy.shiaChildlessWidowLandRule} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, shiaChildlessWidowLandRule: e.target.value as 'classical' | 'equal' } })}>
               <option value="classical">Classical: no share in the land itself (share in buildings / trees value)</option><option value="equal">Equal: share in land too</option>
             </select>
           </label>
         )}
-        <label className="flex items-center gap-2 text-xs text-slate-600 sm:col-span-2">
+        <label className="flex items-center gap-2 text-xs text-slate-600">
           <input type="checkbox" checked={c.policy.applyMFLOs4} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, applyMFLOs4: e.target.checked } })} />
           Apply MFLO 1961 s.4 (children of a predeceased son / daughter)
         </label>
         {c.policy.applyMFLOs4 && ['sunni-hanafi', 'sunni-shafii', 'sunni-maliki', 'sunni-hanbali', 'shia-ithna'].includes(c.lawSystem) && (
-          <label className="text-xs font-semibold text-slate-600 sm:col-span-2">s.4 when the predeceased child left only daughters
+          <label className="text-xs font-semibold text-slate-600">s.4 when the predeceased child left only daughters
             <select className={input} value={c.policy.mfloS4OnlyDaughters ?? 'daughters-share'} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, mfloS4OnlyDaughters: e.target.value as 'daughters-share' | 'whole' } })}>
               <option value="daughters-share">Daughters take 1/2 (one) or 2/3 (two or more) of the parent's share; the rest to the parent's brothers / sisters or next heirs</option>
               <option value="whole">Daughters take the parent's whole share</option>
             </select>
           </label>
         )}
-        <label className="flex items-center gap-2 text-xs text-slate-600 sm:col-span-2">
+        <label className="flex items-center gap-2 text-xs text-slate-600">
           <input type="checkbox" checked={c.policy.raddToSpouseWhenNoOtherHeir} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, raddToSpouseWhenNoOtherHeir: e.target.checked } })} />
           Sole spouse takes the surplus (Pakistani practice)
         </label>
+        </fieldset>
       </section>
 
       <Estate c={c} setC={setC} />
