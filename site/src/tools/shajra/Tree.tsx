@@ -98,7 +98,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
   /** X where the line from the parents meets a child: always the child's centre, so stems are straight. */
   const childAnchorX = (id: string) => cx(id);
   /** Y where the parent descent line meets the child's glyph top. */
-  const childAnchorY = (id: string) => (kindOf(id) === 'both' ? top(id) - 11 : id === c.deceasedId ? top(id) - 6 : top(id));
+  const childAnchorY = (id: string) => (kindOf(id) === 'both' ? top(id) - 11 : top(id));
 
   // Every family's bar (the line the sons and daughters hang from) sits at the same height in a row;
   // a second level is used only where two families' bars would run into each other.
@@ -138,7 +138,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
         <g stroke={INK} strokeWidth="1.3" fill="none">
           {famList.map(({ father, mother, kids }, fi) => {
             const ky = Math.min(...kids.map((k) => top(k)));
-            // Bar clear of the row below (the deceased's box and the marriage lines).
+            // Bar clear of the row below (names and marriage lines).
             const bar = ky - 26 - (barLevel.get(fi) ?? 0) * 14;
             const xs = kids.map(childAnchorX);
             // Draw the mother's branch only when the father has more than one wife in the tree
@@ -196,17 +196,12 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
           const [en, ur] = relLabel(r?.relationKey ?? (isD ? 'deceased' : ''));
           const nm = (p.name || 'Unnamed').slice(0, 22);
           const shareTxt = isD ? 'متوفی' : r ? (r.fraction.n > 0n ? toString(r.fraction) : '—') : '';
-          // Compact dotted box around the deceased
-          const dBoxW = k === 'wife' || k === 'both' ? 98 : 84;
-          const dBoxY = k === 'both' ? y - 14 : y - 6;
-          const dBoxH = k === 'both' ? sym + 52 : sym + 32;
           return (
             <g key={p.id} className={printMode ? undefined : 'cursor-pointer'} onClick={printMode ? undefined : () => onSelect(p.id)} tabIndex={printMode ? undefined : 0} role={printMode ? undefined : 'button'} aria-haspopup={printMode ? undefined : 'menu'}
               aria-label={`${nm}, ${en}${r && !isD ? `, share ${shareTxt}` : ''}`}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(p.id); } }}>
               <title>{`${nm} · ${en}${ur ? ` · ${ur}` : ''}`}</title>
-              {isD && <rect x={x - dBoxW / 2} y={dBoxY} width={dBoxW} height={dBoxH} rx="4" fill="none" stroke={INK} strokeWidth="1.15" strokeDasharray="2 2.5" />}
-              <rect x={n.x + P + 2} y={n.y + P - 20} width={NODE_W - 4} height={sym + (k === 'both' ? 96 : 72)} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#0ea5e9' : 'none'} strokeDasharray="3 3" />
+              <rect x={n.x + P + 2} y={n.y + P - 20} width={NODE_W - 4} height={sym + (k === 'both' ? 96 : 72)} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#7dd3fc' : 'none'} />
               {(() => {
                 const inLaw = isInLaw(p.id);
                 const dir = tipDir(p.id);
