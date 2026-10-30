@@ -103,10 +103,17 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
   // Every family's bar (the line the sons and daughters hang from) sits at the same height in a row;
   // a second level is used only where two families' bars would run into each other.
   const famList = [...families.values()];
+  /** Whose line the children hang from: the father's; but when he has more than one wife, each
+   *  wife's children hang from her own line (a separate family per wife), and from the mother's
+   *  when the father is not in the tree. */
+  const dropsOf = ({ father, mother }: { father?: string; mother?: string }) => {
+    const wivesOfFather = father ? c.unions.filter((u) => u.partners.includes(father)).length : 0;
+    return (father ? (mother && wivesOfFather > 1 ? [mother] : [father]) : [mother]).filter(Boolean) as string[];
+  };
   const barLevel = new Map<number, number>();
   {
     const span = (f: (typeof famList)[number]) => {
-      const xs = [...f.kids.map((k) => cx(k)), ...[f.father, f.mother].filter(Boolean).map((p) => cx(p!))];
+      const xs = [...f.kids.map((k) => cx(k)), ...dropsOf(f).map((p) => cx(p))];
       return [Math.min(...xs) - 20, Math.max(...xs) + 20];
     };
     const byRow = new Map<number, number[]>();
@@ -151,10 +158,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
             // Bar clear of the row below (names and marriage lines).
             const bar = ky - 26 - (barLevel.get(fi) ?? 0) * 14;
             const xs = kids.map(childAnchorX);
-            // Draw the mother's branch only when the father has more than one wife in the tree
-            // (children are then grouped by mother) or when the father is not in the tree.
-            const wivesOfFather = father ? c.unions.filter((u) => u.partners.includes(father)).length : 0;
-            const drops = (father ? (mother && wivesOfFather > 1 ? [father, mother] : [father]) : [mother]).filter(Boolean) as string[];
+            const drops = dropsOf({ father, mother });
             const parentBottom = (id: string) =>
               top(id) + sym + (id === c.deceasedId && kindOf(id) === 'male' ? 46 : kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 56 : 60); // just below the parent's last line of text
             // A wife's line: straight down from under her name when her children are right below her;
