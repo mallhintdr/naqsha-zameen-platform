@@ -297,7 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if ('Notification' in window && Notification.permission === 'granted' && !window.__pushEnabled) {
         try {
           const title = n.title || 'System Notification';
-          const options: NotificationOptions = { body: n.message || '', icon: '/logo192.png', badge: '/favicon.png', tag: n.id || 'geo-dashboard-notif' };
+          const options: NotificationOptions = { body: n.message || '', icon: '/logo192.png', badge: '/badge-96.png', tag: n.id || 'geo-dashboard-notif' };
           if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
             navigator.serviceWorker.ready.then((reg) => reg.showNotification(title, options)).catch(() => new Notification(title, options));
           } else new Notification(title, options);

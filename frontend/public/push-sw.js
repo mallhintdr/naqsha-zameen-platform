@@ -13,7 +13,8 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '',
     icon: '/logo192.png',
-    badge: '/favicon.png',
+    // Status-bar icon: white shape on a transparent background (Android uses only its outline).
+    badge: '/badge-96.png',
     tag: data.tag || (data.data && data.data.notificationId) || undefined,
     renotify: true,
     requireInteraction: false,
