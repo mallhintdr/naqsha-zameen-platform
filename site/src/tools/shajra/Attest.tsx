@@ -57,8 +57,8 @@ export function AttestPrint({ c }: { c: Case }) {
   const blank = '________________';
   const cols: [string, string, Party][] = [
     ['یکے از وارثان', 'بیان کیا کہ شجرہ نسب و تفصیل وارثان بالا درست ہے۔', a.heir],
-    ['گواہ نمبر 1', 'تصدیق کی کہ بیان وارث درست ہے۔', a.witnesses[0]],
-    ['گواہ نمبر 2', 'تصدیق کی کہ بیان وارث درست ہے۔', a.witnesses[1]],
+    ['گواہ نمبر 1', 'تصدیق کی کہ بیان وارث اور شجرہ نسب درست ہیں۔', a.witnesses[0]],
+    ['گواہ نمبر 2', 'تصدیق کی کہ بیان وارث اور شجرہ نسب درست ہیں۔', a.witnesses[1]],
   ];
   return (
     <div className="print-attest-wrap">
