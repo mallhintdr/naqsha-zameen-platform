@@ -7,7 +7,7 @@ export type Link = 'walad' | 'dukhtar' | 'zoja';
 export type Party = { name: string; fatherName: string; cnic: string; link?: Link };
 export type Attest = { heir: Party; witnesses: [Party, Party] };
 export type Orientation = 'auto' | 'portrait' | 'landscape';
-export type WithPrint = Case & { attest?: Attest; print?: { orientation?: Orientation } };
+export type WithPrint = Case & { attest?: Attest; print?: { orientation?: Orientation; shareTable?: boolean } };
 
 const EMPTY: Party = { name: '', fatherName: '', cnic: '' };
 export const attestOf = (c: Case): Attest => {
@@ -15,6 +15,8 @@ export const attestOf = (c: Case): Attest => {
   return { heir: { ...EMPTY, ...a?.heir }, witnesses: [{ ...EMPTY, ...a?.witnesses?.[0] }, { ...EMPTY, ...a?.witnesses?.[1] }] };
 };
 export const orientationOf = (c: Case): Orientation => (c as WithPrint).print?.orientation ?? 'auto';
+/** Whether the share table is printed with the shajra (yes unless switched off). */
+export const printTableOf = (c: Case): boolean => (c as WithPrint).print?.shareTable !== false;
 
 const LINK_UR: Record<Link, string> = { walad: 'ولد', dukhtar: 'دختر', zoja: 'زوجہ' };
 

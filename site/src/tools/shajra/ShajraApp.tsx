@@ -56,7 +56,8 @@ export function sheetPlan(c: Case, hasTable: boolean, tableRows: number) {
 
 /** What is printed / turned into the PDF: title, the chart centred under it, a small Urdu share
  *  table at the side (or below when the tree is wide), and the heir's statement with two witnesses. */
-function PrintSheet({ c, result, results }: { c: Case; result: ComputeResult | null; results: Map<string, ShareResult> }) {
+function PrintSheet({ c, result: computed, results }: { c: Case; result: ComputeResult | null; results: Map<string, ShareResult> }) {
+  const result = printTableOf(c) ? computed : null; // the share table can be left off the paper
   const rows = (result?.shares ?? []).filter((s) => s.fraction.n > 0n || s.status === 'reserved');
   const plan = sheetPlan(c, !!result, rows.length);
   const nm = (id: string) => c.persons.find((p) => p.id === id)?.name || (id === '__unborn__' ? 'حمل' : id);
@@ -104,7 +105,7 @@ import { addRelative, fromJSON, load, newCase, removePerson, save, setParentOf, 
 import { DISCLAIMER, DISCLAIMER_UR, relLabel, ruleText as ruleTextL, type Lang } from './labels.ts';
 import Estate, { areaText, areaTextUr, feetText, feetTextUr, heirLandText, kmfText, systemFor } from './Estate.tsx';
 import SideShares from './SideShares.tsx';
-import { AttestForm, AttestPrint, orientationOf, type Orientation, type WithPrint } from './Attest.tsx';
+import { AttestForm, AttestPrint, orientationOf, printTableOf, type Orientation, type WithPrint } from './Attest.tsx';
 import { layout, type WithLayout } from './layout.ts';
 import qrcode from 'qrcode-generator';
 import { SITE } from '../../site';
@@ -350,6 +351,11 @@ export default function ShajraApp() {
             onChange={(e) => setC({ ...structuredClone(c), print: { ...(c as WithPrint).print, orientation: e.target.value as Orientation } } as WithPrint)}>
             <option value="auto">Auto</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option>
           </select>
+        </label>
+        <label className="flex items-center gap-1 text-xs font-semibold text-slate-600" title="Print the share table with the shajra (Print / Save PDF and Download PDF)">
+          <input type="checkbox" checked={printTableOf(c)}
+            onChange={(e) => setC({ ...structuredClone(c), print: { ...(c as WithPrint).print, shareTable: e.target.checked } } as WithPrint)} />
+          Print share table
         </label>
         <button className={`${btn} !border-sky-700 !bg-sky-700 !text-white`} onClick={() => window.print()}>Print / Save PDF</button>
         <button className={btn} onClick={downloadPdf} disabled={!!busy}>{busy === 'pdf' ? 'Creating PDF…' : 'Download PDF'}</button>
