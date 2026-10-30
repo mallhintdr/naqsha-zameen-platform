@@ -100,7 +100,7 @@ function PrintSheet({ c, result: computed, results }: { c: Case; result: Compute
       )}
       </div>
       <AttestPrint c={c} />
-      <p className="print-footer" dir="ltr">Created at {SITE_HOST}/tools/shajra-nasab/</p>
+      <p className="print-footer" dir="ltr">Created and downloaded from {SITE_HOST}/tools/shajra-nasab/</p>
     </div>
   );
 }

@@ -79,7 +79,8 @@ const BUILD = import.meta.env.DEV ? '' : Date.now().toString(36);
     .print-sheet, .print-sheet * { visibility: visible; }
     .print-sheet { display: block !important; position: absolute; inset: 0 auto auto 0; box-sizing: border-box; padding: 9mm; overflow: hidden; color: #111; break-after: avoid; break-inside: avoid; }
     .print-sheet .shajra-tree-print { background: transparent !important; }
-    .print-footer { position: absolute; left: 0; right: 0; bottom: 4mm; margin: 0; text-align: center; font: 8px/1 Arial, sans-serif; color: #555; }
+    /* Dark band across the foot of the page, white text (printed even when background graphics are off). */
+    .print-footer { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 2mm 0; text-align: center; font: 600 16px/1 Arial, sans-serif; color: #fff !important; background: #0b2545 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     /* The tree starts right under the title, centred on the page; the share table at the side or below. */
     .print-body.side { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; column-gap: 4mm; }
     .print-body.side[data-cols='3'] .print-tree { grid-column: 2; }
