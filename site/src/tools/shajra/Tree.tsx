@@ -157,7 +157,8 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
     const p = c.persons.find((x) => x.id === id)!;
     const r = results.get(id);
     const isD = id === c.deceasedId;
-    const predeceased = !isD && !p.alive && !!p.dateOfDeath && p.dateOfDeath <= c.dateOfDeath;
+    // Died with no date counts as before the deceased (as in the calculation and پہلے فوت شدہ).
+    const predeceased = !isD && !p.alive && (!p.dateOfDeath || p.dateOfDeath <= c.dateOfDeath);
     const zero = !isD && !!r && r.fraction.n === 0n && r.status === 'excluded';
     const mahroom = zero && !predeceased;
     const divorced = isDivorced(id);

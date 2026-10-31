@@ -276,7 +276,22 @@ export default function ShareCalc() {
     }
     // A late son / daughter reads "Late son 2"; the deceased's father and mother are drawn as a couple.
     for (const p of c.persons) if (/^late (son|daughter)/.test(p.name)) p.name = p.name.replace(/^late/, 'Late');
-    const link = c.parents.find((l) => l.childId === c.deceasedId);
+    // Relatives not entered (died before the deceased) are still drawn, as پہلے فوت شدہ with no date:
+    // the father, the mother and a husband / wife. They take no share, so the shares do not change.
+    const dead = (name: string, g: 'M' | 'F') => { const id = `x-${name.toLowerCase()}`; c.persons.push({ id, name, gender: g, alive: false, religion: d.religion, flags: {} }); return id; };
+    let link = c.parents.find((l) => l.childId === c.deceasedId);
+    if (!link) { link = { childId: c.deceasedId }; c.parents.push(link); }
+    if (!link.fatherId) link.fatherId = dead('Father', 'M');
+    if (!link.motherId) link.motherId = dead('Mother', 'F');
+    if (!c.unions.some((u) => u.partners.includes(c.deceasedId))) {
+      const sp = dead(d.gender === 'M' ? 'Wife' : 'Husband', d.gender === 'M' ? 'F' : 'M');
+      c.unions.push({ id: 'u-spouse', partners: [c.deceasedId, sp], type: 'marriage' });
+      // The deceased's children hang from the couple.
+      for (const l of c.parents) {
+        if (d.gender === 'M' && l.fatherId === c.deceasedId && !l.motherId) l.motherId = sp;
+        if (d.gender === 'F' && l.motherId === c.deceasedId && !l.fatherId) l.fatherId = sp;
+      }
+    }
     if (link?.fatherId && link.motherId && !c.unions.some((u) => u.partners.includes(link.fatherId!) && u.partners.includes(link.motherId!))) {
       c.unions.push({ id: 'u-parents', partners: [link.fatherId, link.motherId], type: 'marriage' });
     }

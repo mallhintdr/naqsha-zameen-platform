@@ -136,6 +136,8 @@ import qrcode from 'qrcode-generator';
 import { SITE } from '../../site';
 
 const API = `${SITE.dashboardUrl}/api/public/shajra`;
+/** Export / Import JSON, Export SVG and Save & get link: hidden for now (set to true to bring them back). */
+const SHOW_FILE_TOOLS = false;
 
 function Qr({ text }: { text: string }) {
   const svg = useMemo(() => { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 2, margin: 0, scalable: true }); }, [text]);
@@ -339,11 +341,15 @@ export default function ShajraApp() {
         {/* Case: new, save / open a file, share */}
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Case">
           <button className={btn} onClick={() => { if (confirm('Start a new case? The current one will be cleared.')) { setRootC(newCase()); setActiveId(null); setSelected('D'); } }}>New case</button>
-          <button className={btn} onClick={exportJson}>Export JSON</button>
-          <button className={btn} onClick={() => fileRef.current?.click()}>Import JSON</button>
-          <button className={btn} onClick={svgExport}>Export SVG</button>
-          <button className={btn} onClick={saveLink} disabled={!!busy}>{busy === 'link' ? 'Saving…' : 'Save & get link'}</button>
-          <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
+          {SHOW_FILE_TOOLS && (
+            <>
+              <button className={btn} onClick={exportJson}>Export JSON</button>
+              <button className={btn} onClick={() => fileRef.current?.click()}>Import JSON</button>
+              <button className={btn} onClick={svgExport}>Export SVG</button>
+              <button className={btn} onClick={saveLink} disabled={!!busy}>{busy === 'link' ? 'Saving…' : 'Save & get link'}</button>
+              <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
+            </>
+          )}
         </div>
         {/* Print: page settings next to the print buttons */}
         <div className="flex flex-wrap items-center gap-1.5 sm:border-l sm:border-slate-200 sm:pl-3" role="group" aria-label="Print">
