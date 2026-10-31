@@ -3,7 +3,7 @@
 // wives attached beside their husband. Male = vertical stroke; daughter = inverted V;
 // wife / widow = heart turned 90° anticlockwise; a daughter who is also a wife = both.
 // Tapping a person opens a small menu (Edit / Add relative / Delete), rendered by the parent.
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { toString, type Case, type ShareResult } from 'inheritance-engine';
 import { layout, NODE_W, type Spacing } from './layout.ts';
 import { fatherOf, motherOf } from './model.ts';
@@ -182,9 +182,16 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
   // On a computer the quick bar (540px) opens under the person: a small tree's area widens while it
   // is open so the bar is never cut off (phones show it as a panel at the bottom instead).
   const svgW = width + P * 2;
-  const wideScreen = typeof window !== 'undefined' && window.innerWidth >= 640;
+  const wideScreen = typeof window !== 'undefined' && window.innerWidth >= 768;
   const outerW = Math.max(svgW, sel && menu && wideScreen ? 560 : 0);
   const offX = (outerW - svgW) / 2;
+  // Phones: the quick bar is a panel over the bottom of the screen; keep the tapped person in view above it.
+  const showMenu = !!(sel && menu);
+  useEffect(() => {
+    if (!showMenu || printMode || typeof window === 'undefined' || window.innerWidth >= 768) return;
+    const el = document.querySelector(`svg.shajra-tree [data-pid="${CSS.escape(selected!)}"]`);
+    el?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+  }, [selected, showMenu, printMode]);
   return (
     <div className={printMode ? 'relative' : 'relative mx-auto'} style={printMode ? { width: printSize ? `${printSize.w}mm` : '100%', margin: '0 auto' } : { width: outerW, minHeight: height + P * 2 + STEM + (sel && menu ? 440 : 90) /* room for the quick bar (with More / Add relative) under the lowest row */ }}>
       <svg width={printMode ? (printSize ? `${printSize.w}mm` : '100%') : svgW} height={printMode ? (printSize ? `${printSize.h}mm` : undefined) : height + P * 2 + STEM + 70} viewBox={`0 0 ${width + P * 2} ${height + STEM + (printMode ? P + 6 : P * 2 + 70)}`} role="group" aria-label="Family tree (shajra nasab)" className={printMode ? 'shajra-tree-print block' : 'shajra-tree mx-auto block'} style={{ background: '#fffdf6' }}>
@@ -249,7 +256,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
           const { mahroom, divorced, shareTxt, dateTxt } = labelInfo(p.id);
           const dl = dateTxt ? 15 : 0; // the lines under the date move down when it is shown
           return (
-            <g key={p.id} className={printMode ? undefined : 'cursor-pointer'} onClick={printMode ? undefined : () => onSelect(p.id)} tabIndex={printMode ? undefined : 0} role={printMode ? undefined : 'button'} aria-haspopup={printMode ? undefined : 'menu'}
+            <g key={p.id} data-pid={p.id} className={printMode ? undefined : 'cursor-pointer'} onClick={printMode ? undefined : () => onSelect(p.id)} tabIndex={printMode ? undefined : 0} role={printMode ? undefined : 'button'} aria-haspopup={printMode ? undefined : 'menu'}
               aria-label={`${nm}, ${en}${r && !isD && shareTxt ? `, share ${shareTxt}` : ''}`}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(p.id); } }}>
               <title>{`${nm} · ${en}${ur ? ` · ${ur}` : ''}`}</title>

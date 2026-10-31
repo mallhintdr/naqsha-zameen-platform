@@ -68,7 +68,7 @@ const BUILD = import.meta.env.DEV ? '' : Date.now().toString(36);
   /* The print sheet (title, chart, compact Urdu share table) is what gets printed / made into a PDF. */
   .print-sheet { display: none; }
   /* Phones: while the person panel is open at the bottom, the WhatsApp button would cover its buttons. */
-  @media (max-width: 639px) { body:has(.person-bar) a[aria-label='Chat on WhatsApp'] { display: none !important; } }
+  @media (max-width: 767px) { body:has(.person-bar) a[aria-label='Chat on WhatsApp'] { display: none !important; } }
   .shajra-title { text-decoration: underline; text-underline-offset: 6px; border: 0 !important; }
   @media print {
     body { background: #fff !important; }
