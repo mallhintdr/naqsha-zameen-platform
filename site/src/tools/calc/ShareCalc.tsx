@@ -326,7 +326,13 @@ export default function ShareCalc() {
             <span className="w-full text-xs font-semibold text-slate-600">Total land (optional) <span className="urdu font-normal" lang="ur">کل رقبہ</span></span>
             {(['k', 'm', 'f'] as const).map((u) => (
               <label key={u} className="w-20 text-[11px] text-slate-500">{{ k: 'Kanal', m: 'Marla', f: 'Feet' }[u]}
-                <input className={`${input} text-right`} inputMode="numeric" value={land[u]} placeholder="0" onChange={(e) => setLand({ ...land, [u]: e.target.value.replace(/[^\d.]/g, '') })} />
+                <input className={`${input} text-right`} inputMode="numeric" value={land[u]} placeholder="0" onChange={(e) => {
+                  // Kanal may have decimals; marla stops at 19 and feet at 271 (the next would make a kanal / marla).
+                  let v = e.target.value.replace(u === 'k' ? /[^\d.]/g : /\D/g, '');
+                  const max = u === 'm' ? 19 : u === 'f' ? 271 : Infinity;
+                  if (v && +v > max) v = String(max);
+                  setLand({ ...land, [u]: v });
+                }} />
               </label>
             ))}
             <button className="ml-auto rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"

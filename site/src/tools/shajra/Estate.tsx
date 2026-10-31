@@ -11,6 +11,19 @@ const rupees = (s: string): Fraction => {
 };
 const showRs = (f: Fraction | undefined) => (f && f.n ? (f.n / f.d).toString() : '');
 const int = (s: string): bigint => BigInt(s.replace(/[^\d]/g, '') || '0');
+/** Largest whole number a smaller unit can hold before it makes one of the next bigger unit
+ *  (e.g. 19 marla, 271 sq ft in Kanal-Marla-Feet); the first (biggest) unit has no limit. */
+export function partMax(units: AreaUnit[], u: AreaUnit): bigint | null {
+  const i = units.indexOf(u);
+  if (i <= 0) return null;
+  const f = fromParts({ [units[i - 1]]: 1n }, u); // one of the bigger unit, in this unit
+  return f.d === 1n ? f.n - 1n : f.n / f.d;
+}
+/** A typed number, kept within the unit's limit. */
+const intIn = (units: AreaUnit[], u: AreaUnit, s: string): bigint => {
+  const v = int(s), max = partMax(units, u);
+  return max != null && v > max ? max : v;
+};
 
 export const UNIT_SYSTEMS: { value: string; label: string; units: AreaUnit[] }[] = [
   { value: 'kmf', label: 'Kanal – Marla – Feet (1 marla = 272 sq ft)', units: ['gkanal', 'gmarla', 'sqft'] },
@@ -69,7 +82,7 @@ export function LandQuick({ c, setC }: { c: Case; setC: (c: Case) => void }) {
   const set = (u: AreaUnit, v: string) => {
     const parts: Partial<Record<AreaUnit, Fraction>> = {};
     for (const x of m.parts) parts[x.unit] = frac(x.whole);
-    parts[u] = frac(int(v));
+    parts[u] = frac(intIn(sys.units, u, v));
     const area = { unit: sys.units[0], value: fromParts(parts, sys.units[0]) };
     const rest = c.estate.immovable.slice(1);
     setC({ ...structuredClone(c), estate: { ...structuredClone(c.estate), immovable: [{ ...(p ?? { title: 'Land' }), area }, ...rest] } });
@@ -103,7 +116,7 @@ export default function Estate({ c, setC }: { c: Case; setC: (c: Case) => void }
     const { sys, m } = partsOf(i);
     const parts: Partial<Record<AreaUnit, Fraction>> = {};
     for (const x of m.parts) parts[x.unit] = frac(x.whole);
-    parts[unit] = frac(int(v));
+    parts[unit] = frac(intIn(sys.units, unit, v));
     setProp(i, { area: { unit: sys.units[0], value: fromParts(parts, sys.units[0]) } });
   };
 
