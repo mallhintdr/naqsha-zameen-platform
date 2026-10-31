@@ -262,7 +262,7 @@ export default function ShareCalc() {
                       <th className={cell}>Heir</th><th className={`${cell} text-center`}>No.</th><th className={`${cell} text-right`}>Each</th>
                       <th className={`${cell} hidden text-right sm:table-cell`}>Together</th>
                       <th className={`${cell} hidden text-right sm:table-cell`}>Sihaam</th>
-                      <th className={`${cell} text-right`}>% each</th>
+                      <th className={`${cell} text-right`}>%</th>
                       {sqft > 0n && <th className={`${cell} text-right`}>Land</th>}
                     </tr>
                   </thead>
