@@ -279,13 +279,20 @@ export default function ShareCalc() {
                       return (
                         <tr key={g.key} className={`border-b border-slate-200 ${none ? 'text-slate-400' : ''}`}>
                           <td className={cell}>
-                            <span className="font-semibold">{g.en}</span>
-                            {noteNo.get(g.key) && <sup className="ml-0.5 text-[10px] font-semibold text-sky-700">({noteNo.get(g.key)})</sup>}
+                            {noteNo.get(g.key)
+                              // The heir's name links to the rule that gives this share (in the notes below).
+                              ? <a href={`#calc-rule-${noteNo.get(g.key)}`} title={notes[noteNo.get(g.key)! - 1]}
+                                  className="font-semibold text-sky-800 underline decoration-sky-400 decoration-dotted underline-offset-2 hover:text-sky-600">{g.en}</a>
+                              : <span className="font-semibold">{g.en}</span>}
                           </td>
                           <td className={`${cell} text-center`} lang="ur" dir="rtl">{(() => {
                             // "پوتے (مرحوم بیٹا 2)": the relation on one line, which late son / daughter in small type under it.
                             const [main, sub] = g.ur.split(' (');
-                            return <><span className="urdu whitespace-nowrap text-[12px] leading-[1.5] text-slate-700">{main}</span>{sub && <span className="urdu block whitespace-nowrap text-[10px] leading-tight text-slate-500">({sub}</span>}</>;
+                            const no = noteNo.get(g.key);
+                            const name = no
+                              ? <a href={`#calc-rule-${no}`} title={notes[no - 1]} className="urdu whitespace-nowrap text-[12px] leading-[1.5] text-sky-800 underline decoration-sky-400 decoration-dotted underline-offset-4">{main}</a>
+                              : <span className="urdu whitespace-nowrap text-[12px] leading-[1.5] text-slate-700">{main}</span>;
+                            return <>{name}{sub && <span className="urdu block whitespace-nowrap text-[10px] leading-tight text-slate-500">({sub}</span>}</>;
                           })()}</td>
                           <td className={`${cell} text-center font-mono`}>{g.ids.length}</td>
                           <td className={`${cell} text-right font-mono`}>{none ? '—' : toString(each.fraction)}</td>
@@ -318,7 +325,15 @@ export default function ShareCalc() {
       <footer className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-[11px] leading-relaxed text-slate-600 rounded-b-2xl">
         {notes.length > 0 && (
           <ol className="space-y-0.5">
-            {notes.map((t, i) => <li key={i}><b className="text-sky-700">({i + 1})</b> {t}</li>)}
+            {notes.map((t, i) => {
+              // Each rule names the heirs it applies to; the heir links in the table land here.
+              const who = out?.groups.filter((g) => noteNo.get(g.key) === i + 1).map((g) => g.en) ?? [];
+              return (
+                <li key={i} id={`calc-rule-${i + 1}`} className="scroll-mt-24 rounded px-1 target:bg-amber-100">
+                  {who.length > 0 && <b className="text-slate-800">{who.join(', ')}: </b>}{t}
+                </li>
+              );
+            })}
           </ol>
         )}
         <ul className="mt-1 space-y-0.5">
