@@ -1,13 +1,14 @@
 // Quick inheritance share calculator: no family tree, just how many of each relative survived the
-// deceased (e.g. 2 sons, 1 wife, mother, father). Same engine as the Shajra Nasab tool.
-import { useMemo, useState } from 'react';
+// deceased (e.g. 2 sons, 1 wife, mother, father). Same engine and the same default rules as the
+// Shajra Nasab tool: the counts are turned into a family and passed to the same compute().
+import { Fragment, useMemo, useState } from 'react';
 import { CaseBuilder, compute, sum, toString, percent, type LawSystem, type ShareResult, type Fraction } from 'inheritance-engine';
 import { ruleText } from '../shajra/labels.ts';
 import { kmfText } from '../shajra/Estate.tsx';
 
 type Key =
   | 'spouse' | 'sons' | 'daughters' | 'father' | 'mother'
-  | 'pgf' | 'pgm' | 'mgm' | 'gsons' | 'gdaughters'
+  | 'pgf' | 'pgm' | 'mgm'
   | 'fullB' | 'fullS' | 'consB' | 'consS' | 'uteB' | 'uteS' | 'uncles';
 
 /** Rows of the form: key, label, Urdu, most allowed. Spouse depends on the deceased's gender. */
@@ -20,8 +21,6 @@ const ROWS: { key: Key; en: string; ur: string; max: number; group: string }[] =
   { key: 'pgf', en: 'Paternal grandfather', ur: 'دادا', max: 1, group: 'Parents and grandparents' },
   { key: 'pgm', en: 'Paternal grandmother', ur: 'دادی', max: 1, group: 'Parents and grandparents' },
   { key: 'mgm', en: 'Maternal grandmother', ur: 'نانی', max: 1, group: 'Parents and grandparents' },
-  { key: 'gsons', en: "Son's sons*", ur: 'پوتے', max: 20, group: 'Grandchildren' },
-  { key: 'gdaughters', en: "Son's daughters*", ur: 'پوتیاں', max: 20, group: 'Grandchildren' },
   { key: 'fullB', en: 'Full brothers', ur: 'حقیقی بھائی', max: 20, group: 'Brothers, sisters and uncles' },
   { key: 'fullS', en: 'Full sisters', ur: 'حقیقی بہنیں', max: 20, group: 'Brothers, sisters and uncles' },
   { key: 'consB', en: 'Brothers by father only', ur: 'علاتی بھائی', max: 20, group: 'Brothers, sisters and uncles' },
@@ -48,6 +47,10 @@ const icell = 'px-1.5 py-0.5 sm:px-2 sm:py-1';
 const stepBtn = 'h-6 w-6 sm:h-7 sm:w-7 shrink-0 rounded-lg border border-slate-300 bg-white text-base font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40';
 
 type Group = { key: string; en: string; ur: string; ids: string[]; shares: ShareResult[] };
+/** A son or daughter of the deceased who died before the deceased, with the children they left. */
+type Line = { id: number; parent: 'M' | 'F'; sons: number; daughters: number };
+const GRAND = 'Grandchildren*';
+const SECTIONS = ['Spouse and children', 'Parents and grandparents', GRAND, 'Brothers, sisters and uncles'];
 
 export default function ShareCalc() {
   const [gender, setGender] = useState<'M' | 'F'>('M');
@@ -55,6 +58,13 @@ export default function ShareCalc() {
   const [s4, setS4] = useState(true);
   const [n, setN] = useState<Record<Key, number>>(() => Object.fromEntries(ROWS.map((r) => [r.key, 0])) as Record<Key, number>);
   const [land, setLand] = useState({ k: '', m: '', f: '' });
+  const [lines, setLines] = useState<Line[]>([]);
+  const setLine = (id: number, x: Partial<Line>) => setLines((ls) => ls.map((l) => (l.id === id ? { ...l, ...x } : l)));
+  /** "late son 2" when there are several late sons, else "late son". */
+  const lineName = (l: Line) => {
+    const same = lines.filter((x) => x.parent === l.parent);
+    return `late ${l.parent === 'M' ? 'son' : 'daughter'}${same.length > 1 ? ` ${same.indexOf(l) + 1}` : ''}`;
+  };
   const set = (k: Key, v: number) => setN((o) => ({ ...o, [k]: Math.max(0, Math.min(ROWS.find((r) => r.key === k)!.max, v)) }));
   const rowMax = (r: (typeof ROWS)[number]) => (r.key === 'spouse' && gender === 'F' ? 1 : r.max);
 
@@ -75,10 +85,16 @@ export default function ShareCalc() {
     const other = spouses.length === 1 ? spouses[0] : undefined;
     many('sons', () => b.child('M', {}, other));
     many('daughters', () => b.child('F', {}, other));
-    if (n.gsons || n.gdaughters) {
-      const dead = b.child('M', { ...DEAD, name: 'Son (died before)' }, other);
-      many('gsons', () => b.childOf(dead, 'M'));
-      many('gdaughters', () => b.childOf(dead, 'F'));
+    // Each late son / daughter separately, so each one's children share only that parent's portion.
+    const lineGroups: Omit<Group, 'shares'>[] = [];
+    for (const l of lines) {
+      if (!l.sons && !l.daughters) continue;
+      const who = lineName(l);
+      const dead = b.child(l.parent, { ...DEAD, name: who }, other);
+      const sons = Array.from({ length: l.sons }, () => b.childOf(dead, 'M'));
+      const daughters = Array.from({ length: l.daughters }, () => b.childOf(dead, 'F'));
+      if (sons.length) lineGroups.push({ key: `L${l.id}s`, en: `Sons of ${who}`, ur: l.parent === 'M' ? 'پوتے' : 'نواسے', ids: sons });
+      if (daughters.length) lineGroups.push({ key: `L${l.id}d`, en: `Daughters of ${who}`, ur: l.parent === 'M' ? 'پوتیاں' : 'نواسیاں', ids: daughters });
     }
     many('fullB', () => b.sibling('M', 'full'));
     many('fullS', () => b.sibling('F', 'full'));
@@ -91,25 +107,28 @@ export default function ShareCalc() {
       many('uncles', () => { const id = b.person('M', { name: 'Paternal uncle' }); b.parents(id, gf, gm); return id; });
     }
     const c = b.build();
-    if (![...made.values()].some((x) => x.length)) return null;
+    if (![...made.values()].some((x) => x.length) && !lineGroups.length) return null;
     try {
       const r = compute(c);
       const byId = new Map(r.shares.map((s) => [s.personId, s]));
       const groups: Group[] = [];
+      const sharesOf = (ids: string[]) => ids.map((id) => byId.get(id)!).filter(Boolean);
       for (const row of ROWS) {
         const ids = made.get(row.key) ?? [];
-        if (!ids.length) continue;
-        const en = row.key === 'spouse' ? (gender === 'M' ? (ids.length > 1 ? 'Wives' : 'Wife') : 'Husband') : row.en;
-        const ur = row.key === 'spouse' ? (gender === 'M' ? 'بیوی' : 'شوہر') : row.ur;
-        groups.push({ key: row.key, en, ur, ids, shares: ids.map((id) => byId.get(id)!).filter(Boolean) });
+        if (ids.length) {
+          const en = row.key === 'spouse' ? (gender === 'M' ? (ids.length > 1 ? 'Wives' : 'Wife') : 'Husband') : row.en;
+          const ur = row.key === 'spouse' ? (gender === 'M' ? 'بیوی' : 'شوہر') : row.ur;
+          groups.push({ key: row.key, en, ur, ids, shares: sharesOf(ids) });
+        }
+        // Grandchildren come after the parents and grandparents.
+        if (row.key === 'mgm') for (const lg of lineGroups) groups.push({ ...lg, shares: sharesOf(lg.ids) });
       }
       return { r, groups, error: null as string | null };
     } catch (e) { return { r: null, groups: [], error: (e as Error).message }; }
-  }, [n, gender, law, s4]);
+  }, [n, gender, law, s4, lines]);
 
   const sqft = BigInt(Math.max(0, Math.round((+land.k || 0) * 5440 + (+land.m || 0) * 272 + (+land.f || 0))));
   const landOf = (f: Fraction) => (sqft > 0n ? kmfText((f.n * sqft * 2n + f.d) / (2n * f.d)) : '');
-  const sections = [...new Set(ROWS.map((r) => r.group))];
   // Footnotes: each distinct explanation once, numbered; a heir row carries its number.
   const notes: string[] = [];
   const noteNo = new Map<string, number>();
@@ -123,6 +142,22 @@ export default function ShareCalc() {
     for (const x of out.r.notes) addNote(ruleText(x.ruleId));
     if (out.r.needsVerification) addNote('Complex case (distant kindred or grandfather with siblings): verify with a lawyer.');
   }
+
+  /** One relation row: name, Urdu name, − count +. */
+  const countRow = (key: string, label: string, ur: string, value: number, max: number, onSet: (v: number) => void) => (
+    <tr key={key} className={`border-b border-slate-100 ${value ? 'bg-sky-50/60' : ''}`}>
+      <td className={`${icell} text-xs leading-tight text-slate-800`}>{label}</td>
+      <td className={`${icell} text-center`}><span className="urdu text-[11px] text-slate-600 sm:text-xs" lang="ur" dir="rtl">{ur}</span></td>
+      <td className={icell}>
+        <div className="flex items-center justify-center gap-0.5 sm:gap-1">
+          <button className={stepBtn} aria-label={`Fewer: ${label}`} disabled={!value} onClick={() => onSet(Math.max(0, value - 1))}>−</button>
+          <input className="h-6 w-7 rounded-md border border-slate-300 text-center text-xs font-semibold sm:h-8 sm:w-9 sm:rounded-lg sm:text-sm" inputMode="numeric" aria-label={label} value={value}
+            onChange={(e) => onSet(Math.min(max, +e.target.value.replace(/\D/g, '') || 0))} />
+          <button className={stepBtn} aria-label={`More: ${label}`} disabled={value >= max} onClick={() => onSet(Math.min(max, value + 1))}>+</button>
+        </div>
+      </td>
+    </tr>
+  );
 
   return (
     <div className="rounded-2xl bg-white text-slate-900 shadow-2xl">
@@ -153,7 +188,7 @@ export default function ShareCalc() {
               </label>
             ))}
             <button className="ml-auto rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              onClick={() => { setN(Object.fromEntries(ROWS.map((r) => [r.key, 0])) as Record<Key, number>); setLand({ k: '', m: '', f: '' }); }}>Clear</button>
+              onClick={() => { setN(Object.fromEntries(ROWS.map((r) => [r.key, 0])) as Record<Key, number>); setLand({ k: '', m: '', f: '' }); setLines([]); }}>Clear</button>
           </div>
           <p className="mt-3 text-xs text-slate-500">Count the relatives <b>alive</b> at the death.</p>
           {/* Relatives as one grouped table: relation, Urdu, count */}
@@ -165,37 +200,50 @@ export default function ShareCalc() {
                 <th className={`${icell} w-[5.75rem] text-center font-semibold sm:w-[7.5rem]`}>Number</th>
               </tr>
             </thead>
-            {sections.map((sec) => (
+            {SECTIONS.map((sec) => (
               <tbody key={sec}>
                 <tr className="bg-slate-100">
                   <th colSpan={3} className={`${icell} text-left text-xs font-bold text-slate-700`}>
                     {sec}
-                    {sec === 'Grandchildren' && (
+                    {sec === GRAND && (
                       <label className="float-right flex items-center gap-1 font-normal text-slate-600">
                         <input type="checkbox" checked={s4} onChange={(e) => setS4(e.target.checked)} /> MFLO 1961 s.4
                       </label>
                     )}
                   </th>
                 </tr>
-                {ROWS.filter((r) => r.group === sec).map((r) => {
+                {sec !== GRAND && ROWS.filter((r) => r.group === sec).map((r) => {
                   const label = r.key === 'spouse' ? (gender === 'M' ? 'Wives' : 'Husband') : r.en;
                   const ur = r.key === 'spouse' ? (gender === 'M' ? 'بیوی' : 'شوہر') : r.ur;
-                  const max = rowMax(r);
-                  return (
-                    <tr key={r.key} className={`border-b border-slate-100 ${n[r.key] ? 'bg-sky-50/60' : ''}`}>
-                      <td className={`${icell} text-xs leading-tight text-slate-800`}>{label}</td>
-                      <td className={`${icell} text-center`}><span className="urdu text-[11px] text-slate-600 sm:text-xs" lang="ur" dir="rtl">{ur}</span></td>
-                      <td className={icell}>
-                        <div className="flex items-center justify-center gap-0.5 sm:gap-1">
-                          <button className={stepBtn} aria-label={`Fewer: ${label}`} disabled={!n[r.key]} onClick={() => set(r.key, n[r.key] - 1)}>−</button>
-                          <input className="h-6 w-7 rounded-md border border-slate-300 text-center text-xs font-semibold sm:h-8 sm:w-9 sm:rounded-lg sm:text-sm" inputMode="numeric" aria-label={label} value={n[r.key]}
-                            onChange={(e) => set(r.key, Math.min(max, +e.target.value.replace(/\D/g, '') || 0))} />
-                          <button className={stepBtn} aria-label={`More: ${label}`} disabled={n[r.key] >= max} onClick={() => set(r.key, n[r.key] + 1)}>+</button>
-                        </div>
+                  return countRow(r.key, label, ur, n[r.key], rowMax(r), (v) => set(r.key, v));
+                })}
+                {sec === GRAND && lines.map((l) => (
+                  <Fragment key={l.id}>
+                    <tr className="border-b border-slate-100">
+                      <td colSpan={3} className={`${icell} text-[11px] font-semibold text-slate-600`}>
+                        <span className="capitalize">{lineName(l)}</span> <span className="urdu font-normal" lang="ur">{l.parent === 'M' ? 'مرحوم بیٹا' : 'مرحومہ بیٹی'}</span>
+                        <button className="float-right rounded px-1.5 text-sm leading-none text-slate-500 hover:bg-slate-100" aria-label={`Remove ${lineName(l)}`}
+                          onClick={() => setLines((ls) => ls.filter((x) => x.id !== l.id))}>×</button>
                       </td>
                     </tr>
-                  );
-                })}
+                    {countRow(`L${l.id}s`, `${l.parent === 'M' ? 'His' : 'Her'} sons`, l.parent === 'M' ? 'پوتے' : 'نواسے', l.sons, 20, (v) => setLine(l.id, { sons: v }))}
+                    {countRow(`L${l.id}d`, `${l.parent === 'M' ? 'His' : 'Her'} daughters`, l.parent === 'M' ? 'پوتیاں' : 'نواسیاں', l.daughters, 20, (v) => setLine(l.id, { daughters: v }))}
+                  </Fragment>
+                ))}
+                {sec === GRAND && (
+                  <tr>
+                    <td colSpan={3} className={`${icell} py-1.5`}>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(['M', 'F'] as const).map((g) => (
+                          <button key={g} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                            onClick={() => setLines((ls) => [...ls, { id: Date.now(), parent: g, sons: 0, daughters: 0 }])}>
+                            + {g === 'M' ? 'Son' : 'Daughter'} who died before <span className="urdu font-normal text-slate-500" lang="ur">{g === 'M' ? 'مرحوم بیٹا' : 'مرحومہ بیٹی'}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             ))}
           </table>
@@ -264,7 +312,7 @@ export default function ShareCalc() {
           </ol>
         )}
         <ul className="mt-1 space-y-0.5">
-          <li>* Their father, the deceased's son, died before the deceased.</li>
+          <li>* Children of a son or daughter who died before the deceased. Add each late son / daughter separately: with MFLO 1961 s.4 each one's children take only the share that parent would have taken (sons twice daughters; only daughters take 1/2 or 2/3 of it).</li>
           <li>** The father's full brothers.</li>
           {sqft > 0n && <li>† Kanal-Marla-Feet (1 kanal = 20 marla, 1 marla = 272 sq ft); feet rounded.</li>}
           <li>For the family tree, the heirs' statement for the revenue officer, or an heir who died after the deceased, use the <a className="font-semibold text-sky-700 underline" href="/tools/shajra-nasab/">Shajra Nasab tool</a>.</li>
