@@ -261,7 +261,7 @@ export default function ShareCalc() {
                     <tr className="bg-slate-800 text-left text-white">
                       <th className={cell}>Heir</th><th className={`${cell} text-center`}>No.</th><th className={`${cell} text-right`}>Each</th>
                       <th className={`${cell} hidden text-right sm:table-cell`}>Together</th>
-                      <th className={`${cell} hidden text-right sm:table-cell`}>Sihaam /{String(out.r.base)}</th>
+                      <th className={`${cell} hidden text-right sm:table-cell`}>Sihaam</th>
                       <th className={`${cell} text-right`}>% each</th>
                       {sqft > 0n && <th className={`${cell} text-right`}>Land each†</th>}
                     </tr>
