@@ -142,13 +142,24 @@ export default function ShareCalc() {
               </div>
             </div>
           </div>
+          {/* Total land right after the deceased's details */}
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <span className="w-full text-xs font-semibold text-slate-600">Total land (optional) <span className="urdu font-normal" lang="ur">کل رقبہ</span></span>
+            {(['k', 'm', 'f'] as const).map((u) => (
+              <label key={u} className="w-20 text-[11px] text-slate-500">{{ k: 'Kanal', m: 'Marla', f: 'Feet' }[u]}
+                <input className={`${input} text-right`} inputMode="numeric" value={land[u]} placeholder="0" onChange={(e) => setLand({ ...land, [u]: e.target.value.replace(/[^\d.]/g, '') })} />
+              </label>
+            ))}
+            <button className="ml-auto rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              onClick={() => { setN(Object.fromEntries(ROWS.map((r) => [r.key, 0])) as Record<Key, number>); setLand({ k: '', m: '', f: '' }); }}>Clear</button>
+          </div>
           <p className="mt-3 text-xs text-slate-500">Count the relatives <b>alive</b> at the death.</p>
           {/* Relatives as one grouped table: relation, Urdu, count */}
           <table className="mt-2 w-full border-collapse text-sm">
             <thead>
               <tr className="bg-slate-800 text-left text-xs text-white">
                 <th className="px-2 py-1.5 font-semibold">Relation</th>
-                <th className="px-2 py-1.5 text-right font-normal"><span className="urdu" lang="ur">رشتہ</span></th>
+                <th className="px-2 py-1.5 text-center font-normal"><span className="urdu" lang="ur">رشتہ</span></th>
                 <th className="w-[7.5rem] px-2 py-1.5 text-center font-semibold">Number</th>
               </tr>
             </thead>
@@ -171,7 +182,7 @@ export default function ShareCalc() {
                   return (
                     <tr key={r.key} className={`border-b border-slate-100 ${n[r.key] ? 'bg-sky-50/60' : ''}`}>
                       <td className="px-2 py-1 text-xs text-slate-800">{label}</td>
-                      <td className="px-2 py-1 text-right"><span className="urdu text-xs text-slate-600" lang="ur" dir="rtl">{ur}</span></td>
+                      <td className="px-2 py-1 text-center"><span className="urdu text-xs text-slate-600" lang="ur" dir="rtl">{ur}</span></td>
                       <td className="px-2 py-1">
                         <div className="flex items-center justify-center gap-1">
                           <button className={stepBtn} aria-label={`Fewer: ${label}`} disabled={!n[r.key]} onClick={() => set(r.key, n[r.key] - 1)}>−</button>
@@ -186,16 +197,6 @@ export default function ShareCalc() {
               </tbody>
             ))}
           </table>
-          <div className="mt-3 flex flex-wrap items-end gap-2">
-            <span className="w-full text-xs font-semibold text-slate-600">Total land (optional) <span className="urdu font-normal" lang="ur">کل رقبہ</span></span>
-            {(['k', 'm', 'f'] as const).map((u) => (
-              <label key={u} className="w-20 text-[11px] text-slate-500">{{ k: 'Kanal', m: 'Marla', f: 'Feet' }[u]}
-                <input className={`${input} text-right`} inputMode="numeric" value={land[u]} placeholder="0" onChange={(e) => setLand({ ...land, [u]: e.target.value.replace(/[^\d.]/g, '') })} />
-              </label>
-            ))}
-            <button className="ml-auto rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              onClick={() => { setN(Object.fromEntries(ROWS.map((r) => [r.key, 0])) as Record<Key, number>); setLand({ k: '', m: '', f: '' }); }}>Clear</button>
-          </div>
         </div>
 
         {/* Shares: figures only; every explanation is a numbered note at the foot */}
