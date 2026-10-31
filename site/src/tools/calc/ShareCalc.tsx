@@ -261,7 +261,7 @@ export default function ShareCalc() {
     c.id = `SN-${Date.now().toString(36).toUpperCase()}`;
     c.dateOfDeath = today;
     const d = c.persons.find((x) => x.id === c.deceasedId)!;
-    d.name = ''; d.dateOfDeath = today;
+    d.name = ''; d.dateOfDeath = undefined; // optional: the user adds it on the shajra
     // Stand-in dates (people who died before) are not real dates: leave them blank to fill in.
     for (const p of c.persons) if (!p.alive && p.id !== c.deceasedId) p.dateOfDeath = undefined;
     // Easy names to type over: "Son 1", "Son 2", "Wife", "Brother"...

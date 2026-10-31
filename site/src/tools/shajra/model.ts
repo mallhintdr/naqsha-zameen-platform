@@ -13,7 +13,9 @@ export function newCase(): Case {
     deceasedId: 'D',
     dateOfDeath: today,
     province: 'punjab',
-    persons: [{ id: 'D', name: '', fatherName: '', gender: 'M', alive: false, dateOfDeath: today, religion: 'muslim', flags: {} }],
+    // The deceased's own date is optional (shown on the shajra only when entered); the case date
+    // (today until one is entered) is what the calculation compares other deaths with.
+    persons: [{ id: 'D', name: '', fatherName: '', gender: 'M', alive: false, religion: 'muslim', flags: {} }],
     unions: [],
     parents: [],
     estate: { immovable: [], debts: ZERO, funeral: ZERO, dower: ZERO, wills: [] },

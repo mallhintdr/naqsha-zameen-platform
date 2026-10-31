@@ -170,7 +170,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
     const below = k === 'wife' ? y + sym + 34 : k === 'both' ? y + 25 + 40 : inLaw ? inLawY + 18 : y + sym + (hasUrdu(nm) ? 40 : 29);
     // Date of death right under پہلے فوت شدہ / بعد میں فوت شدہ / حال متوفی (can be switched off).
     const showDates = (c as Case & { print?: { showDates?: boolean } }).print?.showDates !== false;
-    const dod = isD ? c.dateOfDeath : !p.alive ? p.dateOfDeath : undefined;
+    const dod = !p.alive ? p.dateOfDeath : undefined; // the deceased's too: only when entered
     const dateTxt = showDates && dod && /^\d{4}-\d{2}-\d{2}$/.test(dod) ? dod.split('-').reverse().join('-') : '';
     const extra = (dateTxt ? 1 : 0) + (mahroom || divorced ? 1 : 0) + (!isD && !mahroom && shareTxt ? 1 : 0);
     // Just under the last line of text: the line down to the children starts here.

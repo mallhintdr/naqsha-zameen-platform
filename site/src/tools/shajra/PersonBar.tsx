@@ -92,8 +92,12 @@ export default function PersonBar({ c, p, share, addOpen, setAddOpen, onPatch, o
           </div>
         )}
         {(isD || !p.alive) && (
-          <label className="flex items-center gap-2 text-xs text-slate-500 sm:gap-1 sm:text-[11px]">{isD ? 'Date of death' : <><span className="sm:hidden">Date of death</span><span className="hidden sm:inline">on</span></>}
-            <input type="date" className={`${field} flex-1 sm:flex-none`} value={(isD ? c.dateOfDeath : p.dateOfDeath) ?? ''} onChange={(e) => onPatch({ dateOfDeath: e.target.value })} />
+          <label className="flex items-center gap-2 text-xs text-slate-500 sm:gap-1 sm:text-[11px]">{isD ? 'Date of death (optional)' : <><span className="sm:hidden">Date of death</span><span className="hidden sm:inline">on</span></>}
+            <input type="date" className={`${field} flex-1 sm:flex-none`} value={p.dateOfDeath ?? ''} onChange={(e) => onPatch({ dateOfDeath: e.target.value || undefined })} />
+            {p.dateOfDeath && (
+              <button type="button" className="rounded px-1.5 text-base leading-none text-slate-500 hover:bg-slate-100" title="Remove the date" aria-label="Remove the date of death"
+                onClick={() => onPatch({ dateOfDeath: undefined })}>×</button>
+            )}
           </label>
         )}
         {!isD && (
