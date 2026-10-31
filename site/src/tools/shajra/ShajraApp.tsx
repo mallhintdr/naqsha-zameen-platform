@@ -50,7 +50,7 @@ export function sheetPlan(c: Case, hasTable: boolean, tableRows: number) {
   // Page margins (mm): 7 at the sides, 5 at the top, 11 at the bottom (room for the footer band).
   const fitAt = (spacing: Spacing, landscape: boolean) => {
     const { width, height } = layout(c, spacing);
-    const treeW = (width + 56) * MM, treeH = (height + 34) * MM; // the tree's drawing size
+    const treeW = (width + 56) * MM, treeH = (height + 62) * MM; // the tree's drawing size
     const W = landscape ? 283 : 196, H = (landscape ? 194 : 281) - fixedH(landscape);
     const side = Math.min(1.2, (W - tableW - 4) / treeW, H / treeH); // table at the side
     const below = Math.min(1.2, W / treeW, (H - tableH - 4) / treeH); // table under the tree

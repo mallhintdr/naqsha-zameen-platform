@@ -13,9 +13,10 @@ const ADD: { kind: AddKind; label: string; ur: string }[] = [
   { kind: 'son', label: 'Son', ur: 'بیٹا' }, { kind: 'daughter', label: 'Daughter', ur: 'بیٹی' }, { kind: 'brother', label: 'Brother', ur: 'بھائی' }, { kind: 'sister', label: 'Sister', ur: 'بہن' },
 ];
 
-const field = 'rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none';
+// 16px text on phones so the browser does not zoom in when a box is tapped.
+const field = 'rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-base text-slate-900 focus:border-sky-500 focus:outline-none sm:text-sm';
 const act = 'inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 focus:border-sky-500 focus:bg-sky-50 focus:outline-none';
-const seg = (on: boolean) => `px-2.5 py-1.5 text-xs font-semibold ${on ? 'bg-slate-800 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`;
+const seg = (on: boolean) => `flex-1 px-2.5 py-2 text-sm font-semibold sm:flex-none sm:py-1.5 sm:text-xs ${on ? 'bg-slate-800 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`;
 
 export default function PersonBar({ c, p, share, addOpen, setAddOpen, onPatch, onGender, onParent, onAdd, onDelete, onMove, onClose }: {
   c: Case; p: Person; share?: ShareResult; addOpen: boolean; setAddOpen: (v: boolean) => void;
@@ -58,7 +59,8 @@ export default function PersonBar({ c, p, share, addOpen, setAddOpen, onPatch, o
 
   return (
     <div ref={ref} role="menu" aria-label={`Details of ${p.name || 'this person'}`} onKeyDown={onKey}
-      className="w-[min(540px,92vw)] rounded-xl border border-slate-200 bg-white p-2 text-slate-900 shadow-xl">
+      className="person-bar fixed inset-x-0 bottom-0 z-[2500] max-h-[80vh] w-full overflow-y-auto rounded-t-2xl border-t border-slate-200 bg-white p-3 text-slate-900 shadow-[0_-8px_24px_rgba(0,0,0,0.18)] sm:static sm:max-h-none sm:w-[min(540px,92vw)] sm:overflow-visible sm:rounded-xl sm:border sm:p-2 sm:shadow-xl">
+      <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-300 sm:hidden" aria-hidden="true" />
       {/* Who: relation and share */}
       <div className="mb-1.5 flex items-center gap-2 text-[11px] text-slate-500">
         <span className="font-semibold uppercase tracking-wide">{isD ? 'Deceased' : en || 'Relative'}</span>
@@ -68,34 +70,34 @@ export default function PersonBar({ c, p, share, addOpen, setAddOpen, onPatch, o
       </div>
 
       {/* Name, gender */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <input ref={nameRef} className={`${field} min-w-0 flex-1 font-semibold`} aria-label="Name" placeholder="Name" value={p.name}
+      <div className="flex flex-col items-stretch gap-1.5 sm:flex-row sm:flex-wrap sm:items-center">
+        <input ref={nameRef} className={`${field} w-full font-semibold sm:w-auto sm:min-w-0 sm:flex-1`} aria-label="Name" placeholder="Name" value={p.name}
           onFocus={(e) => e.target.select()} onChange={(e) => onPatch({ name: e.target.value })} />
-        <div className="inline-flex overflow-hidden rounded-lg border border-slate-300" role="group" aria-label="Gender">
+        <div className="flex overflow-hidden rounded-lg border border-slate-300 sm:inline-flex" role="group" aria-label="Gender">
           <button className={seg(p.gender === 'M')} aria-pressed={p.gender === 'M'} onClick={() => onGender('M')}>M</button>
           <button className={seg(p.gender === 'F')} aria-pressed={p.gender === 'F'} onClick={() => onGender('F')}>F</button>
         </div>
       </div>
 
       {/* Father's name (deceased, when the father is not on the tree), alive / died, CNIC */}
-      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+      <div className="mt-1.5 flex flex-col items-stretch gap-1.5 sm:flex-row sm:flex-wrap sm:items-center">
         {isD && !treeFather && (
-          <input className={`${field} min-w-[9rem] flex-1`} aria-label="Father's name" placeholder={p.gender === 'F' ? "Father's name (d/o)" : "Father's name (s/o)"}
+          <input className={`${field} w-full sm:w-auto sm:min-w-[9rem] sm:flex-1`} aria-label="Father's name" placeholder={p.gender === 'F' ? "Father's name (d/o)" : "Father's name (s/o)"}
             value={p.fatherName ?? ''} onChange={(e) => onPatch({ fatherName: e.target.value })} />
         )}
         {!isD && (
-          <div className="inline-flex overflow-hidden rounded-lg border border-slate-300" role="group" aria-label="Alive or died">
+          <div className="flex overflow-hidden rounded-lg border border-slate-300 sm:inline-flex" role="group" aria-label="Alive or died">
             <button className={seg(p.alive)} aria-pressed={p.alive} onClick={() => onPatch({ alive: true, dateOfDeath: undefined })}>Alive</button>
             <button className={seg(!p.alive)} aria-pressed={!p.alive} onClick={() => onPatch({ alive: false })}>Died</button>
           </div>
         )}
         {(isD || !p.alive) && (
-          <label className="flex items-center gap-1 text-[11px] text-slate-500">{isD ? 'Date of death' : 'on'}
-            <input type="date" className={field} value={(isD ? c.dateOfDeath : p.dateOfDeath) ?? ''} onChange={(e) => onPatch({ dateOfDeath: e.target.value })} />
+          <label className="flex items-center gap-2 text-xs text-slate-500 sm:gap-1 sm:text-[11px]">{isD ? 'Date of death' : <><span className="sm:hidden">Date of death</span><span className="hidden sm:inline">on</span></>}
+            <input type="date" className={`${field} flex-1 sm:flex-none`} value={(isD ? c.dateOfDeath : p.dateOfDeath) ?? ''} onChange={(e) => onPatch({ dateOfDeath: e.target.value })} />
           </label>
         )}
         {!isD && (
-          <input className={`${field} w-[10.5rem]`} inputMode="numeric" aria-label="CNIC" placeholder="CNIC 12345-1234567-1" value={p.cnic ?? ''}
+          <input className={`${field} w-full sm:w-[10.5rem]`} inputMode="numeric" aria-label="CNIC" placeholder="CNIC 12345-1234567-1" value={p.cnic ?? ''}
             onChange={(e) => onPatch({ cnic: formatCnic(e.target.value) })} />
         )}
       </div>

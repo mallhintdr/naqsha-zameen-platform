@@ -62,9 +62,11 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
 }) {
   const { nodes, width, height } = useMemo(() => layout(c, spacing), [c, spacing?.h, spacing?.v]);
   const P = 28;
+  /** Extra room at the top for the long stem where a family line starts (a root with no parents drawn). */
+  const STEM = 28;
   const sym = 26;
   const cx = (id: string) => nodes.get(id)!.x + NODE_W / 2 + P;
-  const top = (id: string) => nodes.get(id)!.y + P;
+  const top = (id: string) => nodes.get(id)!.y + P + STEM;
   const kindOf = (id: string): Kind => {
     const p = c.persons.find((x) => x.id === id)!;
     if (p.gender === 'M') return 'male';
@@ -177,9 +179,15 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
   };
 
   const sel = selected ? nodes.get(selected) : null;
+  // On a computer the quick bar (540px) opens under the person: a small tree's area widens while it
+  // is open so the bar is never cut off (phones show it as a panel at the bottom instead).
+  const svgW = width + P * 2;
+  const wideScreen = typeof window !== 'undefined' && window.innerWidth >= 640;
+  const outerW = Math.max(svgW, sel && menu && wideScreen ? 560 : 0);
+  const offX = (outerW - svgW) / 2;
   return (
-    <div className={printMode ? 'relative' : 'relative mx-auto'} style={printMode ? { width: printSize ? `${printSize.w}mm` : '100%', margin: '0 auto' } : { width: width + P * 2, minHeight: height + P * 2 + (sel && menu ? 440 : 90) /* room for the quick bar (with More / Add relative) under the lowest row */ }}>
-      <svg width={printMode ? (printSize ? `${printSize.w}mm` : '100%') : width + P * 2} height={printMode ? (printSize ? `${printSize.h}mm` : undefined) : height + P * 2 + 70} viewBox={`0 0 ${width + P * 2} ${height + (printMode ? P + 6 : P * 2 + 70)}`} role="group" aria-label="Family tree (shajra nasab)" className={printMode ? 'shajra-tree-print block' : 'shajra-tree block'} style={{ background: '#fffdf6' }}>
+    <div className={printMode ? 'relative' : 'relative mx-auto'} style={printMode ? { width: printSize ? `${printSize.w}mm` : '100%', margin: '0 auto' } : { width: outerW, minHeight: height + P * 2 + STEM + (sel && menu ? 440 : 90) /* room for the quick bar (with More / Add relative) under the lowest row */ }}>
+      <svg width={printMode ? (printSize ? `${printSize.w}mm` : '100%') : svgW} height={printMode ? (printSize ? `${printSize.h}mm` : undefined) : height + P * 2 + STEM + 70} viewBox={`0 0 ${width + P * 2} ${height + STEM + (printMode ? P + 6 : P * 2 + 70)}`} role="group" aria-label="Family tree (shajra nasab)" className={printMode ? 'shajra-tree-print block' : 'shajra-tree mx-auto block'} style={{ background: '#fffdf6' }}>
         {/* Lines of descent: parent stroke -> bar over the children -> each child */}
         <g stroke={INK} strokeWidth="1.3" fill="none">
           {famList.map(({ father, mother, kids }, fi) => {
@@ -245,7 +253,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
               aria-label={`${nm}, ${en}${r && !isD && shareTxt ? `, share ${shareTxt}` : ''}`}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(p.id); } }}>
               <title>{`${nm} · ${en}${ur ? ` · ${ur}` : ''}`}</title>
-              <rect x={n.x + P + 2} y={n.y + P - 20} width={NODE_W - 4} height={sym + (k === 'both' ? 96 : 72)} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#7dd3fc' : 'none'} />
+              <rect x={n.x + P + 2} y={n.y + P + STEM - 20} width={NODE_W - 4} height={sym + (k === 'both' ? 96 : 72)} rx="8" fill={selected === p.id ? 'rgba(14,165,233,0.10)' : 'transparent'} stroke={selected === p.id ? '#7dd3fc' : 'none'} />
               {(() => {
                 const inLaw = isInLaw(p.id);
                 const dir = tipDir(p.id);
@@ -278,6 +286,10 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
                     )}
                     {/* A son of the family is a short stroke; a husband who married into the family is just his name. */}
                     {k === 'male' && !inLaw && <line x1={x} y1={y} x2={x} y2={y + sym} stroke={INK} strokeWidth="1.6" />}
+                    {/* Where a family line starts (no parents drawn above): a longer stem, like the trunk of the tree. */}
+                    {!inLaw && (k === 'male' || k === 'daughter') && !(fatherOf(c, p.id) && nodes.get(fatherOf(c, p.id)!)) && !(motherOf(c, p.id) && nodes.get(motherOf(c, p.id)!)) && (
+                      <line x1={x} y1={y - STEM + 2} x2={x} y2={k === 'male' ? y : y - 2} stroke={INK} strokeWidth="1.6" />
+                    )}
                     {p.flags.pregnant && <path d={`M${x + 30},${y + sym} l6,-10 l6,10 z`} fill="none" stroke="#b45309" strokeDasharray="2 2" />}
                     <text x={nameX} y={nameY - (heartLines.length - 1) * 6} textAnchor="middle" fontSize={hasUrdu(nm) ? (inHeart ? 12 : 13) : inHeart ? 10.5 : 11.5} fontWeight={isD ? 800 : 600} fill={INK}
                       fontFamily={hasUrdu(nm) ? URDU_FONT : undefined}>
@@ -300,7 +312,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
         })}
       </svg>
       {sel && menu && (
-        <div className="absolute z-20" style={{ left: Math.max(4, sel.x + P + NODE_W / 2 - 150), top: sel.y + P + sym + (kindOf(sel.id) === 'both' ? 90 : 62) }}>
+        <div className="absolute z-20" style={{ left: Math.min(Math.max(4, offX + sel.x + P + NODE_W / 2 - 150), Math.max(4, outerW - 548)), top: sel.y + P + STEM + sym + (kindOf(sel.id) === 'both' ? 90 : 62) }}>
           {menu}
         </div>
       )}
