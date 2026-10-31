@@ -397,43 +397,45 @@ export default function ShajraApp() {
         </label>
         </fieldset>
         {/* Law and how the shares are worked out */}
-        <fieldset className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 grid content-start gap-2">
+        <fieldset className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 grid content-start gap-2 sm:grid-cols-2">
           <legend className="px-1 text-xs font-bold text-slate-800">Law and options <span className="urdu font-normal text-slate-500" lang="ur">قانون</span></legend>
-          <label className="text-xs font-semibold text-slate-600">Law (religion of the deceased)
+          <label className="text-xs font-semibold text-slate-600">Law
           <select className={input} value={c.lawSystem} onChange={(e) => setC({ ...structuredClone(c), lawSystem: e.target.value as LawSystem })}>
             {LAWS.map((l) => <option key={l.value} value={l.value} disabled={!l.ready}>{l.label}</option>)}
           </select>
         </label>
           {c.lawSystem.startsWith('hindu') && (
-          <label className="text-xs font-semibold text-slate-600">Property type (Hindu)
+          <label className="text-xs font-semibold text-slate-600">Property (Hindu)
             <select className={input} value={c.policy.hinduProperty ?? 'separate'} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, hinduProperty: e.target.value as 'separate' | 'coparcenary' } })}>
-              <option value="separate">Separate / self-acquired property</option><option value="coparcenary">Coparcenary (joint family) interest</option>
+              <option value="separate">Self-acquired</option><option value="coparcenary">Joint family (coparcenary)</option>
             </select>
-            <span className="mt-1 block rounded bg-amber-50 p-1 text-amber-800">Custom may apply. Beta: verify every result; you may override the table manually.</span>
+            <span className="mt-1 block rounded bg-amber-50 p-1 font-normal text-amber-800">Beta: verify; shares can be edited by hand.</span>
           </label>
         )}
         {c.lawSystem === 'shia-ithna' && (
           <label className="text-xs font-semibold text-slate-600">Childless widow and land
             <select className={input} value={c.policy.shiaChildlessWidowLandRule} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, shiaChildlessWidowLandRule: e.target.value as 'classical' | 'equal' } })}>
-              <option value="classical">Classical: no share in the land itself (share in buildings / trees value)</option><option value="equal">Equal: share in land too</option>
+              <option value="classical">No share in land (classical)</option><option value="equal">Share in land too</option>
             </select>
           </label>
         )}
-        <label className="flex items-center gap-2 text-xs text-slate-600">
-          <input type="checkbox" checked={c.policy.applyMFLOs4} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, applyMFLOs4: e.target.checked } })} />
-          Apply MFLO 1961 s.4 (children of a predeceased son / daughter)
-        </label>
-        {c.policy.applyMFLOs4 && ['sunni-hanafi', 'sunni-shafii', 'sunni-maliki', 'sunni-hanbali', 'shia-ithna'].includes(c.lawSystem) && (
-          <label className="text-xs font-semibold text-slate-600">s.4 when the predeceased child left only daughters
-            <select className={input} value={c.policy.mfloS4OnlyDaughters ?? 'daughters-share'} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, mfloS4OnlyDaughters: e.target.value as 'daughters-share' | 'whole' } })}>
-              <option value="daughters-share">Daughters take 1/2 (one) or 2/3 (two or more) of the parent's share; the rest to the parent's brothers / sisters or next heirs</option>
-              <option value="whole">Daughters take the parent's whole share</option>
+        {/* MFLO 1961 s.4 in one choice: off, or on with what only daughters of a late son / daughter take. */}
+        {['sunni-hanafi', 'sunni-shafii', 'sunni-maliki', 'sunni-hanbali', 'shia-ithna'].includes(c.lawSystem) && (
+          <label className="text-xs font-semibold text-slate-600">MFLO s.4 (late son's / daughter's children)
+            <select className={input} value={!c.policy.applyMFLOs4 ? 'off' : c.policy.mfloS4OnlyDaughters ?? 'daughters-share'}
+              onChange={(e) => {
+                const v = e.target.value;
+                setC({ ...structuredClone(c), policy: { ...c.policy, applyMFLOs4: v !== 'off', ...(v !== 'off' ? { mfloS4OnlyDaughters: v as 'daughters-share' | 'whole' } : {}) } });
+              }}>
+              <option value="daughters-share">On · only daughters: 1/2 or 2/3</option>
+              <option value="whole">On · only daughters: whole share</option>
+              <option value="off">Off</option>
             </select>
           </label>
         )}
-        <label className="flex items-center gap-2 text-xs text-slate-600">
+        <label className="flex items-center gap-2 text-xs text-slate-600 sm:col-span-2">
           <input type="checkbox" checked={c.policy.raddToSpouseWhenNoOtherHeir} onChange={(e) => setC({ ...structuredClone(c), policy: { ...c.policy, raddToSpouseWhenNoOtherHeir: e.target.checked } })} />
-          Sole spouse takes the surplus (Pakistani practice)
+          Sole spouse takes the rest (radd)
         </label>
         </fieldset>
       </section>
