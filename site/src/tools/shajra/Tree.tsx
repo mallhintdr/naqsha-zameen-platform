@@ -4,6 +4,7 @@
 // wife / widow = heart turned 90° anticlockwise; a daughter who is also a wife = both.
 // Tapping a person opens a small menu (Edit / Add relative / Delete), rendered by the parent.
 import { useEffect, useMemo, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { toString, type Case, type ShareResult } from 'inheritance-engine';
 import { layout, NODE_W, type Spacing } from './layout.ts';
 import { fatherOf, motherOf } from './model.ts';
@@ -318,11 +319,11 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
           );
         })}
       </svg>
-      {sel && menu && (
+      {sel && menu && (wideScreen ? (
         <div className="absolute z-20" style={{ left: Math.min(Math.max(4, offX + sel.x + P + NODE_W / 2 - 150), Math.max(4, outerW - 548)), top: sel.y + P + STEM + sym + (kindOf(sel.id) === 'both' ? 90 : 62) }}>
           {menu}
         </div>
-      )}
+      ) : createPortal(menu, document.body) /* phones: a panel fixed to the bottom of the screen, outside the drawing */)}
     </div>
   );
 }

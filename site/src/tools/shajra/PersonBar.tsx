@@ -59,7 +59,7 @@ export default function PersonBar({ c, p, share, addOpen, setAddOpen, onPatch, o
 
   return (
     <div ref={ref} role="menu" aria-label={`Details of ${p.name || 'this person'}`} onKeyDown={onKey}
-      className="person-bar fixed inset-x-0 bottom-0 z-[2500] max-h-[85vh] w-full overflow-y-auto rounded-t-2xl border-t border-slate-200 bg-white px-2.5 pb-2.5 pt-1.5 text-slate-900 shadow-[0_-8px_24px_rgba(0,0,0,0.18)] md:static md:max-h-none md:w-[min(540px,92vw)] md:overflow-visible md:rounded-xl md:border md:p-2 md:shadow-xl">
+      className="person-bar shajra fixed inset-x-0 bottom-0 z-[2500] max-h-[85vh] w-full overflow-y-auto overflow-x-hidden rounded-t-2xl border-t border-slate-200 bg-white px-2.5 pb-2.5 pt-1.5 text-slate-900 shadow-[0_-8px_24px_rgba(0,0,0,0.18)] md:static md:max-h-none md:w-[min(540px,92vw)] md:overflow-visible md:rounded-xl md:border md:p-2 md:shadow-xl">
       <div className="mx-auto mb-1.5 h-1 w-10 rounded-full bg-slate-300 md:hidden" aria-hidden="true" />
       {/* Who: relation and share */}
       <div className="mb-1 flex items-center gap-2 text-[11px] text-slate-500">
@@ -117,12 +117,12 @@ export default function PersonBar({ c, p, share, addOpen, setAddOpen, onPatch, o
       </div>
 
       {addOpen && (
-        <div data-rel role="group" aria-label="Add relative" className="mt-1.5 flex flex-wrap gap-1 border-t border-slate-100 pt-1.5">
+        <div data-rel role="group" aria-label="Add relative" className="mt-1.5 grid grid-cols-2 gap-1 border-t border-slate-100 pt-1.5 min-[400px]:grid-cols-3 md:flex md:flex-wrap">
           {ADD.map((a) => {
             // A man gets a wife, a woman a husband.
             const [label, u] = a.kind === 'spouse' ? (p.gender === 'M' ? ['Wife', 'بیوی'] : ['Husband', 'شوہر']) : [a.label, a.ur];
             return (
-              <button key={a.kind} role="menuitem" className={`${act} !px-2 !py-1`} onClick={() => onAdd(a.kind)}>
+              <button key={a.kind} role="menuitem" className={`${act} justify-center !px-2 !py-1.5 md:!py-1`} onClick={() => onAdd(a.kind)}>
                 {label} <span className="urdu text-[11px] font-normal text-slate-500" lang="ur">{u}</span>
               </button>
             );
@@ -131,7 +131,7 @@ export default function PersonBar({ c, p, share, addOpen, setAddOpen, onPatch, o
       )}
 
       {more && !isD && (
-        <div className="mt-1.5 grid gap-1.5 border-t border-slate-100 pt-1.5 text-xs text-slate-700 sm:grid-cols-2">
+        <div className="mt-1.5 grid gap-1.5 border-t border-slate-100 pt-1.5 text-xs text-slate-700 md:grid-cols-2">
           <label className="flex items-center gap-1">Father
             <select className={`${field} min-w-0 flex-1 !py-1 !text-xs`} value={fatherOf(c, p.id) ?? ''} onChange={(e) => onParent('fatherId', e.target.value || undefined)}>
               <option value="">—</option>{others.filter((x) => x.gender === 'M').map((x) => <option key={x.id} value={x.id}>{x.name || x.id}</option>)}
@@ -153,19 +153,19 @@ export default function PersonBar({ c, p, share, addOpen, setAddOpen, onPatch, o
             </select>
           </label>
           {isSpouseOfD && (
-            <label className="flex items-center gap-1 sm:col-span-2">Divorce
+            <label className="flex items-center gap-1 md:col-span-2">Divorce
               <select className={`${field} min-w-0 flex-1 !py-1 !text-xs`} value={flags.divorced ?? ''} onChange={(e) => flag('divorced', e.target.value)}>
                 <option value="">Not divorced</option><option value="revocable-in-iddat">Revocable talaq, still in iddat</option><option value="irrevocable">Irrevocable talaq</option><option value="khula">Khula</option>
               </select>
             </label>
           )}
-          <div className="flex flex-wrap gap-x-3 gap-y-1 sm:col-span-2">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 md:col-span-2">
             {p.gender === 'F' && isSpouseOfD && <label className="flex items-center gap-1"><input type="checkbox" checked={!!flags.pregnant} onChange={(e) => flag('pregnant', e.target.checked)} /> Pregnant</label>}
             <label className="flex items-center gap-1"><input type="checkbox" checked={!!flags.missing} onChange={(e) => flag('missing', e.target.checked)} /> Missing</label>
             <label className="flex items-center gap-1"><input type="checkbox" checked={!!flags.adopted} onChange={(e) => flag('adopted', e.target.checked)} /> Adopted</label>
             <label className="flex items-center gap-1"><input type="checkbox" checked={!!flags.illegitimate} onChange={(e) => flag('illegitimate', e.target.checked)} /> Born outside marriage</label>
           </div>
-          {share && share.reasons.length > 0 && <p className="text-[11px] text-slate-500 sm:col-span-2">{share.reasons.map((r) => ruleText(r.ruleId)).join(' ')}</p>}
+          {share && share.reasons.length > 0 && <p className="text-[11px] text-slate-500 md:col-span-2">{share.reasons.map((r) => ruleText(r.ruleId)).join(' ')}</p>}
         </div>
       )}
     </div>
