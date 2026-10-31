@@ -20,15 +20,15 @@ const ROWS: { key: Key; en: string; ur: string; max: number; group: string }[] =
   { key: 'pgf', en: 'Paternal grandfather', ur: 'دادا', max: 1, group: 'Parents and grandparents' },
   { key: 'pgm', en: 'Paternal grandmother', ur: 'دادی', max: 1, group: 'Parents and grandparents' },
   { key: 'mgm', en: 'Maternal grandmother', ur: 'نانی', max: 1, group: 'Parents and grandparents' },
-  { key: 'gsons', en: "Son's sons (their father died before)", ur: 'پوتے', max: 20, group: 'Grandchildren' },
-  { key: 'gdaughters', en: "Son's daughters (their father died before)", ur: 'پوتیاں', max: 20, group: 'Grandchildren' },
+  { key: 'gsons', en: "Son's sons*", ur: 'پوتے', max: 20, group: 'Grandchildren' },
+  { key: 'gdaughters', en: "Son's daughters*", ur: 'پوتیاں', max: 20, group: 'Grandchildren' },
   { key: 'fullB', en: 'Full brothers', ur: 'حقیقی بھائی', max: 20, group: 'Brothers, sisters and uncles' },
   { key: 'fullS', en: 'Full sisters', ur: 'حقیقی بہنیں', max: 20, group: 'Brothers, sisters and uncles' },
   { key: 'consB', en: 'Brothers by father only', ur: 'علاتی بھائی', max: 20, group: 'Brothers, sisters and uncles' },
   { key: 'consS', en: 'Sisters by father only', ur: 'علاتی بہنیں', max: 20, group: 'Brothers, sisters and uncles' },
   { key: 'uteB', en: 'Brothers by mother only', ur: 'اخیافی بھائی', max: 20, group: 'Brothers, sisters and uncles' },
   { key: 'uteS', en: 'Sisters by mother only', ur: 'اخیافی بہنیں', max: 20, group: 'Brothers, sisters and uncles' },
-  { key: 'uncles', en: 'Paternal uncles (father’s full brothers)', ur: 'چچا', max: 20, group: 'Brothers, sisters and uncles' },
+  { key: 'uncles', en: 'Paternal uncles**', ur: 'چچا', max: 20, group: 'Brothers, sisters and uncles' },
 ];
 
 const LAWS: { value: LawSystem; label: string }[] = [
@@ -108,6 +108,19 @@ export default function ShareCalc() {
   const sqft = BigInt(Math.max(0, Math.round((+land.k || 0) * 5440 + (+land.m || 0) * 272 + (+land.f || 0))));
   const landOf = (f: Fraction) => (sqft > 0n ? kmfText((f.n * sqft * 2n + f.d) / (2n * f.d)) : '');
   const sections = [...new Set(ROWS.map((r) => r.group))];
+  // Footnotes: each distinct explanation once, numbered; a heir row carries its number.
+  const notes: string[] = [];
+  const noteNo = new Map<string, number>();
+  const addNote = (t: string) => { let i = notes.indexOf(t); if (i < 0) { notes.push(t); i = notes.length - 1; } return i + 1; };
+  if (out?.r) {
+    for (const g of out.groups) {
+      const each = g.shares[0];
+      const t = each ? each.reasons.map((x) => ruleText(x.ruleId)).join(' ') || (each.fraction.n === 0n ? 'No share.' : '') : '';
+      if (t) noteNo.set(g.key, addNote(t));
+    }
+    for (const x of out.r.notes) addNote(ruleText(x.ruleId));
+    if (out.r.needsVerification) addNote('Complex case (distant kindred or grandfather with siblings): verify with a lawyer.');
+  }
 
   return (
     <div className="rounded-2xl bg-white text-slate-900 shadow-2xl">
@@ -129,7 +142,7 @@ export default function ShareCalc() {
               </div>
             </div>
           </div>
-          <p className="mt-3 text-xs text-slate-500">How many of each relative were <b>alive</b> when the deceased died? Leave the rest at 0.</p>
+          <p className="mt-3 text-xs text-slate-500">Count the relatives <b>alive</b> at the death.</p>
           {sections.map((sec) => (
             <fieldset key={sec} className="mt-3 rounded-xl border border-slate-200 p-2">
               <legend className="px-1 text-xs font-bold text-slate-800">{sec}</legend>
@@ -151,7 +164,7 @@ export default function ShareCalc() {
               </div>
               {sec === 'Grandchildren' && (
                 <label className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-600">
-                  <input type="checkbox" checked={s4} onChange={(e) => setS4(e.target.checked)} /> Apply MFLO 1961 s.4 (they take their late father's share)
+                  <input type="checkbox" checked={s4} onChange={(e) => setS4(e.target.checked)} /> Apply MFLO 1961 s.4
                 </label>
               )}
             </fieldset>
@@ -168,60 +181,64 @@ export default function ShareCalc() {
           </div>
         </div>
 
-        {/* Shares */}
+        {/* Shares: figures only; every explanation is a numbered note at the foot */}
         <div className="p-4" aria-live="polite">
           <h2 className="text-lg font-bold">Shares <span className="urdu font-normal" lang="ur">حصص</span></h2>
-          {!out ? <p className="mt-2 text-sm text-slate-500">Add the relatives on the left (for example 2 sons, 1 wife, mother and father) to see each share.</p>
+          {!out ? <p className="mt-2 text-sm text-slate-500">Add the relatives on the left, e.g. 2 sons, 1 wife, mother and father.</p>
             : out.error ? <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{out.error}</p>
             : out.r && (
-              <>
-                <div className="mt-2 overflow-x-auto">
-                  <table className="w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="bg-slate-800 text-left text-white">
-                        <th className="p-2">Heir</th><th className="p-2 text-right">Each</th><th className="p-2 text-right">Together</th><th className="p-2 text-right">%</th>
-                        {sqft > 0n && <th className="p-2 text-right">Land each (K-M-F)</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {out.groups.map((g) => {
-                        const each = g.shares[0];
-                        const t = sum(g.shares.map((s) => s.fraction));
-                        const none = !each || each.fraction.n === 0n;
-                        return (
-                          <tr key={g.key} className={`border-b border-slate-200 align-top ${none ? 'text-slate-400' : ''}`}>
-                            <td className="p-2">
-                              <span className="font-semibold">{g.ids.length > 1 ? `${g.ids.length} × ` : ''}{g.en}</span> <span className="urdu text-slate-500" lang="ur">{g.ur}</span>
-                              <span className="block text-[11px] text-slate-500">{none ? (each?.reasons[0] ? ruleText(each.reasons[0].ruleId) : 'No share') : each.reasons.map((x) => ruleText(x.ruleId)).join(' ')}</span>
-                            </td>
-                            <td className="p-2 text-right font-mono">{none ? '—' : toString(each.fraction)}</td>
-                            <td className="p-2 text-right font-mono">{none ? '—' : toString(t)}</td>
-                            <td className="p-2 text-right font-mono">{none ? '—' : percent(t, 2)}</td>
-                            {sqft > 0n && <td className="p-2 text-right font-mono">{none ? '—' : landOf(each.fraction)}</td>}
-                          </tr>
-                        );
-                      })}
-                      {out.r.escheat.n > 0n && <tr className="border-b border-slate-200"><td className="p-2">Government (no heir) / residue</td><td /><td className="p-2 text-right font-mono">{toString(out.r.escheat)}</td><td className="p-2 text-right font-mono">{percent(out.r.escheat, 2)}</td>{sqft > 0n && <td />}</tr>}
-                      <tr className="bg-slate-100 font-bold"><td className="p-2">Total</td><td /><td className="p-2 text-right font-mono">1</td><td className="p-2 text-right font-mono">100</td>{sqft > 0n && <td className="p-2 text-right font-mono">{kmfText(sqft)}</td>}</tr>
-                    </tbody>
-                  </table>
-                </div>
-                {sqft > 0n && <p className="mt-1 text-[11px] text-slate-500">K-M-F = Kanal-Marla-Feet (1 kanal = 20 marla, 1 marla = 272 sq ft); feet rounded.</p>}
-                {out.r.needsVerification && <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">Complex case (distant kindred or grandfather with siblings): verify with a lawyer.</p>}
-                {out.r.notes.length > 0 && (
-                  <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-slate-600">
-                    {out.r.notes.map((x, i) => <li key={i}>{ruleText(x.ruleId)}</li>)}
-                  </ul>
-                )}
-                <p className="mt-3 text-xs text-slate-500">Common share base: {String(out.r.base)} sihaam. Each group's members share equally (son twice a daughter is already applied).</p>
-              </>
+              <div className="mt-2 overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-slate-800 text-left text-white">
+                      <th className="p-2">Heir</th><th className="p-2 text-right">Each</th><th className="p-2 text-right">Together</th>
+                      <th className="p-2 text-right">Sihaam /{String(out.r.base)}</th><th className="p-2 text-right">%</th>
+                      {sqft > 0n && <th className="p-2 text-right">Land each†</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {out.groups.map((g) => {
+                      const each = g.shares[0];
+                      const t = sum(g.shares.map((x) => x.fraction));
+                      const none = !each || each.fraction.n === 0n;
+                      return (
+                        <tr key={g.key} className={`border-b border-slate-200 ${none ? 'text-slate-400' : ''}`}>
+                          <td className="p-2">
+                            <span className="font-semibold">{g.ids.length > 1 ? `${g.ids.length} × ` : ''}{g.en}</span> <span className="urdu text-slate-500" lang="ur">{g.ur}</span>
+                            {noteNo.get(g.key) && <sup className="ml-0.5 text-[10px] font-semibold text-sky-700">({noteNo.get(g.key)})</sup>}
+                          </td>
+                          <td className="p-2 text-right font-mono">{none ? '—' : toString(each.fraction)}</td>
+                          <td className="p-2 text-right font-mono">{none ? '—' : toString(t)}</td>
+                          <td className="p-2 text-right font-mono">{none ? '—' : String(g.shares.reduce((a, x) => a + x.sihaam, 0n))}</td>
+                          <td className="p-2 text-right font-mono">{none ? '—' : percent(t, 2)}</td>
+                          {sqft > 0n && <td className="p-2 text-right font-mono">{none ? '—' : landOf(each.fraction)}</td>}
+                        </tr>
+                      );
+                    })}
+                    {out.r.escheat.n > 0n && <tr className="border-b border-slate-200"><td className="p-2">Government (no heir)</td><td /><td className="p-2 text-right font-mono">{toString(out.r.escheat)}</td><td /><td className="p-2 text-right font-mono">{percent(out.r.escheat, 2)}</td>{sqft > 0n && <td />}</tr>}
+                    <tr className="bg-slate-100 font-bold"><td className="p-2">Total</td><td /><td className="p-2 text-right font-mono">1</td><td className="p-2 text-right font-mono">{String(out.r.base)}</td><td className="p-2 text-right font-mono">100</td>{sqft > 0n && <td className="p-2 text-right font-mono">{kmfText(sqft)}</td>}</tr>
+                  </tbody>
+                </table>
+              </div>
             )}
-          <p className="mt-4 rounded-lg border border-sky-200 bg-sky-50 p-2 text-xs text-sky-900">
-            Need the family tree drawing, the heirs' statement for the revenue officer, or a relative who died after the deceased? Use the <a className="font-semibold underline" href="/tools/shajra-nasab/">Shajra Nasab tool</a>.
-          </p>
-          <p className="mt-2 text-[11px] text-slate-500">Computational aid, not legal advice. Verify with a lawyer / revenue officer.</p>
         </div>
       </div>
+
+      {/* Notes at the foot */}
+      <footer className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-[11px] leading-relaxed text-slate-600 rounded-b-2xl">
+        {notes.length > 0 && (
+          <ol className="space-y-0.5">
+            {notes.map((t, i) => <li key={i}><b className="text-sky-700">({i + 1})</b> {t}</li>)}
+          </ol>
+        )}
+        <ul className="mt-1 space-y-0.5">
+          <li>* Their father, the deceased's son, died before the deceased.</li>
+          <li>** The father's full brothers.</li>
+          {sqft > 0n && <li>† Kanal-Marla-Feet (1 kanal = 20 marla, 1 marla = 272 sq ft); feet rounded.</li>}
+          <li>For the family tree, the heirs' statement for the revenue officer, or an heir who died after the deceased, use the <a className="font-semibold text-sky-700 underline" href="/tools/shajra-nasab/">Shajra Nasab tool</a>.</li>
+          <li>Computational aid, not legal advice. Verify with a lawyer / revenue officer.</li>
+        </ul>
+      </footer>
     </div>
   );
 }
