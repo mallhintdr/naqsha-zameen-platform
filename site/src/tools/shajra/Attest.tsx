@@ -8,7 +8,7 @@ export type Party = { name: string; fatherName: string; cnic: string; link?: Lin
 /** heirId: the declaring heir is a person on the tree (name, father's name and CNIC come from there). */
 export type Attest = { heir: Party; heirId?: string; heirTyped?: boolean; witnesses: [Party, Party] };
 export type Orientation = 'auto' | 'portrait' | 'landscape';
-export type WithPrint = Case & { attest?: Attest; print?: { orientation?: Orientation; shareTable?: boolean } };
+export type WithPrint = Case & { attest?: Attest; print?: { orientation?: Orientation; shareTable?: boolean; showDates?: boolean } };
 
 const EMPTY: Party = { name: '', fatherName: '', cnic: '' };
 /** A person on the tree as a party: s/o or d/o the father on the tree; a widow (no father on the

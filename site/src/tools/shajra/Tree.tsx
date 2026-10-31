@@ -166,10 +166,14 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
     const spouseOfBoth = inLaw && c.unions.some((u) => u.partners.includes(id) && u.partners.some((o) => o !== id && kindOf(o) === 'both'));
     const inLawY = spouseOfBoth ? y + 29 : y + sym / 2 + 4;
     const below = k === 'wife' ? y + sym + 34 : k === 'both' ? y + 25 + 40 : inLaw ? inLawY + 18 : y + sym + (hasUrdu(nm) ? 40 : 29);
-    const extra = (mahroom || divorced ? 1 : 0) + (!isD && !mahroom && shareTxt ? 1 : 0);
+    // Date of death right under پہلے فوت شدہ / بعد میں فوت شدہ / حال متوفی (can be switched off).
+    const showDates = (c as Case & { print?: { showDates?: boolean } }).print?.showDates !== false;
+    const dod = isD ? c.dateOfDeath : !p.alive ? p.dateOfDeath : undefined;
+    const dateTxt = showDates && dod && /^\d{4}-\d{2}-\d{2}$/.test(dod) ? dod.split('-').reverse().join('-') : '';
+    const extra = (dateTxt ? 1 : 0) + (mahroom || divorced ? 1 : 0) + (!isD && !mahroom && shareTxt ? 1 : 0);
     // Just under the last line of text: the line down to the children starts here.
     const textBottom = below + extra * 15 + 12;
-    return { predeceased, zero, mahroom, divorced, shareTxt, below, textBottom };
+    return { predeceased, zero, mahroom, divorced, shareTxt, below, textBottom, dateTxt };
   };
 
   const sel = selected ? nodes.get(selected) : null;
@@ -234,7 +238,8 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
           const nm = (p.name || (printMode ? '__________' : 'Tap to add name')).slice(0, 22);
           // Not inheriting: written (محروم) in red, like (ز). Someone who died before the deceased
           // already reads پہلے فوت شدہ, so nothing more is written under them.
-          const { mahroom, divorced, shareTxt } = labelInfo(p.id);
+          const { mahroom, divorced, shareTxt, dateTxt } = labelInfo(p.id);
+          const dl = dateTxt ? 15 : 0; // the lines under the date move down when it is shown
           return (
             <g key={p.id} className={printMode ? undefined : 'cursor-pointer'} onClick={printMode ? undefined : () => onSelect(p.id)} tabIndex={printMode ? undefined : 0} role={printMode ? undefined : 'button'} aria-haspopup={printMode ? undefined : 'menu'}
               aria-label={`${nm}, ${en}${r && !isD && shareTxt ? `, share ${shareTxt}` : ''}`}
@@ -281,10 +286,11 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
                     {/* Status in red, as the patwari writes it */}
                     {/* Status in red under the name (for the deceased: حال متوفی, centred under the name) */}
                     <text x={x} y={below} textAnchor="middle" fontSize="10" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">{statusOf(p.id)}</text>
+                    {dateTxt && <text x={x} y={below + 14} textAnchor="middle" fontSize="9" fill="#b91c1c" fontFamily="Arial, sans-serif">{dateTxt}</text>}
                     {/* Divorced: (مطلقہ / محروم) in red instead of slashes on the marriage line */}
-                    {(mahroom || divorced) && <text x={x} y={below + 15} textAnchor="middle" fontSize="10" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">({divorced ? (mahroom || !shareTxt ? 'مطلقہ / محروم' : 'مطلقہ') : 'محروم'})</text>}
+                    {(mahroom || divorced) && <text x={x} y={below + 15 + dl} textAnchor="middle" fontSize="10" fill="#dc2626" fontFamily={URDU_FONT} className="urdu">({divorced ? (mahroom || !shareTxt ? 'مطلقہ / محروم' : 'مطلقہ') : 'محروم'})</text>}
                     {!isD && !mahroom && shareTxt && (
-                      <text x={x} y={below + (divorced ? 30 : 15)} textAnchor="middle" fontSize="11" fontWeight="700" fill={SHARE_COLOR[r?.status ?? 'excluded']}>({shareTxt})</text>
+                      <text x={x} y={below + (divorced ? 30 : 15) + dl} textAnchor="middle" fontSize="11" fontWeight="700" fill={SHARE_COLOR[r?.status ?? 'excluded']}>({shareTxt})</text>
                     )}
                   </>
                 );

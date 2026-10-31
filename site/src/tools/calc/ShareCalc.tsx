@@ -262,6 +262,8 @@ export default function ShareCalc() {
     c.dateOfDeath = today;
     const d = c.persons.find((x) => x.id === c.deceasedId)!;
     d.name = ''; d.dateOfDeath = today;
+    // Stand-in dates (people who died before) are not real dates: leave them blank to fill in.
+    for (const p of c.persons) if (!p.alive && p.id !== c.deceasedId) p.dateOfDeath = undefined;
     // Easy names to type over: "Son 1", "Son 2", "Wife", "Brother"...
     const single: Record<string, string> = {
       spouse: gender === 'M' ? 'Wife' : 'Husband', sons: 'Son', daughters: 'Daughter', father: 'Father', mother: 'Mother',

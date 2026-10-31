@@ -353,6 +353,11 @@ export default function ShajraApp() {
             <option value="auto">Auto</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option>
           </select>
         </label>
+          <label className="flex items-center gap-1 text-xs font-semibold text-slate-600" title="Date of death under پہلے فوت شدہ / حال متوفی on the shajra">
+            <input type="checkbox" checked={(c as WithPrint).print?.showDates !== false}
+              onChange={(e) => setC({ ...structuredClone(c), print: { ...(c as WithPrint).print, showDates: e.target.checked } } as WithPrint)} />
+            Death dates
+          </label>
           <button className={`${btn} !border-sky-700 !bg-sky-700 !text-white`} onClick={() => setAskTable('print')}>Print / Save PDF</button>
           <button className={btn} onClick={() => setAskTable('pdf')} disabled={!!busy}>{busy === 'pdf' ? 'Creating PDF…' : 'Download PDF'}</button>
         </div>
