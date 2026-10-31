@@ -77,7 +77,7 @@ const BUILD = import.meta.env.DEV ? '' : Date.now().toString(36);
     body *:has(.print-sheet) { margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; max-width: none !important; min-height: 0 !important; }
     html, body { margin: 0 !important; padding: 0 !important; }
     .print-sheet, .print-sheet * { visibility: visible; }
-    .print-sheet { display: block !important; position: absolute; inset: 0 auto auto 0; box-sizing: border-box; padding: 9mm; overflow: hidden; color: #111; break-after: avoid; break-inside: avoid; }
+    .print-sheet { display: block !important; position: absolute; inset: 0 auto auto 0; box-sizing: border-box; padding: 5mm 7mm 11mm; overflow: hidden; color: #111; break-after: avoid; break-inside: avoid; }
     .print-sheet .shajra-tree-print { background: transparent !important; }
     /* Dark band across the foot of the page, white text (printed even when background graphics are off). */
     .print-footer { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 2mm 0; text-align: center; font: 600 16px/1 Arial, sans-serif; color: #fff !important; background: #0b2545 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }

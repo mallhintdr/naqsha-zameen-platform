@@ -42,27 +42,38 @@ const SITE_HOST = (() => { try { return new URL(SITE.url).host.replace(/^www\./,
  *  The tree is centred on the page right under the title, at its natural size when it fits,
  *  smaller when it does not; the share table sits at the side when there is room, else below. */
 export function sheetPlan(c: Case, hasTable: boolean, tableRows: number) {
-  const { width, height } = layout(c);
-  const treeW = (width + 56) * MM, treeH = (height + 34) * MM; // the tree's drawing size
   const props = c.estate.immovable.length;
   const tableW = hasTable ? 70 + 20 * props : 0;
   const tableH = hasTable ? (tableRows + 2) * 5.8 + 5 : 0;
   // Title, declaration (more lines on a narrow page), heir and witnesses with CNIC boxes.
   const fixedH = (landscape: boolean) => 10 + (landscape ? 22 : 30) + 50;
-  const fit = (landscape: boolean) => {
-    const W = landscape ? 279 : 192, H = (landscape ? 192 : 279) - fixedH(landscape);
+  // Page margins (mm): 7 at the sides, 5 at the top, 11 at the bottom (room for the footer band).
+  const fitAt = (spacing: Spacing, landscape: boolean) => {
+    const { width, height } = layout(c, spacing);
+    const treeW = (width + 56) * MM, treeH = (height + 34) * MM; // the tree's drawing size
+    const W = landscape ? 283 : 196, H = (landscape ? 194 : 281) - fixedH(landscape);
     const side = Math.min(1.2, (W - tableW - 4) / treeW, H / treeH); // table at the side
     const below = Math.min(1.2, W / treeW, (H - tableH - 4) / treeH); // table under the tree
     const useSide = !hasTable || side >= below * 0.85;
     const scale = Math.max(0.1, useSide ? side : below);
     // Truly centred on the page when there is room for an equal margin on the other side too.
     const centred = !hasTable || treeW * scale + 2 * (tableW + 4) <= W;
-    return { landscape, side: useSide, centred, scale, tableW };
+    return { landscape, side: useSide, centred, scale, tableW, spacing, w: treeW * scale, h: treeH * scale };
+  };
+  // A large shajra: draw people closer (normal, then tighter, then tightest) before shrinking it.
+  const SPACINGS: Spacing[] = [{ h: 1, v: 1 }, { h: 0.92, v: 0.95 }, { h: 0.85, v: 0.9 }];
+  const fit = (landscape: boolean) => {
+    let best = fitAt(SPACINGS[0], landscape);
+    for (const sp of SPACINGS.slice(1)) {
+      if (best.scale >= 1) break; // fits at full size: keep the normal spacing
+      const next = fitAt(sp, landscape);
+      if (next.scale > best.scale) best = next;
+    }
+    return best;
   };
   const o = orientationOf(c);
   const p = fit(false), l = fit(true);
-  const plan = o === 'portrait' ? p : o === 'landscape' ? l : l.scale > p.scale * 1.1 ? l : p;
-  return { ...plan, w: treeW * plan.scale, h: treeH * plan.scale };
+  return o === 'portrait' ? p : o === 'landscape' ? l : l.scale > p.scale * 1.1 ? l : p;
 }
 
 /** What is printed / turned into the PDF: title, the chart centred under it, a small Urdu share
@@ -80,7 +91,7 @@ function PrintSheet({ c, result: computed, results }: { c: Case; result: Compute
       <ShajraTitle c={c} />
       <div className={`print-body ${plan.side ? 'side' : 'below'}`} style={plan.side && result ? { gridTemplateColumns: plan.centred ? `${plan.tableW}mm minmax(0,1fr) ${plan.tableW}mm` : `minmax(0,1fr) ${plan.tableW}mm` } : undefined}
         data-cols={plan.side && result ? (plan.centred ? 3 : 2) : 1}>
-      <div className="print-tree"><Tree c={c} results={results} selected={null} onSelect={() => {}} printMode printSize={{ w: plan.w, h: plan.h }} /></div>
+      <div className="print-tree"><Tree c={c} results={results} selected={null} onSelect={() => {}} printMode printSize={{ w: plan.w, h: plan.h }} spacing={plan.spacing} /></div>
       {result && (
         <div className="print-share-wrap">
           <table className="print-share urdu" dir="rtl">
@@ -120,7 +131,7 @@ import Estate, { areaText, areaTextUr, feetText, feetTextUr, heirLandText, kmfTe
 import SideShares from './SideShares.tsx';
 import PersonBar from './PersonBar.tsx';
 import { AttestForm, AttestPrint, orientationOf, printTableOf, type Orientation, type WithPrint } from './Attest.tsx';
-import { layout, type WithLayout } from './layout.ts';
+import { layout, type Spacing, type WithLayout } from './layout.ts';
 import qrcode from 'qrcode-generator';
 import { SITE } from '../../site';
 

@@ -14,7 +14,11 @@ export interface Placed { id: string; x: number; y: number; gen: number }
 /** Manual left / right order set by the user (person id -> position in the row). Saved with the case. */
 export type WithLayout = Case & { layoutRank?: Record<string, number> };
 
-export function layout(c: Case): { nodes: Map<string, Placed>; width: number; height: number } {
+/** Spacing factors (1 = normal). The print view packs a large shajra closer (sideways and down)
+ *  before it shrinks the drawing, so it stays on one page with readable names. */
+export type Spacing = { h: number; v: number };
+
+export function layout(c: Case, spacing: Spacing = { h: 1, v: 1 }): { nodes: Map<string, Placed>; width: number; height: number } {
   // 1. generation of each person (BFS from the deceased).
   const gen = new Map<string, number>([[c.deceasedId, 0]]);
   const queue = [c.deceasedId];
@@ -243,10 +247,10 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
   const minX = Math.min(...[...nodes.values()].map((n) => n.x));
   let width = 0;
   for (const n of nodes.values()) {
-    n.x -= minX;
-    n.y = (n.gen - minGen) * ROW_H;
+    n.x = (n.x - minX) * spacing.h;
+    n.y = (n.gen - minGen) * ROW_H * spacing.v;
     width = Math.max(width, n.x + NODE_W);
   }
-  const height = (Math.max(...rows) - minGen) * ROW_H + NODE_H;
+  const height = (Math.max(...rows) - minGen) * ROW_H * spacing.v + NODE_H;
   return { nodes, width, height };
 }

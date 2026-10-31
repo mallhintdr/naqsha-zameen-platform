@@ -5,7 +5,7 @@
 // Tapping a person opens a small menu (Edit / Add relative / Delete), rendered by the parent.
 import { useMemo, type ReactNode } from 'react';
 import { toString, type Case, type ShareResult } from 'inheritance-engine';
-import { layout, NODE_W } from './layout.ts';
+import { layout, NODE_W, type Spacing } from './layout.ts';
 import { fatherOf, motherOf } from './model.ts';
 import { relLabel } from './labels.ts';
 
@@ -53,12 +53,14 @@ export function Glyph({ x, y, size, kind }: { x: number; y: number; size: number
   );
 }
 
-export default function Tree({ c, results, selected, onSelect, menu, printMode, printSize }: {
+export default function Tree({ c, results, selected, onSelect, menu, printMode, printSize, spacing }: {
   c: Case; results: Map<string, ShareResult>; selected: string | null; onSelect: (id: string) => void; menu?: ReactNode; printMode?: boolean;
   /** Print: drawn size in mm (the sheet works it out so the tree fits the page). */
   printSize?: { w: number; h: number };
+  /** Print: people drawn closer together for a large shajra (see sheetPlan). */
+  spacing?: Spacing;
 }) {
-  const { nodes, width, height } = useMemo(() => layout(c), [c]);
+  const { nodes, width, height } = useMemo(() => layout(c, spacing), [c, spacing?.h, spacing?.v]);
   const P = 28;
   const sym = 26;
   const cx = (id: string) => nodes.get(id)!.x + NODE_W / 2 + P;
