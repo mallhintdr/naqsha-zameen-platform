@@ -43,7 +43,7 @@ const LAWS: { value: LawSystem; label: string }[] = [
 
 const DEAD = { alive: false, dateOfDeath: '2000-01-01' };
 const input = 'w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none';
-const stepBtn = 'h-8 w-8 shrink-0 rounded-lg border border-slate-300 bg-white text-base font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40';
+const stepBtn = 'h-7 w-7 shrink-0 rounded-lg border border-slate-300 bg-white text-base font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40';
 
 type Group = { key: string; en: string; ur: string; ids: string[]; shares: ShareResult[] };
 
@@ -143,32 +143,49 @@ export default function ShareCalc() {
             </div>
           </div>
           <p className="mt-3 text-xs text-slate-500">Count the relatives <b>alive</b> at the death.</p>
-          {sections.map((sec) => (
-            <fieldset key={sec} className="mt-3 rounded-xl border border-slate-200 p-2">
-              <legend className="px-1 text-xs font-bold text-slate-800">{sec}</legend>
-              <div className="grid gap-x-3 gap-y-1.5 sm:grid-cols-2">
+          {/* Relatives as one grouped table: relation, Urdu, count */}
+          <table className="mt-2 w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-slate-800 text-left text-xs text-white">
+                <th className="px-2 py-1.5 font-semibold">Relation</th>
+                <th className="px-2 py-1.5 text-right font-normal"><span className="urdu" lang="ur">رشتہ</span></th>
+                <th className="w-[7.5rem] px-2 py-1.5 text-center font-semibold">Number</th>
+              </tr>
+            </thead>
+            {sections.map((sec) => (
+              <tbody key={sec}>
+                <tr className="bg-slate-100">
+                  <th colSpan={3} className="px-2 py-1 text-left text-xs font-bold text-slate-700">
+                    {sec}
+                    {sec === 'Grandchildren' && (
+                      <label className="float-right flex items-center gap-1 font-normal text-slate-600">
+                        <input type="checkbox" checked={s4} onChange={(e) => setS4(e.target.checked)} /> MFLO 1961 s.4
+                      </label>
+                    )}
+                  </th>
+                </tr>
                 {ROWS.filter((r) => r.group === sec).map((r) => {
                   const label = r.key === 'spouse' ? (gender === 'M' ? 'Wives' : 'Husband') : r.en;
                   const ur = r.key === 'spouse' ? (gender === 'M' ? 'بیوی' : 'شوہر') : r.ur;
                   const max = rowMax(r);
                   return (
-                    <div key={r.key} className="flex items-center gap-1.5">
-                      <span className="min-w-0 flex-1 text-xs leading-tight text-slate-700">{label} <span className="urdu text-slate-500" lang="ur">{ur}</span></span>
-                      <button className={stepBtn} aria-label={`Fewer: ${label}`} disabled={!n[r.key]} onClick={() => set(r.key, n[r.key] - 1)}>−</button>
-                      <input className="h-8 w-10 rounded-lg border border-slate-300 text-center text-sm font-semibold" inputMode="numeric" aria-label={label} value={n[r.key]}
-                        onChange={(e) => set(r.key, Math.min(max, +e.target.value.replace(/\D/g, '') || 0))} />
-                      <button className={stepBtn} aria-label={`More: ${label}`} disabled={n[r.key] >= max} onClick={() => set(r.key, n[r.key] + 1)}>+</button>
-                    </div>
+                    <tr key={r.key} className={`border-b border-slate-100 ${n[r.key] ? 'bg-sky-50/60' : ''}`}>
+                      <td className="px-2 py-1 text-xs text-slate-800">{label}</td>
+                      <td className="px-2 py-1 text-right"><span className="urdu text-xs text-slate-600" lang="ur" dir="rtl">{ur}</span></td>
+                      <td className="px-2 py-1">
+                        <div className="flex items-center justify-center gap-1">
+                          <button className={stepBtn} aria-label={`Fewer: ${label}`} disabled={!n[r.key]} onClick={() => set(r.key, n[r.key] - 1)}>−</button>
+                          <input className="h-8 w-9 rounded-lg border border-slate-300 text-center text-sm font-semibold" inputMode="numeric" aria-label={label} value={n[r.key]}
+                            onChange={(e) => set(r.key, Math.min(max, +e.target.value.replace(/\D/g, '') || 0))} />
+                          <button className={stepBtn} aria-label={`More: ${label}`} disabled={n[r.key] >= max} onClick={() => set(r.key, n[r.key] + 1)}>+</button>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
-              {sec === 'Grandchildren' && (
-                <label className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-600">
-                  <input type="checkbox" checked={s4} onChange={(e) => setS4(e.target.checked)} /> Apply MFLO 1961 s.4
-                </label>
-              )}
-            </fieldset>
-          ))}
+              </tbody>
+            ))}
+          </table>
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <span className="w-full text-xs font-semibold text-slate-600">Total land (optional) <span className="urdu font-normal" lang="ur">کل رقبہ</span></span>
             {(['k', 'm', 'f'] as const).map((u) => (
