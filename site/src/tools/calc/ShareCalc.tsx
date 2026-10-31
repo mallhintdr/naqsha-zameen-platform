@@ -259,7 +259,7 @@ export default function ShareCalc() {
                 <table className="w-full border-collapse text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-slate-800 text-left text-white">
-                      <th className={cell}>Heir</th><th className={`${cell} text-right`}>Each</th>
+                      <th className={cell}>Heir</th><th className={`${cell} text-center`}>No.</th><th className={`${cell} text-right`}>Each</th>
                       <th className={`${cell} hidden text-right sm:table-cell`}>Together</th>
                       <th className={`${cell} hidden text-right sm:table-cell`}>Sihaam /{String(out.r.base)}</th>
                       <th className={`${cell} text-right`}>% each</th>
@@ -274,10 +274,11 @@ export default function ShareCalc() {
                       return (
                         <tr key={g.key} className={`border-b border-slate-200 ${none ? 'text-slate-400' : ''}`}>
                           <td className={cell}>
-                            <span className="font-semibold">{g.ids.length > 1 ? `${g.ids.length}× ` : ''}{g.en}</span>
+                            <span className="font-semibold">{g.en}</span>
                             {noteNo.get(g.key) && <sup className="ml-0.5 text-[10px] font-semibold text-sky-700">({noteNo.get(g.key)})</sup>}
                             <span className="urdu block text-[11px] leading-tight text-slate-500 sm:ml-1 sm:inline" lang="ur">{g.ur}</span>
                           </td>
+                          <td className={`${cell} text-center font-mono`}>{g.ids.length}</td>
                           <td className={`${cell} text-right font-mono`}>{none ? '—' : toString(each.fraction)}</td>
                           <td className={`${cell} hidden text-right font-mono sm:table-cell`}>{none ? '—' : toString(t)}</td>
                           <td className={`${cell} hidden text-right font-mono sm:table-cell`}>{none ? '—' : String(g.shares.reduce((a, x) => a + x.sihaam, 0n))}</td>
@@ -287,11 +288,11 @@ export default function ShareCalc() {
                       );
                     })}
                     {out.r.escheat.n > 0n && (
-                      <tr className="border-b border-slate-200"><td className={cell}>Government (no heir)</td><td className={`${cell} text-right font-mono`}>{toString(out.r.escheat)}</td>
+                      <tr className="border-b border-slate-200"><td className={cell}>Government (no heir)</td><td /><td className={`${cell} text-right font-mono`}>{toString(out.r.escheat)}</td>
                         <td className="hidden sm:table-cell" /><td className="hidden sm:table-cell" /><td className={`${cell} text-right font-mono`}>{percent(out.r.escheat, 2)}</td>{sqft > 0n && <td />}</tr>
                     )}
                     <tr className="bg-slate-100 font-bold">
-                      <td className={cell}>Total</td><td />
+                      <td className={cell}>Total</td><td className={`${cell} text-center font-mono`}>{out.groups.reduce((a, g) => a + g.ids.length, 0)}</td><td />
                       <td className={`${cell} hidden text-right font-mono sm:table-cell`}>1</td>
                       <td className={`${cell} hidden text-right font-mono sm:table-cell`}>{String(out.r.base)}</td>
                       <td />
