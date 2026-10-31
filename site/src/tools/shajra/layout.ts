@@ -97,6 +97,92 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
     placed.forEach((id, i) => nodes.set(id, { id, x: i * (NODE_W + GAP_X), y: 0, gen: r }));
   }
 
+  // 1b. The deceased's row and everything below it as a tidy tree: every family (a person or a
+  //     couple) gets as much width as its children and grandchildren need, and each parent stands
+  //     over the middle of their own children. Families never run under each other: the tree grows
+  //     wider instead (the print view scales it to the page).
+  {
+    const step = NODE_W + GAP_X;
+    const order = new Map<number, string[]>();
+    for (const r of rows) order.set(r, [...nodes.values()].filter((n) => n.gen === r).sort((a, b) => a.x - b.x).map((n) => n.id));
+    const married = (a: string, b: string) => c.unions.some((u) => u.partners.includes(a) && u.partners.includes(b));
+    /** The parent a child's line comes from: the father; each wife when he has more than one; the mother without him. */
+    const ownerOf = (id: string): string | undefined => {
+      const g = gen.get(id)!;
+      const f = fatherOf(c, id), m = motherOf(c, id);
+      const fIn = f && gen.get(f) === g - 1 ? f : undefined, mIn = m && gen.get(m) === g - 1 ? m : undefined;
+      if (fIn) return mIn && c.unions.filter((u) => u.partners.includes(fIn)).length > 1 ? mIn : fIn;
+      return mIn;
+    };
+    type Unit = { members: string[]; kids: Unit[]; w: number; owner?: string };
+    // Units: people standing together in a row (a person and the spouses beside them).
+    const unitsByRow = new Map<number, Unit[]>();
+    for (const r of rows) {
+      if (r < 0) continue;
+      const us: Unit[] = [];
+      for (const id of order.get(r)!) {
+        const last = us[us.length - 1];
+        if (last && last.members.some((m) => married(m, id))) last.members.push(id); else us.push({ members: [id], kids: [], w: 1 });
+      }
+      unitsByRow.set(r, us);
+    }
+    // Which unit above each unit hangs from (a married-in spouse goes with the partner).
+    const unitOf = new Map<string, Unit>();
+    for (const us of unitsByRow.values()) for (const u of us) for (const m of u.members) unitOf.set(m, u);
+    const maxRow = Math.max(...rows);
+    for (let r = maxRow; r >= 1; r--) {
+      const us = unitsByRow.get(r) ?? [];
+      us.forEach((u, i) => {
+        // A couple stays with the husband's family (a wife from another branch keeps her own line up).
+        const men = u.members.filter((m) => c.persons.find((x) => x.id === m)?.gender === 'M');
+        u.owner = [...men, ...u.members].map(ownerOf).find(Boolean);
+        // No parent above (e.g. a spouse alone in the row): stay with the neighbouring family.
+        if (!u.owner) u.owner = (us.slice(0, i).reverse().find((x) => x.owner) ?? us.slice(i + 1).find((x) => x.owner))?.owner;
+        const parent = u.owner ? unitOf.get(u.owner) : undefined;
+        if (parent && parent !== u) parent.kids.push(u);
+      });
+    }
+    // Widths bottom-up (in slots).
+    const width = (u: Unit): number => (u.w = Math.max(u.members.length, u.kids.reduce((a, k) => a + width(k), 0)));
+    const roots = unitsByRow.get(0) ?? [];
+    for (const u of roots) width(u);
+    // Positions top-down: children's blocks first, then the parents over the middle of their own children.
+    const place = (u: Unit, left: number) => {
+      const kidsW = u.kids.reduce((a, k) => a + k.w, 0);
+      let cur = left + ((u.w - kidsW) * step) / 2;
+      for (const k of u.kids) { place(k, cur); cur += k.w * step; }
+      const own = (m: string) => u.kids.flatMap((k) => k.members).filter((id) => ownerOf(id) === m).map((id) => nodes.get(id)!.x);
+      const want = u.members.map((m) => { const xs = own(m); return xs.length ? (Math.min(...xs) + Math.max(...xs)) / 2 : undefined; });
+      const xs: number[] = [];
+      const firstAnchor = want.findIndex((w) => w !== undefined);
+      if (firstAnchor < 0) {
+        const start = left + ((u.w - u.members.length) * step) / 2;
+        u.members.forEach((_, i) => xs.push(start + i * step));
+      } else {
+        for (let i = 0; i < u.members.length; i++) {
+          if (i < firstAnchor) { xs.push(want[firstAnchor]! - (firstAnchor - i) * step); continue; }
+          const minX = i ? xs[i - 1] + step : -Infinity;
+          xs.push(Math.max(want[i] ?? minX, minX));
+        }
+        // Keep the couple inside its own block.
+        const over = xs[xs.length - 1] + step - (left + u.w * step);
+        if (over > 0) for (let i = 0; i < xs.length; i++) xs[i] = Math.max(left + i * step, xs[i] - over);
+        const under = left - xs[0];
+        if (under > 0) for (let i = 0; i < xs.length; i++) xs[i] += under;
+      }
+      u.members.forEach((m, i) => { nodes.get(m)!.x = xs[i]; });
+    };
+    let cur = 0;
+    for (const u of roots) { place(u, cur); cur += u.w * step; }
+    // Anyone not reached from the deceased's row (rare): to the right of their row.
+    for (const r of rows) {
+      if (r <= 0) continue;
+      const placed = new Set(roots.flatMap(function all(u: Unit): string[] { return [...u.members, ...u.kids.flatMap(all)]; }));
+      let end = Math.max(-step, ...[...nodes.values()].filter((n) => n.gen === r && placed.has(n.id)).map((n) => n.x));
+      for (const id of order.get(r)!) if (!placed.has(id)) { end += step; nodes.get(id)!.x = end; }
+    }
+  }
+
   // 2. Ancestor rows, bottom-up: a father stands straight above his children (above the middle of
   //    them when there are several) with his wife / wives beside him on whichever side is free, so
   //    every stem is a straight line. When a family must move right to make room, the rows below it
@@ -147,37 +233,8 @@ export function layout(c: Case): { nodes: Map<string, Placed>; width: number; he
       free = ax + (wives.length - L + 1) * step;
       if (delta > 0.5 && kids.length) {
         const from = Math.min(...kids.map((x) => x.x)) - 1;
-        for (const m of nodes.values()) if (m.gen > r && m.gen <= 0 && m.x >= from) m.x += delta;
+        for (const m of nodes.values()) if (m.gen > r && m.x >= from) m.x += delta;
       }
-    }
-  }
-
-  // 2b. Descendant rows: centre each family (children of one couple) under its parents,
-  //     left to right, never overlapping. A child's spouse stays next to the child.
-  for (const r of rows) {
-    if (r <= 0) continue;
-    const inRow = [...nodes.values()].filter((n) => n.gen === r).sort((a, b) => a.x - b.x);
-    const groups: { key: string; items: Placed[] }[] = [];
-    for (const n of inRow) {
-      const f = fatherOf(c, n.id), m = motherOf(c, n.id);
-      if (f || m) {
-        const key = `${f ?? ''}|${m ?? ''}`;
-        const last = groups[groups.length - 1];
-        if (last && last.key === key) last.items.push(n); else groups.push({ key, items: [n] });
-      } else if (groups.length) groups[groups.length - 1].items.push(n);
-      else groups.push({ key: `solo-${n.id}`, items: [n] });
-    }
-    const step = NODE_W + GAP_X;
-    let end = -Infinity;
-    for (const g of groups) {
-      const [f, m] = g.key.split('|');
-      const wivesOfF = f ? c.unions.filter((u) => u.partners.includes(f)).length : 0;
-      // A man with more than one wife: each wife's children sit under her (their line comes from her).
-      const ps = (f && (wivesOfF <= 1 || !m) ? [f] : [m]).map((id) => (id ? nodes.get(id) : undefined)).filter((p) => p && p.gen === r - 1) as Placed[];
-      const want = ps.length ? ps.reduce((a, p) => a + p.x, 0) / ps.length - ((g.items.length - 1) * step) / 2 : g.items[0].x;
-      let x = Math.max(want, end + step);
-      for (const n of g.items) { n.x = x; x += step; }
-      end = x - step;
     }
   }
 
