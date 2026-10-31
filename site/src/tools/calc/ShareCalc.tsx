@@ -263,7 +263,7 @@ export default function ShareCalc() {
                       <th className={`${cell} hidden text-right sm:table-cell`}>Together</th>
                       <th className={`${cell} hidden text-right sm:table-cell`}>Sihaam</th>
                       <th className={`${cell} text-right`}>% each</th>
-                      {sqft > 0n && <th className={`${cell} text-right`}>Land each†</th>}
+                      {sqft > 0n && <th className={`${cell} text-right`}>Land</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -315,7 +315,7 @@ export default function ShareCalc() {
         <ul className="mt-1 space-y-0.5">
           <li>* Children of a son or daughter who died before the deceased. Add each late son / daughter separately: with MFLO 1961 s.4 each one's children take only the share that parent would have taken (sons twice daughters; only daughters take 1/2 or 2/3 of it).</li>
           <li>** The father's full brothers.</li>
-          {sqft > 0n && <li>† Kanal-Marla-Feet (1 kanal = 20 marla, 1 marla = 272 sq ft); feet rounded.</li>}
+          {sqft > 0n && <li>Land: each heir's land in Kanal-Marla-Feet (1 kanal = 20 marla, 1 marla = 272 sq ft); feet rounded.</li>}
           <li>For the family tree, the heirs' statement for the revenue officer, or an heir who died after the deceased, use the <a className="font-semibold text-sky-700 underline" href="/tools/shajra-nasab/">Shajra Nasab tool</a>.</li>
           <li>Computational aid, not legal advice. Verify with a lawyer / revenue officer.</li>
         </ul>
