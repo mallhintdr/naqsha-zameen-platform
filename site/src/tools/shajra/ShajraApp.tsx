@@ -444,7 +444,9 @@ export default function ShajraApp() {
         {/* Hint and the share table */}
         <aside id="shajra-editor" className="no-print flex flex-col gap-3 border-t border-slate-200 p-3 lg:border-t-0">
           <p className="text-xs text-slate-600"><b className="text-slate-800">Tap a person</b> on the shajra to type the name, CNIC and dates right there, and to add relatives. Enter or Esc closes it.</p>
-          <SideShares c={c} setC={setC} result={result} name={name} />
+          <SideShares c={c} setC={setC} result={result} name={name}
+            onward={(id) => { const p = c.persons.find((x) => x.id === id); return !!p && !p.alive && !!p.dateOfDeath && p.dateOfDeath > c.dateOfDeath; }}
+            onOnward={distributeOnward} />
         </aside>
       </div>
 
@@ -453,7 +455,7 @@ export default function ShajraApp() {
       {/* Step 3: results */}
       <section className="border-t border-slate-200 p-4" id="shajra-results">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-bold">Shares <span className="urdu font-normal" lang="ur">(حصص)</span></h2>
+          <h2 className="text-lg font-bold">{canOverride ? <>Shares <span className="urdu font-normal" lang="ur">(حصص)</span></> : <>How the shares are worked out <span className="urdu font-normal" lang="ur">(تفصیل)</span></>}</h2>
           <div className="no-print ml-auto flex items-center gap-1" role="group" aria-label="Language of the notes">
             <button className={`${btn} ${lang === 'en' ? '!bg-slate-800 !text-white' : ''}`} aria-pressed={lang === 'en'} onClick={() => setLang('en')}>English</button>
             <button className={`${btn} urdu ${lang === 'ur' ? '!bg-slate-800 !text-white' : ''}`} aria-pressed={lang === 'ur'} onClick={() => setLang('ur')} lang="ur">اردو</button>
@@ -472,6 +474,8 @@ export default function ShajraApp() {
         {result && (
           <>
             {result.needsVerification && <p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-800">Complex case (distant kindred or grandfather with siblings): verify with a lawyer.</p>}
+            {/* The share table is the one beside the shajra; this full table only for manual shares (Hindu beta). */}
+            {canOverride && (
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[640px] border-collapse text-sm">
                 <thead>
@@ -511,6 +515,7 @@ export default function ShajraApp() {
                 </tbody>
               </table>
             </div>
+            )}
 
             {excluded.length > 0 && (
               <div className="mt-4">

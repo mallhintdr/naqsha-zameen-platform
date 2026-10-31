@@ -3,8 +3,10 @@ import { toString, type Case, type ComputeResult } from 'inheritance-engine';
 import { relLabel } from './labels.ts';
 import { heirLandText, kmfText, areaText, LandQuick } from './Estate.tsx';
 
-export default function SideShares({ c, setC, result, name }: {
+export default function SideShares({ c, setC, result, name, onward, onOnward }: {
   c: Case; setC: (c: Case) => void; result: ComputeResult | null; name: (id: string) => string;
+  /** An heir who died after the deceased: their share can be distributed onward (munasakha). */
+  onward?: (id: string) => boolean; onOnward?: (id: string) => void;
 }) {
   const props = c.estate.immovable;
   const rows = (result?.shares ?? []).filter((s) => s.fraction.n > 0n || s.status === 'reserved');
@@ -33,8 +35,12 @@ export default function SideShares({ c, setC, result, name }: {
                   <td className="px-1 py-1">
                     <span className="font-semibold">{name(s.personId)}</span>
                     <span className="block text-[10px] text-slate-500">{relLabel(s.relationKey)[0]}{s.status === 'substituted-s4' ? ' · s.4' : ''}{s.status === 'reserved' ? ' · reserved' : ''}</span>
+                    {onward?.(s.personId) && s.fraction.n > 0n && onOnward && (
+                      <button className="mt-0.5 rounded border border-sky-300 px-1 text-[10px] font-semibold text-sky-700 hover:bg-sky-50" onClick={() => onOnward(s.personId)}
+                        title="This heir died after the deceased: distribute their share to their own heirs">Distribute onward →</button>
+                    )}
                   </td>
-                  <td className="px-1 py-1 text-right font-mono">{toString(s.fraction)}</td>
+                  <td className="px-1 py-1 text-right font-mono" title={`${s.percent}% · ${String(s.sihaam)} of ${String(s.base)} sihaam`}>{toString(s.fraction)}<span className="block text-[10px] font-normal text-slate-500">{Number(s.percent).toFixed(2)}%</span></td>
                   {props.map((p, k) => <td key={k} className="whitespace-nowrap px-1 py-1 text-right font-mono">{heirLandText(s, p.area.unit, k)}</td>)}
                 </tr>
               ))}

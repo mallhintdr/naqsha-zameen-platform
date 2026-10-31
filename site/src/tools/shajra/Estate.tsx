@@ -108,7 +108,7 @@ export default function Estate({ c, setC }: { c: Case; setC: (c: Case) => void }
   };
 
   return (
-    <details className="no-print border-b border-slate-200 p-4" open={props.length > 0 || e.wills.length > 0}>
+    <details className="no-print border-b border-slate-200 p-4">{/* folded until opened */}
       <summary className="cursor-pointer text-sm font-bold">Estate (optional): deductions, will, land</summary>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {([['movableValue', 'Value of the estate (Rs)'], ['funeral', 'Funeral expenses (Rs)'], ['debts', 'Debts (Rs)'], ['dower', 'Unpaid dower / haq mehr (Rs)']] as const).map(([k, label]) => (

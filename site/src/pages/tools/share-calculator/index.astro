@@ -1,0 +1,41 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ShareCalc from '../../../tools/calc/ShareCalc.tsx';
+import { SITE } from '../../../site';
+
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'Inheritance Share Calculator',
+  alternateName: 'وراثت حصص کیلکولیٹر',
+  url: `${SITE.url}/tools/share-calculator/`,
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'Any (web browser)',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'PKR' },
+  provider: { '@id': `${SITE.url}/#organization` },
+};
+---
+<Base
+  title="Inheritance Share Calculator"
+  seoTitle="Inheritance (Wirasat) Share Calculator: Sons, Wife, Mother, Father | Naqsha Zameen"
+  description="Free inheritance share calculator for Pakistan: enter how many sons, daughters, wives or husband, mother, father, brothers and sisters survived, and get each heir's exact share and land in Kanal-Marla-Feet."
+  schema={[ld]}
+  crumbNames={['Tools', 'Share Calculator']}
+>
+  <section class="relative isolate overflow-hidden pt-28 sm:pt-32">
+    <div class="mx-auto max-w-4xl px-4 text-center sm:px-6">
+      <h1 class="font-display text-3xl font-extrabold text-white sm:text-5xl">Inheritance Share Calculator</h1>
+      <p class="urdu mt-3 text-2xl text-cyan-100/90" dir="rtl" lang="ur">وراثتی حصص کا فوری حساب</p>
+      <p class="mx-auto mt-4 max-w-2xl text-slate-300">
+        No family tree needed: enter how many sons, daughters, wives or husband, parents, brothers and sisters survived the deceased, and see each heir's share straight away.
+      </p>
+    </div>
+  </section>
+  <section class="mx-auto mt-8 max-w-6xl px-2 sm:px-6 lg:px-8">
+    <ShareCalc client:only="react" />
+  </section>
+</Base>
+
+<style is:global>
+  .urdu, [lang='ur'] { font-family: 'Noto Nastaliq Urdu', serif; }
+</style>

@@ -61,7 +61,7 @@ export const NAV: NavItem[] = [
   {
     href: '/tools/',
     label: 'Tools',
-    children: [{ href: '/tools/shajra-nasab/', label: 'Shajra Nasab & Inheritance' }],
+    children: [{ href: '/tools/shajra-nasab/', label: 'Shajra Nasab & Inheritance' }, { href: '/tools/share-calculator/', label: 'Inheritance Share Calculator' }],
   },
   { href: '/about/', label: 'About' },
   { href: '/contact/', label: 'Contact' },
