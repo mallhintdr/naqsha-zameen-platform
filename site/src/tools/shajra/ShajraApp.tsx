@@ -155,10 +155,13 @@ export default function ShajraApp() {
   const [activeId, setActiveId] = useState<string | null>(null); // null = main case
   const subs = rootC.subcases ?? [];
   const c: Case = (activeId && subs.find((x) => x.id === activeId)) || rootC;
-  const setC = (n: Case) => {
-    if (activeId && subs.some((x) => x.id === activeId)) setRootC({ ...rootC, subcases: subs.map((x) => (x.id === activeId ? n : x)) });
-    else setRootC({ ...(n as Root), subcases: subs });
-  };
+  /** The whole saved case with the open estate replaced by `n`. */
+  const nextRoot = (n: Case): Root => (activeId && subs.some((x) => x.id === activeId)
+    ? { ...rootC, subcases: subs.map((x) => (x.id === activeId ? n : x)) }
+    : { ...(n as Root), subcases: subs });
+  const setC = (n: Case) => setRootC(nextRoot(n));
+  // Print / Download PDF first ask whether the share table goes on the paper.
+  const [askTable, setAskTable] = useState<'print' | 'pdf' | null>(null);
   const [selected, setSelected] = useState<string | null>('D');
   const [lang, setLang] = useState<Lang>('en');
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -192,7 +195,7 @@ export default function ShajraApp() {
   }, []);
   useEffect(() => { if (loaded && !pdfMode) save(rootC); }, [rootC, loaded, pdfMode]);
 
-  const post = async (path: string) => fetch(`${API}/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ case: toJSON(rootC) }) });
+  const post = async (path: string, root: Root = rootC) => fetch(`${API}/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ case: toJSON(root) }) });
   const saveLink = async () => {
     setBusy('link'); setMsg(null);
     try {
@@ -203,10 +206,10 @@ export default function ShajraApp() {
       try { await navigator.clipboard.writeText(j.shareUrl); setMsg('Link copied. It works for 30 days.'); } catch { setMsg('Link ready. It works for 30 days.'); }
     } catch (e) { setMsg((e as Error).message); } finally { setBusy(null); }
   };
-  const downloadPdf = async () => {
+  const downloadPdf = async (root: Root = rootC) => {
     setBusy('pdf'); setMsg(null);
     try {
-      const r = await post('pdf');
+      const r = await post('pdf', root);
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message || 'Could not create the PDF.');
       const blob = await r.blob();
       const a = document.createElement('a');
@@ -217,6 +220,16 @@ export default function ShajraApp() {
       const id = r.headers.get('X-Shajra-Case');
       if (id) setShareUrl(`${SITE.url}/tools/shajra-nasab/?case=${id}`);
     } catch (e) { setMsg(`${(e as Error).message} You can also use Print / Save PDF.`); } finally { setBusy(null); }
+  };
+
+  /** Yes / No from the share-table question, then print or make the PDF. */
+  const printWith = (includeTable: boolean) => {
+    const kind = askTable;
+    setAskTable(null);
+    const root = nextRoot({ ...structuredClone(c), print: { ...(c as WithPrint).print, shareTable: includeTable } } as WithPrint);
+    setRootC(root);
+    if (kind === 'print') setTimeout(() => window.print(), 120); // after the sheet re-renders
+    else if (kind === 'pdf') downloadPdf(root);
   };
 
   const { result, error } = useMemo((): { result: ComputeResult | null; error: string | null } => {
@@ -329,17 +342,27 @@ export default function ShajraApp() {
             <option value="auto">Auto</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option>
           </select>
         </label>
-<label className="flex items-center gap-1 text-xs font-semibold text-slate-600" title="Print the share table with the shajra (Print / Save PDF and Download PDF)">
-          <input type="checkbox" checked={printTableOf(c)}
-            onChange={(e) => setC({ ...structuredClone(c), print: { ...(c as WithPrint).print, shareTable: e.target.checked } } as WithPrint)} />
-          Print share table
-        </label>
-          <button className={`${btn} !border-sky-700 !bg-sky-700 !text-white`} onClick={() => window.print()}>Print / Save PDF</button>
-          <button className={btn} onClick={downloadPdf} disabled={!!busy}>{busy === 'pdf' ? 'Creating PDF…' : 'Download PDF'}</button>
+          <button className={`${btn} !border-sky-700 !bg-sky-700 !text-white`} onClick={() => setAskTable('print')}>Print / Save PDF</button>
+          <button className={btn} onClick={() => setAskTable('pdf')} disabled={!!busy}>{busy === 'pdf' ? 'Creating PDF…' : 'Download PDF'}</button>
         </div>
         <span className="ml-auto text-[11px] text-slate-500">Case {c.id} · saved in this browser only</span>
       </div>
 
+      {askTable && (
+        <div className="no-print fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="ask-table-title"
+          onClick={() => setAskTable(null)} onKeyDown={(e) => { if (e.key === 'Escape') setAskTable(null); }}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-4 text-slate-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 id="ask-table-title" className="text-base font-bold">Print the share table too?</h2>
+            <p className="urdu mt-1 text-right text-slate-600" lang="ur" dir="rtl">کیا حصص کا جدول بھی ساتھ پرنٹ کیا جائے؟</p>
+            <p className="mt-1 text-xs text-slate-500">{askTable === 'pdf' ? 'For the downloaded PDF.' : 'For this print or saved PDF.'} The shajra nasab and the heir / witness statement are always included.</p>
+            <div className="mt-3 flex gap-2">
+              <button autoFocus className={`${btn} flex-1 !border-sky-700 !bg-sky-700 !py-2 !text-sm !text-white`} onClick={() => printWith(true)}>Yes <span className="urdu font-normal" lang="ur">ہاں</span></button>
+              <button className={`${btn} flex-1 !py-2 !text-sm`} onClick={() => printWith(false)}>No <span className="urdu font-normal" lang="ur">نہیں</span></button>
+            </div>
+            <button className="mt-2 w-full text-xs text-slate-500 underline" onClick={() => setAskTable(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
       {subs.length > 0 && (
         <div className="no-print flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs">
           <span className="font-semibold text-slate-600">Estates (munasakha):</span>

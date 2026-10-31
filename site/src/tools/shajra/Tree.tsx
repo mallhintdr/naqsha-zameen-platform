@@ -147,6 +147,29 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
     return p.dateOfDeath && p.dateOfDeath > c.dateOfDeath ? 'بعد میں فوت شدہ' : 'پہلے فوت شدہ';
   };
 
+  /** What is written under a person: share text, (محروم), divorced, and where that text ends. */
+  const labelInfo = (id: string) => {
+    const p = c.persons.find((x) => x.id === id)!;
+    const r = results.get(id);
+    const isD = id === c.deceasedId;
+    const predeceased = !isD && !p.alive && !!p.dateOfDeath && p.dateOfDeath <= c.dateOfDeath;
+    const zero = !isD && !!r && r.fraction.n === 0n && r.status === 'excluded';
+    const mahroom = zero && !predeceased;
+    const divorced = isDivorced(id);
+    const shareTxt = isD || (zero && predeceased) ? '' : r ? (r.fraction.n > 0n ? toString(r.fraction) : mahroom ? 'محروم' : '—') : '';
+    // Status line (ز / پہلے فوت شدہ / حال متوفی) and the lines under it.
+    const k = kindOf(id), y = top(id);
+    const nm = p.name || 'Tap to add name';
+    const inLaw = isInLaw(id);
+    const spouseOfBoth = inLaw && c.unions.some((u) => u.partners.includes(id) && u.partners.some((o) => o !== id && kindOf(o) === 'both'));
+    const inLawY = spouseOfBoth ? y + 29 : y + sym / 2 + 4;
+    const below = k === 'wife' ? y + sym + 34 : k === 'both' ? y + 25 + 40 : inLaw ? inLawY + 18 : y + sym + (hasUrdu(nm) ? 40 : 29);
+    const extra = (mahroom || divorced ? 1 : 0) + (!isD && !mahroom && shareTxt ? 1 : 0);
+    // Just under the last line of text: the line down to the children starts here.
+    const textBottom = below + extra * 15 + 12;
+    return { predeceased, zero, mahroom, divorced, shareTxt, below, textBottom };
+  };
+
   const sel = selected ? nodes.get(selected) : null;
   return (
     <div className={printMode ? 'relative' : 'relative mx-auto'} style={printMode ? { width: printSize ? `${printSize.w}mm` : '100%', margin: '0 auto' } : { width: width + P * 2, minHeight: height + P * 2 + (sel && menu ? 440 : 90) /* room for the quick bar (with More / Add relative) under the lowest row */ }}>
@@ -159,17 +182,18 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
             const bar = ky - 26 - (barLevel.get(fi) ?? 0) * 14;
             const xs = kids.map(childAnchorX);
             const drops = dropsOf({ father, mother });
-            const parentBottom = (id: string) =>
-              top(id) + sym + (id === c.deceasedId && kindOf(id) === 'male' ? 46 : kindOf(id) === 'wife' ? 44 : kindOf(id) === 'both' ? 56 : 60); // just below the parent's last line of text
+            // The line starts just below the parent's last line of text (the same gap for everyone,
+            // so a late son / daughter with no share line has no extra gap).
+            const parentBottom = (id: string) => labelInfo(id).textBottom;
             // A wife's line: straight down from under her name when her children are right below her;
             // otherwise from the outer side of her heart, so it never runs into a child's line.
             const midKids = (Math.min(...xs) + Math.max(...xs)) / 2;
             const straight = (id: string) => Math.abs(midKids - cx(id)) < 30;
             const dropX = (id: string) => (kindOf(id) === 'wife' && !straight(id) ? cx(id) + tipDir(id) * 18 : cx(id));
-            const dropY = (id: string) => (kindOf(id) === 'wife' ? (straight(id) ? top(id) + sym + 62 : parentBottom(id) - 22) : parentBottom(id));
+            const dropY = (id: string) => (kindOf(id) === 'wife' && !straight(id) ? top(id) + sym + 22 : parentBottom(id));
             const all = [...xs, ...drops.map(dropX)];
             return (
-              <g key={`f-${fi}`} strokeDasharray={!father ? '4 3' : undefined}>
+              <g key={`f-${fi}`}>{/* one solid line of descent for every family, father's or mother's */}
                 {drops.map((d) => <line key={d} x1={dropX(d)} y1={dropY(d)} x2={dropX(d)} y2={bar} />)}
                 <line x1={Math.min(...all)} y1={bar} x2={Math.max(...all)} y2={bar} />
                 {kids.map((k) => <line key={k} x1={childAnchorX(k)} y1={bar} x2={childAnchorX(k)} y2={childAnchorY(k)} />)}
@@ -208,11 +232,7 @@ export default function Tree({ c, results, selected, onSelect, menu, printMode, 
           const nm = (p.name || (printMode ? '__________' : 'Tap to add name')).slice(0, 22);
           // Not inheriting: written (محروم) in red, like (ز). Someone who died before the deceased
           // already reads پہلے فوت شدہ, so nothing more is written under them.
-          const predeceased = !isD && !p.alive && !!p.dateOfDeath && p.dateOfDeath <= c.dateOfDeath;
-          const zero = !isD && !!r && r.fraction.n === 0n && r.status === 'excluded';
-          const mahroom = zero && !predeceased;
-          const divorced = isDivorced(p.id);
-          const shareTxt = isD || (zero && predeceased) ? '' : r ? (r.fraction.n > 0n ? toString(r.fraction) : mahroom ? 'محروم' : '—') : '';
+          const { mahroom, divorced, shareTxt } = labelInfo(p.id);
           return (
             <g key={p.id} className={printMode ? undefined : 'cursor-pointer'} onClick={printMode ? undefined : () => onSelect(p.id)} tabIndex={printMode ? undefined : 0} role={printMode ? undefined : 'button'} aria-haspopup={printMode ? undefined : 'menu'}
               aria-label={`${nm}, ${en}${r && !isD && shareTxt ? `, share ${shareTxt}` : ''}`}
@@ -288,7 +308,7 @@ export function Legend() {
       ))}
       <span className="flex items-center gap-1"><svg width="14" height="14" aria-hidden="true"><line x1="2" y1="12" x2="12" y2="2" stroke={INK} strokeWidth="1.5" /></svg> Died</span>
       <span><b className="text-green-700">(1/4)</b> heir · <b className="urdu font-normal text-red-600" lang="ur">(محروم)</b> not inheriting · <b className="text-amber-700">amber</b> reserved · <b className="text-blue-700">blue</b> MFLO s.4</span>
-      <span>── father line · ┄┄ mother line · ─ marriage · <span className="urdu text-red-600" lang="ur">(مطلقہ)</span> divorced</span>
+      <span>── line of descent · ─ marriage · <span className="urdu text-red-600" lang="ur">(مطلقہ)</span> divorced</span>
     </div>
   );
 }
