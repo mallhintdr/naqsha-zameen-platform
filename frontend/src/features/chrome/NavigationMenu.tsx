@@ -305,7 +305,16 @@ export default function NavigationMenu() {
             <div className="px-3 pb-2 pt-1 text-[0.78rem] font-semibold text-[#b45309]">Preview mode: {selectedMauza || 'mouza'}</div>
             <NavItem onClick={() => { setOpenSubmenu(null); set({ subscribeFeature: 'preview' }); toggleMenu(); }}>⭐ Get full access</NavItem>
             <NavItem onClick={() => { window.location.href = `${SITE_URL}/maps/`; }}>🌐 Back to website</NavItem>
+            {/* Free tools on the website: for everyone, logged in or not. */}
+            <div className="px-3 pb-0.5 pt-1 text-[0.68rem] font-bold uppercase tracking-wide text-[#16a34a]">Free tools</div>
+            <NavItem onClick={() => { setOpenSubmenu(null); window.open(`${SITE_URL}/tools/share-calculator/`, '_blank', 'noopener'); toggleMenu(); }}>
+              🧮 Share Calculator <span className="ml-1 rounded bg-green-100 px-1 text-[0.62rem] font-bold text-green-700">FREE</span>
+            </NavItem>
+            <NavItem onClick={() => { setOpenSubmenu(null); window.open(`${SITE_URL}/tools/shajra-nasab/`, '_blank', 'noopener'); toggleMenu(); }}>
+              🌳 Shajra Nasab <span className="ml-1 rounded bg-green-100 px-1 text-[0.62rem] font-bold text-green-700">FREE</span>
+            </NavItem>
             <div className="nav-divider" />
+
             <div className="nav-user-info">
               <div className="user-greeting">👤 {user.userName}</div>
             </div>
@@ -507,6 +516,15 @@ export default function NavigationMenu() {
               </NavItem>
             )}
 
+            {/* Free tools on the website: for everyone, logged in or not. */}
+            <div className="nav-divider" />
+            <div className="px-3 pb-0.5 pt-1 text-[0.68rem] font-bold uppercase tracking-wide text-[#16a34a]">Free tools</div>
+            <NavItem onClick={() => { setOpenSubmenu(null); window.open(`${SITE_URL}/tools/share-calculator/`, '_blank', 'noopener'); toggleMenu(); }}>
+              🧮 Share Calculator <span className="ml-1 rounded bg-green-100 px-1 text-[0.62rem] font-bold text-green-700">FREE</span>
+            </NavItem>
+            <NavItem onClick={() => { setOpenSubmenu(null); window.open(`${SITE_URL}/tools/shajra-nasab/`, '_blank', 'noopener'); toggleMenu(); }}>
+              🌳 Shajra Nasab <span className="ml-1 rounded bg-green-100 px-1 text-[0.62rem] font-bold text-green-700">FREE</span>
+            </NavItem>
             <div className="nav-divider" />
             {(user || tourType === 'changePassword') && (
               <NavItem
