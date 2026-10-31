@@ -2,9 +2,11 @@
 // deceased (e.g. 2 sons, 1 wife, mother, father). Same engine and the same default rules as the
 // Shajra Nasab tool: the counts are turned into a family and passed to the same compute().
 import { Fragment, useMemo, useState } from 'react';
-import { CaseBuilder, compute, sum, toString, percent, type LawSystem, type ShareResult, type Fraction } from 'inheritance-engine';
+import { CaseBuilder, compute, frac, sum, toString, percent, type Case, type LawSystem, type ShareResult, type Fraction } from 'inheritance-engine';
 import { ruleText } from '../shajra/labels.ts';
 import { kmfText } from '../shajra/Estate.tsx';
+import { load as loadShajra, save as saveShajra } from '../shajra/model.ts';
+import { SITE } from '../../site';
 
 type Key =
   | 'spouse' | 'sons' | 'daughters' | 'father' | 'mother'
@@ -103,10 +105,18 @@ export default function ShareCalc() {
     }
     many('fullB', () => b.sibling('M', 'full'));
     many('fullS', () => b.sibling('F', 'full'));
-    many('consB', () => b.sibling('M', 'consanguine'));
-    many('consS', () => b.sibling('F', 'consanguine'));
-    many('uteB', () => b.sibling('M', 'uterine'));
-    many('uteS', () => b.sibling('F', 'uterine'));
+    // Half brothers / sisters share one step-mother (by father) or one step-father (by mother).
+    let stepMother: string | undefined, stepFather: string | undefined;
+    const half = (g: 'M' | 'F', by: 'father' | 'mother') => {
+      const id = b.person(g, { name: g === 'M' ? 'Brother' : 'Sister' });
+      if (by === 'father') { stepMother ??= b.person('F', { ...DEAD, name: 'Step-mother' }); b.parents(id, b.father(DEAD), stepMother); }
+      else { stepFather ??= b.person('M', { ...DEAD, name: 'Step-father' }); b.parents(id, stepFather, b.mother(DEAD)); }
+      return id;
+    };
+    many('consB', () => half('M', 'father'));
+    many('consS', () => half('F', 'father'));
+    many('uteB', () => half('M', 'mother'));
+    many('uteS', () => half('F', 'mother'));
     if (n.uncles) {
       const gf = b.paternalGrandfather(DEAD), gm = b.paternalGrandmother(DEAD);
       many('uncles', () => { const id = b.person('M', { name: 'Paternal uncle' }); b.parents(id, gf, gm); return id; });
@@ -128,8 +138,8 @@ export default function ShareCalc() {
         // Grandchildren come after the parents and grandparents.
         if (row.key === 'mgm') for (const lg of lineGroups) groups.push({ ...lg, shares: sharesOf(lg.ids) });
       }
-      return { r, groups, error: null as string | null };
-    } catch (e) { return { r: null, groups: [], error: (e as Error).message }; }
+      return { r, groups, c, error: null as string | null };
+    } catch (e) { return { r: null, groups: [], c, error: (e as Error).message }; }
   }, [n, gender, law, s4, lines]);
 
   const sqft = BigInt(Math.max(0, Math.round((+land.k || 0) * 5440 + (+land.m || 0) * 272 + (+land.f || 0))));
@@ -147,6 +157,131 @@ export default function ShareCalc() {
     for (const x of out.r.notes) addNote(ruleText(x.ruleId));
     if (out.r.needsVerification) addNote('Complex case (distant kindred or grandfather with siblings): verify with a lawyer.');
   }
+
+  const lawLabel = LAWS.find((l) => l.value === law)?.label ?? law;
+  const host = (() => { try { return new URL(SITE.url).host.replace(/^www\./, ''); } catch { return 'naqsha-zameen.com'; } })();
+
+  /** Download: the shares table (with the rules) drawn on a canvas and saved as a JPG. */
+  const downloadJpg = async () => {
+    if (!out?.r) return;
+    try { await document.fonts.load("16px 'Noto Nastaliq Urdu'"); } catch { /* falls back to a system font */ }
+    const r = out.r;
+    const S = 2; // sharp on phones and in print
+    type Col = { head: string; w: number; ur?: boolean; get: (g: Group) => string };
+    const rowOf = (g: Group) => { const e = g.shares[0]; const none = !e || e.fraction.n === 0n; return { e, none, t: sum(g.shares.map((x) => x.fraction)) }; };
+    const cols: Col[] = [
+      { head: 'Heir', w: 250, get: (g) => g.en },
+      { head: 'وارث', w: 190, ur: true, get: (g) => g.ur },
+      { head: 'No.', w: 60, get: (g) => String(g.ids.length) },
+      { head: 'Each', w: 110, get: (g) => { const x = rowOf(g); return x.none ? '—' : toString(x.e.fraction); } },
+      { head: 'Together', w: 110, get: (g) => { const x = rowOf(g); return x.none ? '—' : toString(x.t); } },
+      { head: 'Sihaam', w: 90, get: (g) => { const x = rowOf(g); return x.none ? '—' : String(g.shares.reduce((a, y) => a + y.sihaam, 0n)); } },
+      { head: '%', w: 80, get: (g) => { const x = rowOf(g); return x.none ? '—' : percent(x.e.fraction, 2); } },
+      ...(sqft > 0n ? [{ head: 'Land (K-M-F)', w: 130, get: (g: Group) => { const x = rowOf(g); return x.none ? '—' : landOf(x.e.fraction); } }] : []),
+    ];
+    const pad = 24, rowH = 36, W = cols.reduce((a, c) => a + c.w, 0) + pad * 2;
+    const ctx0 = document.createElement('canvas').getContext('2d')!;
+    // Rules under the table, wrapped to the table width.
+    const ruleLines: string[] = [];
+    ctx0.font = '13px Arial, sans-serif';
+    const wrap = (text: string) => {
+      let line = '';
+      for (const word of text.split(' ')) {
+        const tryLine = line ? `${line} ${word}` : word;
+        if (ctx0.measureText(tryLine).width > W - pad * 2 && line) { ruleLines.push(line); line = `   ${word}`; } else line = tryLine;
+      }
+      if (line) ruleLines.push(line);
+    };
+    notes.forEach((t, i) => {
+      const who = out.groups.filter((g) => noteNo.get(g.key) === i + 1).map((g) => g.en);
+      wrap(`${who.length ? `${who.join(', ')}: ` : '• '}${t}`);
+    });
+    const rows = out.groups.length + 2 + (r.escheat.n > 0n ? 1 : 0);
+    const H = 78 + rows * rowH + 18 + ruleLines.length * 19 + 16 + 40;
+    const cv = document.createElement('canvas');
+    cv.width = W * S; cv.height = H * S;
+    const ctx = cv.getContext('2d')!;
+    ctx.scale(S, S);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    // Title
+    ctx.fillStyle = '#0f172a'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.font = 'bold 20px Arial, sans-serif'; ctx.fillText('Inheritance shares', pad, 28);
+    ctx.font = "20px 'Noto Nastaliq Urdu', serif"; ctx.textAlign = 'right'; ctx.direction = 'rtl'; ctx.fillText('وراثتی حصص', W - pad, 26); ctx.direction = 'ltr';
+    ctx.textAlign = 'left'; ctx.font = '13px Arial, sans-serif'; ctx.fillStyle = '#475569';
+    ctx.fillText(`${lawLabel} · The deceased was a ${gender === 'M' ? 'man' : 'woman'}${sqft > 0n ? ` · Total land ${kmfText(sqft)} (K-M-F)` : ''}`, pad, 56);
+    // Table
+    let y = 72;
+    const drawRow = (cells: string[], opts: { head?: boolean; total?: boolean; grey?: boolean }) => {
+      ctx.fillStyle = opts.head ? '#1e293b' : opts.total ? '#f1f5f9' : '#fff';
+      ctx.fillRect(pad, y, W - pad * 2, rowH);
+      let x = pad;
+      cells.forEach((text, i) => {
+        const c = cols[i];
+        ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, c.w, rowH);
+        const urdu = /[\u0600-\u06FF]/.test(text);
+        ctx.fillStyle = opts.head ? '#fff' : opts.grey ? '#94a3b8' : '#0f172a';
+        ctx.font = urdu ? "15px 'Noto Nastaliq Urdu', serif" : `${opts.head || opts.total || i === 0 ? 'bold ' : ''}14px ${i >= 2 && !opts.head ? 'Consolas, monospace' : 'Arial, sans-serif'}`;
+        ctx.direction = urdu ? 'rtl' : 'ltr';
+        const left = i === 0 && !opts.head;
+        ctx.textAlign = left ? 'left' : 'center';
+        ctx.fillText(text, left ? x + 8 : x + c.w / 2, y + rowH / 2 + (urdu ? -2 : 1));
+        x += c.w;
+      });
+      ctx.direction = 'ltr';
+      y += rowH;
+    };
+    drawRow(cols.map((c) => c.head), { head: true });
+    for (const g of out.groups) drawRow(cols.map((c) => c.get(g)), { grey: rowOf(g).none });
+    if (r.escheat.n > 0n) drawRow(cols.map((c, i) => (i === 0 ? 'Government (no heir)' : i === 1 ? 'حکومت' : c.head === 'Together' ? toString(r.escheat) : '')), {});
+    drawRow(cols.map((c, i) => (i === 0 ? 'Total' : i === 1 ? 'میزان' : c.head === 'No.' ? String(out.groups.reduce((a, g) => a + g.ids.length, 0)) : c.head === 'Together' ? '1' : c.head === 'Sihaam' ? String(r.base) : c.head.startsWith('Land') ? kmfText(sqft) : '')), { total: true });
+    // Rules
+    y += 18; ctx.textAlign = 'left'; ctx.fillStyle = '#334155'; ctx.font = '13px Arial, sans-serif';
+    for (const l of ruleLines) { ctx.fillText(l, pad, y); y += 19; }
+    // Footer band
+    ctx.fillStyle = '#0b2545'; ctx.fillRect(0, H - 40, W, 40);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 15px Arial, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(`Created and downloaded from ${host}/tools/share-calculator/`, W / 2, H - 20);
+    cv.toBlob((blob) => {
+      if (!blob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'inheritance-shares.jpg';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/jpeg', 0.92);
+  };
+
+  /** Draw shajra nasab: the same family goes to the Shajra tool (saved in this browser), named so it is easy to edit. */
+  const drawShajra = () => {
+    if (!out?.c) return;
+    const existing = loadShajra();
+    if (existing && existing.persons.length > 1 && !confirm('The Shajra Nasab tool already has a family saved in this browser. Replace it with this one?')) return;
+    const c: Case = structuredClone(out.c);
+    const today = new Date().toISOString().slice(0, 10);
+    c.id = `SN-${Date.now().toString(36).toUpperCase()}`;
+    c.dateOfDeath = today;
+    const d = c.persons.find((x) => x.id === c.deceasedId)!;
+    d.name = ''; d.dateOfDeath = today;
+    // Easy names to type over: "Son 1", "Son 2", "Wife", "Brother"...
+    const single: Record<string, string> = {
+      spouse: gender === 'M' ? 'Wife' : 'Husband', sons: 'Son', daughters: 'Daughter', father: 'Father', mother: 'Mother',
+      pgf: 'Paternal grandfather', pgm: 'Paternal grandmother', mgm: 'Maternal grandmother',
+      fullB: 'Brother', fullS: 'Sister', consB: 'Half-brother', consS: 'Half-sister', uteB: 'Half-brother', uteS: 'Half-sister', uncles: 'Uncle',
+    };
+    for (const g of out.groups) {
+      const base = single[g.key] ?? (g.key.endsWith('s') ? 'Grandson' : 'Granddaughter');
+      g.ids.forEach((id, i) => { const p = c.persons.find((x) => x.id === id); if (p) p.name = g.ids.length > 1 ? `${base} ${i + 1}` : base; });
+    }
+    // A late son / daughter reads "Late son 2"; the deceased's father and mother are drawn as a couple.
+    for (const p of c.persons) if (/^late (son|daughter)/.test(p.name)) p.name = p.name.replace(/^late/, 'Late');
+    const link = c.parents.find((l) => l.childId === c.deceasedId);
+    if (link?.fatherId && link.motherId && !c.unions.some((u) => u.partners.includes(link.fatherId!) && u.partners.includes(link.motherId!))) {
+      c.unions.push({ id: 'u-parents', partners: [link.fatherId, link.motherId], type: 'marriage' });
+    }
+    if (sqft > 0n) c.estate = { ...c.estate, immovable: [{ title: 'Land', area: { unit: 'gkanal', value: frac(sqft, 5440n) } }] };
+    saveShajra(c);
+    window.location.href = '/tools/shajra-nasab/?from=calculator';
+  };
 
   /** One relation row: name, Urdu name, − count +. */
   const countRow = (key: string, label: string, ur: string, value: number, max: number, onSet: (v: number) => void) => (
@@ -256,19 +391,27 @@ export default function ShareCalc() {
 
         {/* Shares: figures only; every explanation is a numbered note at the foot */}
         <div className="p-3 sm:p-4" aria-live="polite">
-          <h2 className="text-lg font-bold">Shares <span className="urdu font-normal" lang="ur">حصص</span></h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-bold">Shares <span className="urdu font-normal" lang="ur">حصص</span></h2>
+            {out?.r && (
+              <div className="ml-auto flex gap-1.5">
+                <button className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" onClick={downloadJpg}>⬇ Download</button>
+                <button className="rounded-lg border border-sky-700 bg-sky-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-sky-800" onClick={drawShajra}>✏️ Draw shajra nasab</button>
+              </div>
+            )}
+          </div>
           {!out ? <p className="mt-2 text-sm text-slate-500">Add the relatives on the left, e.g. 2 sons, 1 wife, mother and father.</p>
             : out.error ? <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{out.error}</p>
             : out.r && (
               <div className="mt-2 overflow-x-auto">
                 <table className="w-full border-collapse border border-slate-300 text-xs sm:text-sm">
                   <thead>
-                    <tr className="bg-slate-800 text-left text-white">
-                      <th className={cell}>Heir</th><th className={`${cell} text-center font-normal`}><span className="urdu" lang="ur">وارث</span></th><th className={`${cell} text-center`}>No.</th><th className={`${cell} text-right`}>Each</th>
-                      <th className={`${cell} hidden text-right sm:table-cell`}>Together</th>
-                      <th className={`${cell} hidden text-right sm:table-cell`}>Sihaam</th>
-                      <th className={`${cell} text-right`}>%</th>
-                      {sqft > 0n && <th className={`${cell} text-right`}>Land</th>}
+                    <tr className="bg-slate-800 text-center text-white">
+                      <th className={`${cell} text-center`}>Heir</th><th className={`${cell} text-center font-normal`}><span className="urdu" lang="ur">وارث</span></th><th className={`${cell} text-center`}>No.</th><th className={`${cell} text-center`}>Each</th>
+                      <th className={`${cell} hidden text-center sm:table-cell`}>Together</th>
+                      <th className={`${cell} hidden text-center sm:table-cell`}>Sihaam</th>
+                      <th className={`${cell} text-center`}>%</th>
+                      {sqft > 0n && <th className={`${cell} text-center`}>Land</th>}
                     </tr>
                   </thead>
                   <tbody>

@@ -181,7 +181,14 @@ export default function ShajraApp() {
         .then((t) => { setRootC(fromJSON(t)); setShareUrl(`${SITE.url}/tools/shajra-nasab/?case=${id}`); })
         .catch((e) => { setMsg(e.message); const s = load(); if (s) setRootC(s); })
         .finally(() => setLoaded(true));
-    } else { const s = load(); if (s) setRootC(s); setLoaded(true); }
+    } else {
+      const s = load(); if (s) setRootC(s); setLoaded(true);
+      // Arrived from the share calculator with the family already drawn.
+      if (new URLSearchParams(window.location.search).get('from') === 'calculator') {
+        setMsg('Drawn from the share calculator. Tap anyone to type the real name, CNIC or dates; tap the deceased first.');
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
   }, []);
   useEffect(() => { if (loaded && !pdfMode) save(rootC); }, [rootC, loaded, pdfMode]);
 

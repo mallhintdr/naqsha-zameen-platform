@@ -1,7 +1,7 @@
 {
   "name": "naqsha-zameen",
   "private": true,
-  "version": "5.9.2",
+  "version": "5.9.3",
   "workspaces": [
     "frontend",
     "backend",
