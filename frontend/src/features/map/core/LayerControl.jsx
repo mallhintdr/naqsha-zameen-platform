@@ -12,6 +12,12 @@ const LayerControlDropdown = ({ activeLayer = "Hybrid Satellite", setActiveLayer
   useEffect(() => {
     if (satelliteLocked && SATELLITE_BASEMAPS.has(activeLayer)) setActiveLayer(LIMITED_DEFAULT_BASEMAP);
   }, [satelliteLocked, activeLayer, setActiveLayer]);
+  // Once the account is activated (locked -> unlocked), go back to the default Google Hybrid basemap.
+  const wasLocked = useRef(satelliteLocked);
+  useEffect(() => {
+    if (wasLocked.current && !satelliteLocked) setActiveLayer("Google Hybrid Satellite");
+    wasLocked.current = satelliteLocked;
+  }, [satelliteLocked, setActiveLayer]);
   const choose = (name) => {
     if (satelliteLocked && SATELLITE_BASEMAPS.has(name)) {
       useAppStore.getState().set({ subscribeFeature: "satellite" });

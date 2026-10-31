@@ -164,29 +164,23 @@
 .nav-user-info .user-role { font-size: 0.72rem; color: #6b7280; font-weight: 500; text-transform: uppercase; }
 
 /* Subscription warning banner (warning-banner.css) */
-.subscription-warning-banner {
-  position: fixed; top: 65px; left: 50%; transform: translateX(-50%);
-  width: max-content; max-width: 90%; z-index: 2000;
-  background: #ffc107; color: #212529; padding: 5px 12px; font-weight: 600; font-size: 0.84rem;
-  border-radius: 36px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-  display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid rgba(0, 0, 0, 0.05);
+/* Expired / pending notice: a small amber tab hanging from the bottom of the navbar (42px). */
+.subscription-strip {
+  position: fixed; top: 42px; left: 50%; transform: translateX(-50%); z-index: 2000;
+  display: flex; align-items: center; gap: 6px; max-width: calc(100vw - 16px);
+  padding: 3px 10px 4px; border: 1px solid #f3c969; border-top: 0; border-radius: 0 0 8px 8px;
+  background: #fff7e0; color: #7a4a00; font-size: 0.76rem; line-height: 1.25;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); white-space: nowrap;
 }
-.subscription-warning-banner-icon {
-  background: #fff; width: 19px; height: 19px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; color: #dc3545;
+.subscription-strip-icon { color: #d97706; flex-shrink: 0; }
+.subscription-strip-text { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.subscription-strip-more { font-weight: 400; }
+.subscription-strip-link {
+  flex-shrink: 0; background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+  color: #b45309; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;
 }
-.subscription-warning-banner-container { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; justify-content: center; }
-.subscription-warning-banner-text { font-size: 0.92rem; }
-.subscription-warning-banner-btn-whatsapp {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.78rem; padding: 2.5px 10px; border-radius: 18px; font-weight: 700;
-  background: #1b9d4e; border: 1px solid #1b9d4e; color: #fff; box-shadow: 0 2px 5px rgba(27, 157, 78, 0.3);
-}
-.subscription-warning-banner-btn-whatsapp:hover { filter: brightness(1.08); }
-@media (max-width: 400px) {
-  .subscription-warning-banner { max-width: calc(100vw - 16px); font-size: 0.78rem; }
-  .subscription-warning-banner-text { font-size: 0.82rem; }
-}
+.subscription-strip-link:hover { color: #92400e; }
+@media (max-width: 560px) { .subscription-strip-more { display: none; } }
 
 /* ---------- Submenu flyout (Guided Tutorials, Admin Tools) ----------
    Desktop/tablet: second column right of the 240px menu. Phones: over the menu. */
