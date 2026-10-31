@@ -43,7 +43,9 @@ const LAWS: { value: LawSystem; label: string }[] = [
 
 const DEAD = { alive: false, dateOfDeath: '2000-01-01' };
 const input = 'w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none';
-const stepBtn = 'h-7 w-7 shrink-0 rounded-lg border border-slate-300 bg-white text-base font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40';
+const cell = 'px-1.5 py-1 sm:p-2';
+const icell = 'px-1.5 py-0.5 sm:px-2 sm:py-1';
+const stepBtn = 'h-6 w-6 sm:h-7 sm:w-7 shrink-0 rounded-lg border border-slate-300 bg-white text-base font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40';
 
 type Group = { key: string; en: string; ur: string; ids: string[]; shares: ShareResult[] };
 
@@ -126,7 +128,7 @@ export default function ShareCalc() {
     <div className="rounded-2xl bg-white text-slate-900 shadow-2xl">
       <div className="grid gap-0 lg:grid-cols-[1fr_1.1fr]">
         {/* Who survived */}
-        <div className="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
+        <div className="border-b border-slate-200 p-3 sm:p-4 lg:border-b-0 lg:border-r">
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="text-xs font-semibold text-slate-600">Law
               <select className={input} value={law} onChange={(e) => setLaw(e.target.value as LawSystem)}>
@@ -155,18 +157,18 @@ export default function ShareCalc() {
           </div>
           <p className="mt-3 text-xs text-slate-500">Count the relatives <b>alive</b> at the death.</p>
           {/* Relatives as one grouped table: relation, Urdu, count */}
-          <table className="mt-2 w-full border-collapse text-sm">
+          <table className="mt-2 w-full border-collapse text-xs sm:text-sm">
             <thead>
               <tr className="bg-slate-800 text-left text-xs text-white">
-                <th className="px-2 py-1.5 font-semibold">Relation</th>
-                <th className="px-2 py-1.5 text-center font-normal"><span className="urdu" lang="ur">رشتہ</span></th>
-                <th className="w-[7.5rem] px-2 py-1.5 text-center font-semibold">Number</th>
+                <th className={`${icell} font-semibold`}>Relation</th>
+                <th className={`${icell} text-center font-normal`}><span className="urdu" lang="ur">رشتہ</span></th>
+                <th className={`${icell} w-[5.75rem] text-center font-semibold sm:w-[7.5rem]`}>Number</th>
               </tr>
             </thead>
             {sections.map((sec) => (
               <tbody key={sec}>
                 <tr className="bg-slate-100">
-                  <th colSpan={3} className="px-2 py-1 text-left text-xs font-bold text-slate-700">
+                  <th colSpan={3} className={`${icell} text-left text-xs font-bold text-slate-700`}>
                     {sec}
                     {sec === 'Grandchildren' && (
                       <label className="float-right flex items-center gap-1 font-normal text-slate-600">
@@ -181,12 +183,12 @@ export default function ShareCalc() {
                   const max = rowMax(r);
                   return (
                     <tr key={r.key} className={`border-b border-slate-100 ${n[r.key] ? 'bg-sky-50/60' : ''}`}>
-                      <td className="px-2 py-1 text-xs text-slate-800">{label}</td>
-                      <td className="px-2 py-1 text-center"><span className="urdu text-xs text-slate-600" lang="ur" dir="rtl">{ur}</span></td>
-                      <td className="px-2 py-1">
-                        <div className="flex items-center justify-center gap-1">
+                      <td className={`${icell} text-xs leading-tight text-slate-800`}>{label}</td>
+                      <td className={`${icell} text-center`}><span className="urdu text-[11px] text-slate-600 sm:text-xs" lang="ur" dir="rtl">{ur}</span></td>
+                      <td className={icell}>
+                        <div className="flex items-center justify-center gap-0.5 sm:gap-1">
                           <button className={stepBtn} aria-label={`Fewer: ${label}`} disabled={!n[r.key]} onClick={() => set(r.key, n[r.key] - 1)}>−</button>
-                          <input className="h-8 w-9 rounded-lg border border-slate-300 text-center text-sm font-semibold" inputMode="numeric" aria-label={label} value={n[r.key]}
+                          <input className="h-6 w-7 rounded-md border border-slate-300 text-center text-xs font-semibold sm:h-8 sm:w-9 sm:rounded-lg sm:text-sm" inputMode="numeric" aria-label={label} value={n[r.key]}
                             onChange={(e) => set(r.key, Math.min(max, +e.target.value.replace(/\D/g, '') || 0))} />
                           <button className={stepBtn} aria-label={`More: ${label}`} disabled={n[r.key] >= max} onClick={() => set(r.key, n[r.key] + 1)}>+</button>
                         </div>
@@ -200,18 +202,20 @@ export default function ShareCalc() {
         </div>
 
         {/* Shares: figures only; every explanation is a numbered note at the foot */}
-        <div className="p-4" aria-live="polite">
+        <div className="p-3 sm:p-4" aria-live="polite">
           <h2 className="text-lg font-bold">Shares <span className="urdu font-normal" lang="ur">حصص</span></h2>
           {!out ? <p className="mt-2 text-sm text-slate-500">Add the relatives on the left, e.g. 2 sons, 1 wife, mother and father.</p>
             : out.error ? <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{out.error}</p>
             : out.r && (
               <div className="mt-2 overflow-x-auto">
-                <table className="w-full border-collapse text-sm">
+                <table className="w-full border-collapse text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-slate-800 text-left text-white">
-                      <th className="p-2">Heir</th><th className="p-2 text-right">Each</th><th className="p-2 text-right">Together</th>
-                      <th className="p-2 text-right">Sihaam /{String(out.r.base)}</th><th className="p-2 text-right">%</th>
-                      {sqft > 0n && <th className="p-2 text-right">Land each†</th>}
+                      <th className={cell}>Heir</th><th className={`${cell} text-right`}>Each</th>
+                      <th className={`${cell} hidden text-right sm:table-cell`}>Together</th>
+                      <th className={`${cell} hidden text-right sm:table-cell`}>Sihaam /{String(out.r.base)}</th>
+                      <th className={`${cell} text-right`}>% each</th>
+                      {sqft > 0n && <th className={`${cell} text-right`}>Land each†</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -221,20 +225,30 @@ export default function ShareCalc() {
                       const none = !each || each.fraction.n === 0n;
                       return (
                         <tr key={g.key} className={`border-b border-slate-200 ${none ? 'text-slate-400' : ''}`}>
-                          <td className="p-2">
-                            <span className="font-semibold">{g.ids.length > 1 ? `${g.ids.length} × ` : ''}{g.en}</span> <span className="urdu text-slate-500" lang="ur">{g.ur}</span>
+                          <td className={cell}>
+                            <span className="font-semibold">{g.ids.length > 1 ? `${g.ids.length}× ` : ''}{g.en}</span>
                             {noteNo.get(g.key) && <sup className="ml-0.5 text-[10px] font-semibold text-sky-700">({noteNo.get(g.key)})</sup>}
+                            <span className="urdu block text-[11px] leading-tight text-slate-500 sm:ml-1 sm:inline" lang="ur">{g.ur}</span>
                           </td>
-                          <td className="p-2 text-right font-mono">{none ? '—' : toString(each.fraction)}</td>
-                          <td className="p-2 text-right font-mono">{none ? '—' : toString(t)}</td>
-                          <td className="p-2 text-right font-mono">{none ? '—' : String(g.shares.reduce((a, x) => a + x.sihaam, 0n))}</td>
-                          <td className="p-2 text-right font-mono">{none ? '—' : percent(t, 2)}</td>
-                          {sqft > 0n && <td className="p-2 text-right font-mono">{none ? '—' : landOf(each.fraction)}</td>}
+                          <td className={`${cell} text-right font-mono`}>{none ? '—' : toString(each.fraction)}</td>
+                          <td className={`${cell} hidden text-right font-mono sm:table-cell`}>{none ? '—' : toString(t)}</td>
+                          <td className={`${cell} hidden text-right font-mono sm:table-cell`}>{none ? '—' : String(g.shares.reduce((a, x) => a + x.sihaam, 0n))}</td>
+                          <td className={`${cell} text-right font-mono`}>{none ? '—' : percent(each.fraction, 2)}</td>
+                          {sqft > 0n && <td className={`${cell} whitespace-nowrap text-right font-mono`}>{none ? '—' : landOf(each.fraction)}</td>}
                         </tr>
                       );
                     })}
-                    {out.r.escheat.n > 0n && <tr className="border-b border-slate-200"><td className="p-2">Government (no heir)</td><td /><td className="p-2 text-right font-mono">{toString(out.r.escheat)}</td><td /><td className="p-2 text-right font-mono">{percent(out.r.escheat, 2)}</td>{sqft > 0n && <td />}</tr>}
-                    <tr className="bg-slate-100 font-bold"><td className="p-2">Total</td><td /><td className="p-2 text-right font-mono">1</td><td className="p-2 text-right font-mono">{String(out.r.base)}</td><td className="p-2 text-right font-mono">100</td>{sqft > 0n && <td className="p-2 text-right font-mono">{kmfText(sqft)}</td>}</tr>
+                    {out.r.escheat.n > 0n && (
+                      <tr className="border-b border-slate-200"><td className={cell}>Government (no heir)</td><td className={`${cell} text-right font-mono`}>{toString(out.r.escheat)}</td>
+                        <td className="hidden sm:table-cell" /><td className="hidden sm:table-cell" /><td className={`${cell} text-right font-mono`}>{percent(out.r.escheat, 2)}</td>{sqft > 0n && <td />}</tr>
+                    )}
+                    <tr className="bg-slate-100 font-bold">
+                      <td className={cell}>Total</td><td />
+                      <td className={`${cell} hidden text-right font-mono sm:table-cell`}>1</td>
+                      <td className={`${cell} hidden text-right font-mono sm:table-cell`}>{String(out.r.base)}</td>
+                      <td />
+                      {sqft > 0n && <td className={`${cell} whitespace-nowrap text-right font-mono`}>{kmfText(sqft)}</td>}
+                    </tr>
                   </tbody>
                 </table>
               </div>
