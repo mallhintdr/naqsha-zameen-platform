@@ -52,18 +52,18 @@ const featureGroups = [
 const ld = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
-  name: 'Mouza Maps & Dashboard of Punjab by Tehsil',
+  name: 'Mouza Maps of Punjab by Tehsil',
   url: `${SITE.url}/maps/`,
   about: { '@type': 'AdministrativeArea', name: 'Punjab', containedInPlace: { '@type': 'Country', name: 'Pakistan' } },
   isPartOf: { '@id': `${SITE.url}/#website` },
 };
 ---
 <Base
-  title="Mouza Maps & Dashboard"
-  seoTitle="Mouza Maps & Dashboard of Punjab – Murabba & Killa Maps Online | Naqsha Zameen"
+  title="Mouza Maps"
+  seoTitle="Mouza Maps of Punjab – Murabba & Killa Maps Online | Naqsha Zameen"
   description={`Find the mouza (chak) map of your village on the ${SITE.brand} dashboard: ${tehsils.length ? `${fmt(totalMouzas)} mouzas in ${tehsils.length} tehsils` : 'mouzas across'} of Punjab. Satellite imagery, GPS killa locator, Kanal & Marla measurement, and free preview.`}
   schema={[ld]}
-  crumbNames={['Mouza Maps & Dashboard']}
+  crumbNames={['Mouza Maps']}
 >
   <!-- HERO: Dashboard Visual + Mouza Picker Unified -->
   <section class="relative isolate overflow-hidden pt-28 sm:pt-36">
@@ -73,7 +73,7 @@ const ld = {
       <div>
         <span class="eyebrow"><span class="size-1.5 animate-pulse rounded-full bg-emerald-400"></span> {SITE.dashboardHost} · {tehsils.length > 0 ? `${fmt(totalMouzas)} Mouzas in ${tehsils.length} Tehsils` : 'Punjab Land Maps'}</span>
         <h1 class="font-display mt-5 text-4xl font-extrabold text-white sm:text-6xl">
-          Mouza Maps &amp; <span class="text-gradient">Live Dashboard.</span>
+          Mouza <span class="text-gradient">Maps.</span>
         </h1>
         <p class="urdu mt-3 text-2xl text-cyan-100/90" dir="rtl" lang="ur">پنجاب کے موضع جات کے نقشے — مربع اور کِلا کی حدود آپ کے موبائل پر</p>
         <p class="mt-4 max-w-xl text-lg text-slate-300">
