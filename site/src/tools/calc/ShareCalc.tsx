@@ -42,7 +42,7 @@ const LAWS: { value: LawSystem; label: string }[] = [
 
 const DEAD = { alive: false, dateOfDeath: '2000-01-01' };
 const input = 'w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none';
-const cell = 'px-1.5 py-1 sm:p-2';
+const cell = 'border border-slate-300 px-1.5 py-1 sm:p-2'; // shares table: every column outlined
 const icell = 'px-1.5 py-0.5 sm:px-2 sm:py-1';
 const stepBtn = 'h-6 w-6 sm:h-7 sm:w-7 shrink-0 rounded-lg border border-slate-300 bg-white text-base font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40';
 
@@ -256,7 +256,7 @@ export default function ShareCalc() {
             : out.error ? <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{out.error}</p>
             : out.r && (
               <div className="mt-2 overflow-x-auto">
-                <table className="w-full border-collapse text-xs sm:text-sm">
+                <table className="w-full border-collapse border border-slate-300 text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-slate-800 text-left text-white">
                       <th className={cell}>Heir</th><th className={`${cell} text-center`}>No.</th><th className={`${cell} text-right`}>Each</th>
@@ -288,14 +288,14 @@ export default function ShareCalc() {
                       );
                     })}
                     {out.r.escheat.n > 0n && (
-                      <tr className="border-b border-slate-200"><td className={cell}>Government (no heir)</td><td /><td className={`${cell} text-right font-mono`}>{toString(out.r.escheat)}</td>
-                        <td className="hidden sm:table-cell" /><td className="hidden sm:table-cell" /><td className={`${cell} text-right font-mono`}>{percent(out.r.escheat, 2)}</td>{sqft > 0n && <td />}</tr>
+                      <tr className="border-b border-slate-200"><td className={cell}>Government (no heir)</td><td className={cell} /><td className={`${cell} text-right font-mono`}>{toString(out.r.escheat)}</td>
+                        <td className={`${cell} hidden sm:table-cell`} /><td className={`${cell} hidden sm:table-cell`} /><td className={`${cell} text-right font-mono`}>{percent(out.r.escheat, 2)}</td>{sqft > 0n && <td className={cell} />}</tr>
                     )}
                     <tr className="bg-slate-100 font-bold">
-                      <td className={cell}>Total</td><td className={`${cell} text-center font-mono`}>{out.groups.reduce((a, g) => a + g.ids.length, 0)}</td><td />
+                      <td className={cell}>Total</td><td className={`${cell} text-center font-mono`}>{out.groups.reduce((a, g) => a + g.ids.length, 0)}</td><td className={cell} />
                       <td className={`${cell} hidden text-right font-mono sm:table-cell`}>1</td>
                       <td className={`${cell} hidden text-right font-mono sm:table-cell`}>{String(out.r.base)}</td>
-                      <td />
+                      <td className={cell} />
                       {sqft > 0n && <td className={`${cell} whitespace-nowrap text-right font-mono`}>{kmfText(sqft)}</td>}
                     </tr>
                   </tbody>
