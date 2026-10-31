@@ -1,7 +1,7 @@
 // Shajra Nasab: build the family of a deceased person and get the inheritance shares.
 // Runs fully in the browser; the case is autosaved in this browser only (localStorage).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { add, combine, compute, eq, ONE, parse, percent, sum, ZERO, toString, type ChainLink, type Case, type ComputeResult, type LawSystem, type Person, type ShareResult } from 'inheritance-engine';
+import { combine, compute, eq, ONE, parse, percent, sum, ZERO, toString, type ChainLink, type Case, type ComputeResult, type LawSystem, type Person, type ShareResult } from 'inheritance-engine';
 import Tree, { Legend } from './Tree.tsx';
 
 type Root = Case & { subcases?: Case[] };
@@ -15,13 +15,21 @@ const FIQH_UR: Record<string, string> = {
 };
 
 /** Urdu heading as on a patwari's shajra: deceased, "as stated by the heirs", fiqh, mouza, tehsil. */
+/** The deceased's father's name: the father on the tree, else the name typed for the deceased. */
+export const deceasedFatherName = (c: Case) => {
+  const d = c.persons.find((p) => p.id === c.deceasedId)!;
+  const fid = c.parents.find((l) => l.childId === d.id)?.fatherId;
+  return c.persons.find((p) => p.id === fid)?.name || d.fatherName || '';
+};
+
 function ShajraTitle({ c }: { c: Case }) {
   const d = c.persons.find((p) => p.id === c.deceasedId)!;
+  const fn = deceasedFatherName(c);
   const pl = place(c);
   const blank = '__________';
   return (
     <h2 className="shajra-title urdu mb-2 border-b-2 border-slate-800 pb-1 text-center font-bold text-slate-900" lang="ur" dir="rtl" style={{ fontSize: '0.75em', lineHeight: 2.1 }}>
-      شجرہ نسب متوفی {d.name || blank}{d.fatherName ? ` ولد ${d.fatherName}` : ''}، حسب گفتہ وارثان، {FIQH_UR[c.lawSystem] ?? ''}، موضع {pl.mauza || blank} تحصیل {pl.tehsil || blank}
+      شجرہ نسب متوفی {d.name || blank}{fn ? ` ${d.gender === 'F' ? 'دختر' : 'ولد'} ${fn}` : ''}، حسب گفتہ وارثان، {FIQH_UR[c.lawSystem] ?? ''}، موضع {pl.mauza || blank} تحصیل {pl.tehsil || blank}
     </h2>
   );
 }
@@ -110,6 +118,7 @@ import { addRelative, fromJSON, load, newCase, removePerson, save, setParentOf, 
 import { DISCLAIMER, DISCLAIMER_UR, relLabel, ruleText as ruleTextL, type Lang } from './labels.ts';
 import Estate, { areaText, areaTextUr, feetText, feetTextUr, heirLandText, kmfText, systemFor } from './Estate.tsx';
 import SideShares from './SideShares.tsx';
+import PersonBar from './PersonBar.tsx';
 import { AttestForm, AttestPrint, orientationOf, printTableOf, type Orientation, type WithPrint } from './Attest.tsx';
 import { layout, type WithLayout } from './layout.ts';
 import qrcode from 'qrcode-generator';
@@ -138,62 +147,6 @@ const LAWS: { value: LawSystem; label: string; ready: boolean }[] = [
   { value: 'hindu-mitakshara-bombay', label: 'Hindu / Sikh: Mitakshara, Bombay (beta)', ready: HINDU_BETA },
 ];
 
-const ADD: { kind: AddKind; label: string; ur: string }[] = [
-  { kind: 'father', label: 'Father', ur: 'والد' }, { kind: 'mother', label: 'Mother', ur: 'والدہ' }, { kind: 'spouse', label: 'Spouse', ur: 'زوج' },
-  { kind: 'son', label: 'Son', ur: 'بیٹا' }, { kind: 'daughter', label: 'Daughter', ur: 'بیٹی' }, { kind: 'brother', label: 'Brother', ur: 'بھائی' }, { kind: 'sister', label: 'Sister', ur: 'بہن' },
-];
-
-/** Action bar shown just below a tapped person: Edit · Add relative · Delete, all in one row;
- *  the relative choices open as a second horizontal row (no scrolling). Keyboard: arrows, Escape. */
-function PersonMenu({ p, isDeceased, addOpen, setAddOpen, onEdit, onAdd, onDelete, onClose, onMove }: {
-  p: Person; isDeceased: boolean; addOpen: boolean; setAddOpen: (v: boolean) => void;
-  onEdit: () => void; onAdd: (k: AddKind) => void; onDelete: () => void; onClose: () => void; onMove: (dir: -1 | 1) => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const sel = addOpen ? '[data-rel] button' : 'button[role=menuitem]';
-    ref.current?.querySelector<HTMLButtonElement>(sel)?.focus({ preventScroll: true });
-    // Bring the whole action bar into view inside the chart frame.
-    ref.current?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-  }, [addOpen]);
-  const onKey = (e: import('react').KeyboardEvent) => {
-    if (e.key === 'Escape') { e.preventDefault(); if (addOpen) setAddOpen(false); else onClose(); return; }
-    const fwd = e.key === 'ArrowRight' || e.key === 'ArrowDown', back = e.key === 'ArrowLeft' || e.key === 'ArrowUp';
-    if (!fwd && !back) return;
-    e.preventDefault();
-    const items = [...(ref.current?.querySelectorAll<HTMLButtonElement>('button[role=menuitem]') ?? [])];
-    const i = items.indexOf(document.activeElement as HTMLButtonElement);
-    items[(i + (fwd ? 1 : -1) + items.length) % items.length]?.focus();
-  };
-  const act = 'inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 focus:border-sky-500 focus:bg-sky-50 focus:outline-none';
-  return (
-    <div ref={ref} role="menu" aria-orientation="horizontal" aria-label={`Actions for ${p.name || 'this person'}`} onKeyDown={onKey}
-      className="w-max max-w-[min(520px,92vw)] rounded-xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-xl">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <button role="menuitem" className={act} onClick={() => onMove(-1)} title="Move left" aria-label="Move left">◀</button>
-        <button role="menuitem" className={act} onClick={() => onMove(1)} title="Move right" aria-label="Move right">▶</button>
-        <button role="menuitem" className={act} onClick={onEdit}>✏️ Edit</button>
-        <button role="menuitem" className={`${act} ${addOpen ? '!border-sky-500 !bg-sky-50' : ''}`} aria-expanded={addOpen} onClick={() => setAddOpen(!addOpen)}>➕ Add relative</button>
-        {!isDeceased && <button role="menuitem" className={`${act} !text-red-700`} onClick={onDelete}>🗑️ Delete</button>}
-        <button aria-label="Close" className="ml-auto rounded px-1.5 text-base leading-none text-slate-500 hover:bg-slate-100" onClick={onClose}>×</button>
-      </div>
-      {addOpen && (
-        <div data-rel role="group" aria-label="Add relative" className="mt-1.5 flex flex-wrap gap-1 border-t border-slate-100 pt-1.5">
-          {ADD.map((a) => {
-            // A man gets a wife, a woman a husband.
-            const [label, ur] = a.kind === 'spouse' ? (p.gender === 'M' ? ['Wife', 'بیوی'] : ['Husband', 'شوہر']) : [a.label, a.ur];
-            return (
-            <button key={a.kind} role="menuitem" className={`${act} !px-2 !py-1`} onClick={() => onAdd(a.kind)}>
-              {label} <span className="urdu text-[11px] font-normal text-slate-500" lang="ur">{ur}</span>
-            </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 const input = 'w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none';
 const btn = 'rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50';
 
@@ -210,7 +163,6 @@ export default function ShajraApp() {
   const [lang, setLang] = useState<Lang>('en');
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [editing, setEditing] = useState<string | null>(null);
   const ruleText = (id: string) => ruleTextL(id, lang);
   const [editShares, setEditShares] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -298,7 +250,14 @@ export default function ShajraApp() {
   const sel = c.persons.find((p) => p.id === selected) ?? null;
 
   const setPlace = (pt: Partial<Place>) => setC({ ...structuredClone(c), place: { ...place(c), ...pt } } as Case);
-  const add = (kind: AddKind) => { if (!sel) return; const [n, id] = addRelative(c, sel.id, kind); setC(n); setSelected(id); };
+  // A new relative opens its own quick bar with the name ready to type.
+  const add = (kind: AddKind) => { if (!sel) return; const [n, id] = addRelative(c, sel.id, kind); setC(n); setSelected(id); setMenuFor(id); setAddOpen(false); };
+  /** Gender; for the deceased the spouses flip too (a man has wives, a woman a husband). */
+  const setGender = (id: string, g: 'M' | 'F') => {
+    let n = updatePerson(c, id, { gender: g });
+    if (id === c.deceasedId) for (const u of n.unions.filter((u) => u.partners.includes(id))) n = updatePerson(n, u.partners.find((x) => x !== id)!, { gender: g === 'M' ? 'F' : 'M' });
+    setC(n);
+  };
   const patch = (id: string, p: Partial<Person>) => setC(updatePerson(c, id, p));
   /** Swaps a person with the neighbour on the left (-1) or right (+1) in the same row; the order is saved. */
   const move = (id: string, dir: -1 | 1) => {
@@ -396,34 +355,9 @@ export default function ShajraApp() {
         </div>
       )}
       {/* Step 1: deceased and law */}
-      <section className="no-print grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[1.25fr_0.75fr_1.4fr]">
-        {/* Deceased: who, son / daughter of, gender, date of death */}
-        <fieldset className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 grid content-start gap-2 sm:grid-cols-2">
-          <legend className="px-1 text-xs font-bold text-slate-800">Deceased <span className="urdu font-normal text-slate-500" lang="ur">متوفی</span></legend>
-          <label className="text-xs font-semibold text-slate-600">Deceased name
-          <input className={input} value={deceased.name} placeholder="e.g. Muhammad Aslam" onChange={(e) => patch('D', { name: e.target.value })} />
-        </label>
-          <label className="text-xs font-semibold text-slate-600">Father's name (walad)
-          <input className={input} value={deceased.fatherName ?? ''} onChange={(e) => patch('D', { fatherName: e.target.value })} />
-        </label>
-          <div className="grid grid-cols-2 gap-2 sm:col-span-2">
-          <label className="text-xs font-semibold text-slate-600">Gender
-            <select className={input} value={deceased.gender} onChange={(e) => {
-              // Changing the deceased's gender flips existing spouses.
-              let n = updatePerson(c, 'D', { gender: e.target.value as 'M' | 'F' });
-              for (const u of n.unions.filter((u) => u.partners.includes('D'))) n = updatePerson(n, u.partners.find((x) => x !== 'D')!, { gender: e.target.value === 'M' ? 'F' : 'M' });
-              setC(n);
-            }}>
-              <option value="M">Male</option><option value="F">Female</option>
-            </select>
-          </label>
-          <label className="text-xs font-semibold text-slate-600">Date of death
-            <input type="date" className={input} value={c.dateOfDeath} onChange={(e) => patch('D', { dateOfDeath: e.target.value })} />
-          </label>
-        </div>
-        </fieldset>
+      <section className="no-print grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[0.8fr_1.6fr]">
         {/* Place: mouza and tehsil (printed in the heading) */}
-        <fieldset className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 grid content-start grid-cols-2 gap-2 lg:grid-cols-1">
+        <fieldset className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 grid content-start grid-cols-2 gap-2">
           <legend className="px-1 text-xs font-bold text-slate-800">Place <span className="urdu font-normal text-slate-500" lang="ur">مقام</span></legend>
           <label className="text-xs font-semibold text-slate-600">Mouza (موضع)
           <input className={input} value={place(c).mauza} onChange={(e) => setPlace({ mauza: e.target.value })} />
@@ -484,21 +418,22 @@ export default function ShajraApp() {
         <div className="min-w-0 border-slate-200 p-3 lg:border-r">
           <div className={`print-only mb-2 ${pdfMode ? '' : 'hidden'} flex items-start justify-between gap-3`}>
             <div>
-              <h2 className="text-lg font-bold">Shajra Nasab: {deceased.name || 'Deceased'}{deceased.fatherName ? ` s/o ${deceased.fatherName}` : ''}</h2>
+              <h2 className="text-lg font-bold">Shajra Nasab: {deceased.name || 'Deceased'}{deceasedFatherName(c) ? ` ${deceased.gender === 'F' ? 'd/o' : 's/o'} ${deceasedFatherName(c)}` : ''}</h2>
               <p className="text-xs">Date of death {c.dateOfDeath} · Law: {LAWS.find((l) => l.value === c.lawSystem)?.label} · Case {c.id} · Policy {c.policy.policyVersion}</p>
               {shareUrl && <p className="text-[10px] text-slate-500">{shareUrl}</p>}
             </div>
             {shareUrl && <Qr text={shareUrl} />}
           </div>
           <ShajraTitle c={c} />
-          <p className="no-print mb-2 text-xs text-slate-500">Tap any person for Edit, Add relative or Delete. Start with the deceased (underlined, متوفی).</p>
+          <p className="no-print mb-2 text-xs text-slate-500">Tap a person to type their details right there. Start with the deceased (متوفی): name, father's name and date of death.</p>
           <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-50" style={{ maxHeight: '81vh' }}>
             <Tree c={c} results={byId} selected={selected} onSelect={(id) => { setSelected(id); setMenuFor(id); setAddOpen(false); }}
               menu={menuFor && sel && sel.id === menuFor ? (
-                <PersonMenu p={sel} isDeceased={sel.id === c.deceasedId} addOpen={addOpen} setAddOpen={setAddOpen}
-                  onEdit={() => { setEditing(sel.id); setMenuFor(null); setTimeout(() => document.getElementById('shajra-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50); }}
-                  onAdd={(k) => { add(k); setMenuFor(null); }}
-                  onDelete={() => { if (confirm(`Delete ${sel.name || 'this person'} from the tree?`)) { setC(removePerson(c, sel.id)); setSelected('D'); setEditing(null); } setMenuFor(null); }}
+                <PersonBar c={c} p={sel} share={byId.get(sel.id)} addOpen={addOpen} setAddOpen={setAddOpen}
+                  onPatch={(x) => patch(sel.id, x)} onGender={(g) => setGender(sel.id, g)}
+                  onParent={(role, id) => setC(setParentOf(c, sel.id, role, id))}
+                  onAdd={(k) => add(k)}
+                  onDelete={() => { if (confirm(`Delete ${sel.name || 'this person'} from the tree?`)) { setC(removePerson(c, sel.id)); setSelected('D'); setMenuFor(null); } }}
                   onMove={(d) => move(sel.id, d)}
                   onClose={() => setMenuFor(null)} />
               ) : null} />
@@ -506,13 +441,9 @@ export default function ShajraApp() {
           <div className="mt-2"><Legend /></div>
         </div>
 
-        {/* Person editor */}
+        {/* Hint and the share table */}
         <aside id="shajra-editor" className="no-print flex flex-col gap-3 border-t border-slate-200 p-3 lg:border-t-0">
-          {sel && editing === sel.id ? <Editor c={c} p={sel} share={byId.get(sel.id)} onPatch={(p) => patch(sel.id, p)}
-            onParent={(role, id) => setC(setParentOf(c, sel.id, role, id))}
-            onRemove={() => { setC(removePerson(c, sel.id)); setSelected('D'); setEditing(null); }} onClose={() => setEditing(null)} /> : (
-            <p className="text-xs text-slate-600"><b className="text-slate-800">Tap a person</b> on the shajra for <b>Edit</b>, <b>Add relative</b> and <b>Delete</b>. Keyboard: Tab, Enter, arrows, Escape.</p>
-          )}
+          <p className="text-xs text-slate-600"><b className="text-slate-800">Tap a person</b> on the shajra to type the name, CNIC and dates right there, and to add relatives. Enter or Esc closes it.</p>
           <SideShares c={c} setC={setC} result={result} name={name} />
         </aside>
       </div>
@@ -624,91 +555,6 @@ export default function ShajraApp() {
         )}
         <p className="mt-4 rounded-lg border border-red-200 bg-red-50 p-2 text-sm font-semibold text-red-800">{DISCLAIMER} <span className="urdu font-normal" lang="ur" dir="rtl">{DISCLAIMER_UR}</span></p>
       </section>
-    </div>
-  );
-}
-
-function Editor({ c, p, share, onPatch, onParent, onRemove, onClose }: {
-  c: Case; p: Person; share?: ShareResult; onPatch: (p: Partial<Person>) => void;
-  onParent: (role: 'fatherId' | 'motherId', id: string | undefined) => void; onRemove: () => void; onClose: () => void;
-}) {
-  const isD = p.id === c.deceasedId;
-  const ruleText = (id: string) => ruleTextL(id);
-  const link = c.parents.find((l) => l.childId === p.id);
-  const others = c.persons.filter((x) => x.id !== p.id);
-  const flags = p.flags;
-  const flag = (k: keyof Person['flags'], v: unknown) => onPatch({ flags: { ...flags, [k]: v || undefined } });
-  return (
-    <div className="space-y-3 text-sm">
-      <div>
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{isD ? 'Deceased' : relLabel(share?.relationKey ?? '')[0]}</div>
-        <input className={`${input} mt-1 font-semibold`} value={p.name} placeholder="Name" onChange={(e) => onPatch({ name: e.target.value })} />
-      </div>
-      <button className={`${btn} w-full`} onClick={onClose}>Done</button>
-      {!isD && (
-        <>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="text-xs text-slate-600">Gender
-              <select className={input} value={p.gender} onChange={(e) => onPatch({ gender: e.target.value as 'M' | 'F' })}><option value="M">Male</option><option value="F">Female</option></select>
-            </label>
-            <label className="text-xs text-slate-600">Alive?
-              <select className={input} value={p.alive ? 'yes' : 'no'} onChange={(e) => onPatch({ alive: e.target.value === 'yes' })}><option value="yes">Alive</option><option value="no">Died</option></select>
-            </label>
-          </div>
-          {!p.alive && (
-            <label className="block text-xs text-slate-600">Date of death (before or after the deceased matters)
-              <input type="date" className={input} value={p.dateOfDeath ?? ''} onChange={(e) => onPatch({ dateOfDeath: e.target.value })} />
-            </label>
-          )}
-          <label className="block text-xs text-slate-600">Religion
-            <select className={input} value={p.religion} onChange={(e) => onPatch({ religion: e.target.value })}>
-              {['muslim', 'christian', 'hindu', 'sikh', 'parsi', 'other'].map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </label>
-          <label className="block text-xs text-slate-600">CNIC (optional)
-            <input className={input} value={p.cnic ?? ''} placeholder="12345-1234567-1" onChange={(e) => onPatch({ cnic: e.target.value })} />
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="text-xs text-slate-600">Father
-              <select className={input} value={link?.fatherId ?? ''} onChange={(e) => onParent('fatherId', e.target.value || undefined)}>
-                <option value="">—</option>{others.filter((x) => x.gender === 'M').map((x) => <option key={x.id} value={x.id}>{x.name || x.id}</option>)}
-              </select>
-            </label>
-            <label className="text-xs text-slate-600">Mother
-              <select className={input} value={link?.motherId ?? ''} onChange={(e) => onParent('motherId', e.target.value || undefined)}>
-                <option value="">—</option>{others.filter((x) => x.gender === 'F').map((x) => <option key={x.id} value={x.id}>{x.name || x.id}</option>)}
-              </select>
-            </label>
-          </div>
-          <fieldset className="space-y-1 rounded-lg border border-slate-200 p-2 text-xs text-slate-700">
-            <legend className="px-1 font-semibold">Special facts</legend>
-            {p.gender === 'F' && c.unions.some((u) => u.partners.includes(p.id) && u.partners.includes(c.deceasedId)) && (
-              <label className="flex items-center gap-2"><input type="checkbox" checked={!!flags.pregnant} onChange={(e) => flag('pregnant', e.target.checked)} /> Pregnant at the date of death</label>
-            )}
-            {c.unions.some((u) => u.partners.includes(p.id) && u.partners.includes(c.deceasedId)) && (
-              <label className="block">Divorce
-                <select className={input} value={flags.divorced ?? ''} onChange={(e) => flag('divorced', e.target.value)}>
-                  <option value="">Not divorced</option><option value="revocable-in-iddat">Revocable talaq, still in iddat</option><option value="irrevocable">Irrevocable talaq</option><option value="khula">Khula</option>
-                </select>
-              </label>
-            )}
-            <label className="flex items-center gap-2"><input type="checkbox" checked={!!flags.missing} onChange={(e) => flag('missing', e.target.checked)} /> Missing (mafqud)</label>
-            <label className="flex items-center gap-2"><input type="checkbox" checked={!!flags.adopted} onChange={(e) => flag('adopted', e.target.checked)} /> Adopted</label>
-            <label className="flex items-center gap-2"><input type="checkbox" checked={!!flags.illegitimate} onChange={(e) => flag('illegitimate', e.target.checked)} /> Born outside marriage</label>
-            <label className="block">Caused the death
-              <select className={input} value={flags.killedDeceased ?? ''} onChange={(e) => flag('killedDeceased', e.target.value)}>
-                <option value="">No</option><option value="intentional">Yes, intentionally</option><option value="negligent">Yes, by negligence</option>
-              </select>
-            </label>
-          </fieldset>
-          {share && (
-            <div className="rounded-lg bg-slate-50 p-2 text-xs">
-              <b>{toString(share.fraction)}</b> ({share.percent}%) · {share.reasons.map((r) => ruleText(r.ruleId)).join(' ')}
-            </div>
-          )}
-          <button className={`${btn} !border-red-300 !text-red-700`} onClick={() => { if (confirm(`Delete ${p.name || 'this person'}?`)) onRemove(); }}>🗑️ Delete person</button>
-        </>
-      )}
     </div>
   );
 }

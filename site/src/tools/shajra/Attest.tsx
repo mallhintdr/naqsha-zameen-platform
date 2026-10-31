@@ -1,18 +1,35 @@
 // Heir's statement and two witnesses at the foot of the printed shajra, with CNIC and room for
 // thumb impressions; plus the page orientation choice. Both are saved with the case.
 import type { Case, Person } from 'inheritance-engine';
-import { fatherOf } from './model.ts';
+import { fatherOf, updatePerson } from './model.ts';
 
 export type Link = 'walad' | 'dukhtar' | 'zoja';
 export type Party = { name: string; fatherName: string; cnic: string; link?: Link };
-export type Attest = { heir: Party; witnesses: [Party, Party] };
+/** heirId: the declaring heir is a person on the tree (name, father's name and CNIC come from there). */
+export type Attest = { heir: Party; heirId?: string; heirTyped?: boolean; witnesses: [Party, Party] };
 export type Orientation = 'auto' | 'portrait' | 'landscape';
 export type WithPrint = Case & { attest?: Attest; print?: { orientation?: Orientation; shareTable?: boolean } };
 
 const EMPTY: Party = { name: '', fatherName: '', cnic: '' };
+/** A person on the tree as a party: s/o or d/o the father on the tree; a widow (no father on the
+ *  tree) as w/o the deceased. */
+export const partyFromPerson = (c: Case, p: Person): Party => {
+  const father = c.persons.find((x) => x.id === fatherOf(c, p.id))?.name || p.fatherName || '';
+  const widow = !father && c.unions.some((u) => u.partners.includes(p.id) && u.partners.includes(c.deceasedId));
+  const d = c.persons.find((x) => x.id === c.deceasedId);
+  return widow
+    ? { name: p.name, fatherName: d?.name ?? '', cnic: p.cnic ?? '', link: 'zoja' }
+    : { name: p.name, fatherName: father, cnic: p.cnic ?? '', link: p.gender === 'F' ? 'dukhtar' : 'walad' };
+};
+
 export const attestOf = (c: Case): Attest => {
   const a = (c as WithPrint).attest;
-  return { heir: { ...EMPTY, ...a?.heir }, witnesses: [{ ...EMPTY, ...a?.witnesses?.[0] }, { ...EMPTY, ...a?.witnesses?.[1] }] };
+  const hp = a?.heirId ? c.persons.find((x) => x.id === a.heirId) : undefined;
+  return {
+    heir: hp ? partyFromPerson(c, hp) : { ...EMPTY, ...a?.heir },
+    heirId: hp ? hp.id : undefined,
+    witnesses: [{ ...EMPTY, ...a?.witnesses?.[0] }, { ...EMPTY, ...a?.witnesses?.[1] }],
+  };
 };
 export const orientationOf = (c: Case): Orientation => (c as WithPrint).print?.orientation ?? 'auto';
 /** Whether the share table is printed with the shajra (yes unless switched off). */
@@ -77,50 +94,67 @@ export function AttestPrint({ c }: { c: Case }) {
 
 const input = 'w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 focus:border-sky-500 focus:outline-none';
 
-/** Entry form on the page (not printed). */
+/** Entry form on the page (not printed): the declaring heir is picked from the family (their CNIC
+ *  is the one on the tree); the two witnesses are typed. Folded away until needed. */
 export function AttestForm({ c, setC }: { c: Case; setC: (c: Case) => void }) {
   const a = attestOf(c);
-  const put = (n: Attest) => setC({ ...structuredClone(c), attest: n } as WithPrint);
-  const setParty = (i: 0 | 1 | 2, p: Partial<Party>) => {
-    const n = structuredClone(a);
-    if (i === 0) n.heir = { ...n.heir, ...p }; else n.witnesses[i - 1] = { ...n.witnesses[i - 1], ...p };
-    put(n);
+  const raw = (c as WithPrint).attest;
+  const put = (n: Partial<Attest>) => setC({ ...structuredClone(c), attest: { ...a, ...raw, ...n } } as WithPrint);
+  const setWitness = (i: 0 | 1, p: Partial<Party>) => {
+    const w = structuredClone(a.witnesses);
+    w[i] = { ...w[i], ...p };
+    put({ witnesses: w });
   };
-  const heirs = c.persons.filter((p) => p.alive && p.id !== c.deceasedId);
-  const fromPerson = (p: Person): Party => ({
-    name: p.name,
-    fatherName: c.persons.find((x) => x.id === fatherOf(c, p.id))?.name || p.fatherName || '',
-    cnic: p.cnic ?? '',
-    link: p.gender === 'F' ? 'dukhtar' : 'walad',
-  });
-  const party = (i: 0 | 1 | 2, title: string, p: Party) => (
-    <fieldset className="space-y-1.5 rounded-lg border border-slate-200 p-2">
-      <legend className="px-1 text-xs font-semibold text-slate-700">{title}</legend>
-      {i === 0 && heirs.length > 0 && (
-        <select className={input} value="" aria-label="Fill from the family" onChange={(e) => { const p = heirs.find((x) => x.id === e.target.value); if (p) setParty(0, fromPerson(p)); }}>
-          <option value="">Fill from the family…</option>
-          {heirs.map((h) => <option key={h.id} value={h.id}>{h.name || h.id}</option>)}
-        </select>
-      )}
-      <input className={input} placeholder="Name" value={p.name} onChange={(e) => setParty(i, { name: e.target.value })} />
-      <div className="flex gap-1.5">
-        <select className={`${input} !w-auto`} aria-label="Relation" value={p.link ?? 'walad'} onChange={(e) => setParty(i, { link: e.target.value as Link })}>
-          <option value="walad">s/o ولد</option><option value="dukhtar">d/o دختر</option><option value="zoja">w/o زوجہ</option>
-        </select>
-        <input className={input} placeholder="Father's / husband's name" value={p.fatherName} onChange={(e) => setParty(i, { fatherName: e.target.value })} />
-      </div>
-      <input className={input} inputMode="numeric" placeholder="CNIC 12345-1234567-1" value={p.cnic} onChange={(e) => setParty(i, { cnic: formatCnic(e.target.value) })} />
-    </fieldset>
+  const living = c.persons.filter((p) => p.alive && p.id !== c.deceasedId);
+  const hp = a.heirId ? c.persons.find((x) => x.id === a.heirId) : undefined;
+  // Typed heir (not on the tree); older saved cases with a typed name count as typed.
+  const other = !a.heirId && (raw?.heirTyped ?? !!raw?.heir?.name);
+  const setOther = (v: boolean) => put({ heirTyped: v, heirId: undefined, heir: v ? { ...EMPTY, ...raw?.heir } : EMPTY });
+  const linkSel = (v: Link | undefined, on: (l: Link) => void) => (
+    <select className={`${input} !w-auto`} aria-label="Relation" value={v ?? 'walad'} onChange={(e) => on(e.target.value as Link)}>
+      <option value="walad">s/o</option><option value="dukhtar">d/o</option><option value="zoja">w/o</option>
+    </select>
   );
+  const filled = !!(a.heirId || other || a.witnesses.some((w) => w.name || w.cnic));
   return (
-    <section className="no-print border-t border-slate-200 p-4">
-      <h2 className="text-sm font-bold text-slate-800">Heir's statement and witnesses <span className="urdu font-normal text-slate-500" lang="ur">بیان وارث و گواہان</span></h2>
-      <p className="mt-0.5 text-xs text-slate-500">Printed at the foot of the shajra with their declaration (in Urdu) that the statement and its verification are their sole responsibility, room for thumb impressions and the CNIC in digit boxes. Leave blank to fill in by hand.</p>
+    <details className="no-print border-t border-slate-200 p-4" open={filled}>
+      <summary className="cursor-pointer text-sm font-bold text-slate-800">Heir's statement and witnesses (printed at the foot) <span className="urdu font-normal text-slate-500" lang="ur">یکے از وارثان و گواہان</span></summary>
+      <p className="mt-1 text-xs text-slate-500">Printed with their declaration in Urdu, room for thumb impressions and the CNIC in digit boxes. Leave blank to fill in by hand.</p>
       <div className="mt-2 grid gap-2 sm:grid-cols-3">
-        {party(0, 'Heir (statement)', a.heir)}
-        {party(1, 'Witness 1', a.witnesses[0])}
-        {party(2, 'Witness 2', a.witnesses[1])}
+        <fieldset className="space-y-1.5 rounded-lg border border-slate-200 p-2">
+          <legend className="px-1 text-xs font-semibold text-slate-700">Heir making the statement</legend>
+          <select className={input} aria-label="Heir making the statement" value={other ? '__other__' : a.heirId ?? ''}
+            onChange={(e) => { const v = e.target.value; if (v === '__other__') setOther(true); else if (!v) setOther(false); else put({ heirId: v, heirTyped: false, heir: EMPTY }); }}>
+            <option value="">Choose from the family…</option>
+            {living.map((h) => <option key={h.id} value={h.id}>{h.name || h.id}</option>)}
+            <option value="__other__">Someone else (type)</option>
+          </select>
+          {hp && (
+            <>
+              <p className="text-xs text-slate-600">{a.heir.name} {a.heir.link === 'zoja' ? 'w/o' : a.heir.link === 'dukhtar' ? 'd/o' : 's/o'} {a.heir.fatherName || '—'}</p>
+              <input className={input} inputMode="numeric" aria-label="Heir's CNIC" placeholder="CNIC 12345-1234567-1" value={hp.cnic ?? ''}
+                onChange={(e) => setC(updatePerson(c, hp.id, { cnic: formatCnic(e.target.value) }))} />
+            </>
+          )}
+          {other && (
+            <>
+              <input className={input} placeholder="Name" value={a.heir.name} onChange={(e) => put({ heir: { ...a.heir, name: e.target.value } })} />
+              <div className="flex gap-1.5">{linkSel(a.heir.link, (l) => put({ heir: { ...a.heir, link: l } }))}
+                <input className={input} placeholder="Father's / husband's name" value={a.heir.fatherName} onChange={(e) => put({ heir: { ...a.heir, fatherName: e.target.value } })} /></div>
+              <input className={input} inputMode="numeric" placeholder="CNIC 12345-1234567-1" value={a.heir.cnic} onChange={(e) => put({ heir: { ...a.heir, cnic: formatCnic(e.target.value) } })} />
+            </>
+          )}
+        </fieldset>
+        {([0, 1] as const).map((i) => (
+          <fieldset key={i} className="space-y-1.5 rounded-lg border border-slate-200 p-2">
+            <legend className="px-1 text-xs font-semibold text-slate-700">Witness {i + 1}</legend>
+            <input className={input} placeholder="Name" value={a.witnesses[i].name} onChange={(e) => setWitness(i, { name: e.target.value })} />
+            <div className="flex gap-1.5">{linkSel(a.witnesses[i].link, (l) => setWitness(i, { link: l }))}
+              <input className={input} placeholder="Father's / husband's name" value={a.witnesses[i].fatherName} onChange={(e) => setWitness(i, { fatherName: e.target.value })} /></div>
+            <input className={input} inputMode="numeric" placeholder="CNIC 12345-1234567-1" value={a.witnesses[i].cnic} onChange={(e) => setWitness(i, { cnic: formatCnic(e.target.value) })} />
+          </fieldset>
+        ))}
       </div>
-    </section>
+    </details>
   );
 }
